@@ -37,3 +37,8 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/.gitignore
+/.idea/modules.xml
+/.idea/ues-mobile-app.iml
+/.idea/vcs.xml
