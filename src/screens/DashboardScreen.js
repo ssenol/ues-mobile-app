@@ -1,11 +1,11 @@
-import React, {useEffect, useState} from "react";
-import {Alert, AppState, Linking, Platform, SafeAreaView, StatusBar, StyleSheet, Text, View,} from "react-native";
-import {useSelector} from "react-redux";
-import {selectCurrentUser} from "../store/slices/authSlice";
-import colors from "../styles/colors";
-import MenuButton from "../components/MenuButton";
+import React, { useEffect, useState } from "react";
+import { Alert, AppState, Linking, Platform, SafeAreaView, StatusBar, StyleSheet, Text, View, } from "react-native";
+import { useSelector } from "react-redux";
 import ActionButton from "../components/ActionButton";
-import {getMicrophoneEnabled, requestMicrophonePermission,} from "../utils/helpers";
+import MenuButton from "../components/MenuButton";
+import { selectCurrentUser } from "../store/slices/authSlice";
+import colors from "../styles/colors";
+import { getMicrophoneEnabled, requestMicrophonePermission, } from "../utils/helpers";
 
 export default function DashboardScreen({ navigation }) {
   const user = useSelector((state) => selectCurrentUser(state));
