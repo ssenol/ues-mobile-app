@@ -20,6 +20,7 @@ import speechService from "../services/speech";
 import Icon from "../components/Icon";
 import * as Haptics from "expo-haptics";
 import { cleanHtmlAndBreaks } from "../utils/helpers";
+import { Alert } from 'react-native';
 
 export default function SpeechTasksScreen({ navigation, route }) {
   const { taskType } = route.params;
@@ -88,24 +89,27 @@ export default function SpeechTasksScreen({ navigation, route }) {
         perPageCount: 10,
       };
       const response = await speechService.fetchSpeechTasks(requestParams);
-      if (response && response.quizzes) {
-        if (typeof response.totalCount === "number") {
-          setTotalCount(response.totalCount);
-        } else if (typeof response.assigned_quizzez_total_count === "number") {
-          setTotalCount(response.assigned_quizzez_total_count);
-        }
+      // API'dan dönen veri yeni backend yapısına uygun şekilde işleniyor
+      if (
+        response &&
+        response.data &&
+        Array.isArray(response.data.assigned_quizzez)
+      ) {
         if (reset) {
-          setTaskList(response.quizzes);
+          setTaskList(response.data.assigned_quizzez);
           setPaginationIndex(1);
         } else {
-          if (response.quizzes.length > 0) {
-            setTaskList((prev) => [...prev, ...response.quizzes]);
+          if (response.data.assigned_quizzez.length > 0) {
+            setTaskList((prev) => [...prev, ...response.data.assigned_quizzez]);
             setPaginationIndex(page);
           }
         }
+        if (typeof response.data.assigned_quizzez_total_count === "number") {
+          setTotalCount(response.data.assigned_quizzez_total_count);
+        }
       } else {
         if (reset) setTaskList([]);
-        Alert.alert("Error", "There was a problem loading tasks.");
+        Alert.alert("Error", "There was a problem loading tasks (data yapısı beklenmiyor)");
       }
       setLoading(false);
       setIsNextPageLoading(false);

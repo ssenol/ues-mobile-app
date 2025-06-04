@@ -1,0 +1,4 @@
+Şimdi yazacaklarımı unutma. Bu bir React Native projesidir. Expo ile kullanıyorum. Proje kodlarındaki arayüzlerde İngilizce kullanıyorum ama seninle Türkçe konuşacağım. Senden de mesajları bana Türkçe yazmanı istiyorum. Proje kodlarını inceleyebilirsiz ve gerekli yerlerde güncelleme yapabilirsin. Ancak hassas bilgileri dışarıda paylaşma..
+Önemli kısımlardan birisi de API bağlantıları config/api.js ortak dosyasında yer alıyor. Proje içerisinde burayı referans alıyoruz.
+Şu anda kullanıcıdan ses kaydetmesini ve bu sesin farklı servislere gönderilerek yabancı dil teleffuzu vs gibi skor almasını sağlayan bir mobil app. Ancak ilerleyen süreçlerde başka özellikler de ekleyeceğiz.
+Daha sonraki zamanlarda hatırlaman için bilgilendirmesini yapacağım.

@@ -37,6 +37,9 @@
         "projectId": "8d7d268f-f363-4dc8-9657-b9ee544b79a7"
       }
     },
-    "owner": "selcuksenol"
+    "owner": "selcuksenol",
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

@@ -21,6 +21,7 @@ import ActionButton from "../components/ActionButton";
 import CustomInput from "../components/CustomInput";
 import BiometricAuthService from "../services/biometricAuth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 
 const BIOMETRIC_PROMPT_SHOWN_KEY = "biometric_prompt_shown";
 
@@ -95,7 +96,6 @@ export default function LoginScreen({ navigation }) {
           body: JSON.stringify({ username, password }),
         });
         const fetchJson = await fetchResponse.json();
-        console.log('FETCH LOGIN DEBUG:', fetchJson);
       } catch (fetchErr) {
         console.error('FETCH LOGIN ERROR:', fetchErr);
       }
@@ -168,7 +168,6 @@ export default function LoginScreen({ navigation }) {
           body: JSON.stringify({ username, password }),
         });
         const fetchJson = await fetchResponse.json();
-        console.log('FETCH LOGIN DEBUG:', fetchJson);
       } catch (fetchErr) {
         console.error('FETCH LOGIN ERROR:', fetchErr);
       }
@@ -194,6 +193,12 @@ export default function LoginScreen({ navigation }) {
         "last_login_credentials",
         JSON.stringify({ username, password })
       );
+      // <--- TOKENI SECURESTORE'A KAYDET --->
+      try {
+        await SecureStore.setItemAsync('accessToken', response.token);
+      } catch (err) {
+        console.error('Token SecureStore kaydetme hatası:', err);
+      }
       // --- Biyometrik prompt gösterimi: Eğer daha önce gösterilmediyse, kullanıcıya sor ---
       const promptShown = await AsyncStorage.getItem(BIOMETRIC_PROMPT_SHOWN_KEY);
       if (!promptShown) {

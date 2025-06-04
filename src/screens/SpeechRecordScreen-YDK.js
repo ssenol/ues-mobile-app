@@ -298,48 +298,177 @@ const SpeechRecordScreen = ({ route, navigation }) => {
   };
 
   const handleSubmit = async () => {
-    setIsLoading(true);
-    setError(null);
     try {
-      // Gerekli parametreleri hazırla
-      const assignedTaskId = taskId;
-      const uesId = username?.uesId || username?.id || username || '';
-      const speechTaskId = taskId;
-      const audioFileUri = Platform.OS === 'ios' ? recordedUri : recordedUri?.replace('file://', '');
-      const stage = __DEV__ ? 'test' : 'prod';
-      const fullName = username?.fullName || username?.name || username?.username || '';
-      const speechDuration = recordingDuration || 0;
+      setIsLoading(true);
 
-      // Yeni API çağrısı
-      const response = await speechService.evaluateSpeechMobileTask({
-        assignedTaskId,
-        uesId,
-        speechTaskId,
-        audioFileUri,
-        stage,
-        username: fullName,
-        speechDuration: String(speechDuration)
+      if (!recordedUri) {
+        Alert.alert('Warning', 'Please make a speech record first');
+        return;
+      }
+
+      // FormData oluştur
+      const formData = new FormData();
+
+      // Ses dosyasını doğru formatta ekle
+      const audioUri = Platform.OS === 'ios' ? recordedUri : recordedUri.replace('file://', '');
+
+      // Ses dosyasını ekle
+      formData.append('audioFile', {
+        uri: audioUri,
+        type: 'audio/m4a',
+        name: 'speech.m4a'
       });
 
-      if (response?.status_code !== 200) {
-        throw new Error('Speech evaluation failed');
+      // Değerlendirme parametrelerini ekle
+      const evulationParams = {
+        data: speechData,
+        type_name: taskType === 'speaking-topic' ? 'on-topic' : 'read-aloud'
+      };
+      console.log('evulationParams:', JSON.stringify(evulationParams));
+      formData.append('evulationParams', JSON.stringify(evulationParams));
+
+      // 1. Değerlendirme isteği gönder
+      let evaluationResponse;
+      try {
+        evaluationResponse = await speechService.evaluateSpeech(formData);
+        if (evaluationResponse?.status_code !== 200) {
+          throw new Error('Speech evaluation failed');
+        }
+      } catch (error) {
+        console.error('Speech evaluation error:', error);
+        Alert.alert('Error', 'There was an error when evaluating the speech');
+        setIsLoading(false);
+        return;
       }
-      // Redux ile sonucu kaydet
-      dispatch(setSpeechResults({ speechResults: response.data }));
-      // Rapor ekranına yönlendir
+
+      // Sonuç işlemleri
+      const results = evaluationResponse.data.results || [];
+      const calculateAverage = (array, propertyPath) => {
+        if (!array || array.length === 0) return 0;
+        const sum = array.reduce((acc, item) => {
+          const value = propertyPath.split('.').reduce((obj, key) => obj && obj[key] !== undefined ? obj[key] : undefined, item);
+          return acc + (value || 0);
+        }, 0);
+        return Math.round((sum / array.length) * 100) / 100;
+      };
+      const getValueFromResults = (results, propertyPath, defaultValue = '') => {
+        if (!results || results.length === 0) return defaultValue;
+        return propertyPath.split('.').reduce((obj, key) => obj && obj[key] !== undefined ? obj[key] : defaultValue, results[0]);
+      };
+      const recordingDurationSeconds = Math.round(calculateAverage(results, 'Duration') / 1000000);
+      const accuracyScore = calculateAverage(results, 'NBest.0.PronunciationAssessment.AccuracyScore');
+      const fluencyScore = calculateAverage(results, 'NBest.0.PronunciationAssessment.FluencyScore');
+      const prosodyScore = calculateAverage(results, 'NBest.0.PronunciationAssessment.ProsodyScore');
+      const completenessScore = calculateAverage(results, 'NBest.0.PronunciationAssessment.CompletenessScore');
+      const pronScore = calculateAverage(results, 'NBest.0.PronunciationAssessment.PronScore');
+      const displayText = getValueFromResults(results, 'DisplayText', '');
+
+      // 2. Konu puanını almak için API isteği gönder
+      let topicScoreResponse;
+      try {
+        topicScoreResponse = await speechService.getSpeechQuestionTopicRelatedScore({
+          subject: speechData,
+          userResponse: displayText,
+          expectations: taskDetails || '',
+          voiceRecordResult: `The speech duration is ${recordingDurationSeconds} seconds. Accuracy Score: ${accuracyScore} Fluency Score: ${fluencyScore} Prosody Score: ${prosodyScore} Completeness Score: ${completenessScore} Pron Score: ${pronScore} All score by out of 100.`
+        });
+        if (topicScoreResponse?.status_code !== 200) {
+          throw new Error('Topic score evaluation failed');
+        }
+      } catch (error) {
+        console.error('Topic score evaluation error:', error);
+        Alert.alert('Error', 'There was an error when evaluating the topic score');
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. AI değerlendirmesi için API isteği gönder
+      let aiResponse;
+      try {
+        aiResponse = await speechService.getSpeechAssessmentResultEvaluationByAI({
+          speechData,
+          taskDetails,
+          duration: recordingDurationSeconds,
+          evaluationResult: evaluationResponse.data,
+          topicScore: topicScoreResponse.data.score,
+          cefrLevel: quizDetails?.cefrLevel,
+          eduLevelType: quizDetails?.eduLevelType,
+          speechRubricType: quizDetails?.speechRubricType,
+          username: username
+        });
+        if (aiResponse?.status_code !== 200) {
+          throw new Error('AI evaluation failed');
+        }
+      } catch (error) {
+        console.error('AI evaluation error:', error);
+        Alert.alert('Error', 'There was an error when evaluating by AI');
+        setIsLoading(false);
+        return;
+      }
+
+      dispatch(setSpeechResults({
+        speechResults: {
+          evaluation: evaluationResponse.data,
+          topicScore: {
+            data: { score: topicScoreResponse.data.score },
+            status_code: topicScoreResponse.status_code,
+            success: topicScoreResponse.success
+          },
+          aiEvaluation: {
+            data: {
+              suggestion: aiResponse.data.suggestion || [],
+              mistakes: aiResponse.data.mistakes,
+              rubricEvaluationResult: aiResponse.data.rubricEvaluationResult
+            },
+            status: aiResponse.status,
+            status_code: aiResponse.status_code,
+            successed: aiResponse.successed
+          }
+        }
+      }));
+
+      // 4. Olarak konuşma sonucunu kaydet (Save Speech Result API)
+      try {
+        const saveFormData = new FormData();
+        // Ses dosyasını ekle
+        saveFormData.append('speechRecordAudio', {
+          uri: Platform.OS === 'ios' ? recordedUri : recordedUri.replace('file://', ''),
+          type: 'audio/m4a',
+          name: 'speech.m4a',
+        });
+        // Kullanıcı ve görev bilgileri
+        saveFormData.append('uesId', username || '');
+        saveFormData.append('assignedTaskId', taskId || '');
+        saveFormData.append('speechTaskId', taskId || ''); // Eğer farklı bir ID varsa burada değiştirin
+        // Nihai skor (örnek: accuracyScore veya topicScore)
+        saveFormData.append('finalScore', String(topicScoreResponse.data?.score ?? accuracyScore ?? ''));
+        saveFormData.append('taskType', taskType || '');
+        saveFormData.append('userResponseAsText', displayText || '');
+        saveFormData.append('voiceEvulationResult', JSON.stringify(evaluationResponse.data));
+        saveFormData.append('suggestions', JSON.stringify(aiResponse.data?.suggestion || []));
+        saveFormData.append('mistakes', JSON.stringify(aiResponse.data?.mistakes || []));
+        saveFormData.append('rubricEvaluationResult', aiResponse.data?.rubricEvaluationResult || '');
+        console.log('saveFormData:', saveFormData);
+        // API çağrısı
+        await speechService.saveSpeechResult(saveFormData);
+      } catch (saveError) {
+        console.error('Save Speech Result API error:', saveError);
+        Alert.alert('Error', 'Speech result could not be saved!');
+        // Kaydetme başarısız olsa bile rapora yönlendiriyoruz
+      }
+
       navigation.navigate('SpeechReport', {
         taskId,
-        speechResults: response.data,
         quizName,
         speechData,
         taskDetails,
         taskType,
-        questionSubDetails
+        questionSubDetails,
+        recordedUri
       });
     } catch (error) {
       console.error('Speech evaluation error:', error);
-      Alert.alert('Error', 'There was an error when evaluating the speech');
-      setError(error.message);
+      Alert.alert("Error", "There was an error when evaluating the speech");
     } finally {
       setIsLoading(false);
     }

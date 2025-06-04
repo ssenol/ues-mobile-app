@@ -5,6 +5,7 @@ node_modules/
 
 # Expo
 .expo/
+.expo-shared/
 dist/
 web-build/
 expo-env.d.ts
@@ -35,6 +36,17 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# iOS ve Android klasörleri (Expo'da genellikle repoya eklenmez)
+ios/
+android/
+
+# Build çıktıları
+build/
+
+# Log dosyaları
+gradle.log
+*.log
 
 app-example
 /.idea/inspectionProfiles/Project_Default.xml
