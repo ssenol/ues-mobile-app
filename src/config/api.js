@@ -14,7 +14,6 @@ export const API_ENDPOINTS = {
     refresh: `${BASE_URL}/auth/refresh-mobile-app-access-token`,
   },
   speech: {
-    // Yeni tekli endpoint
     evaluateMobileTask: `${BASE_URL}/question/evaluate-speech-mobile-task`,
   },
   quiz: {

@@ -5,9 +5,8 @@ import colors from "../styles/colors";
 import speechService from "../services/speech";
 import Icon from "../components/Icon";
 import {useDispatch, useSelector} from "react-redux";
-import {selectQuizDetails, setSpeechResults,} from "../store/slices/speechSlice";
 import {selectCurrentUser} from "../store/slices/authSlice";
-// import {DEBUG_MODE, DUMMY_SPEECH_REPORT} from "../constants/config";
+import { setSpeechResults } from "../store/slices/speechSlice";
 import { cleanHtmlAndBreaks } from "../utils/helpers";
 
 const SpeechRecordScreen = ({ route, navigation }) => {
@@ -49,9 +48,6 @@ const SpeechRecordScreen = ({ route, navigation }) => {
 
   // Redux'tan kullanıcı bilgisini alır
   const username = useSelector(selectCurrentUser);
-
-  // Redux'tan görev detaylarını alır
-  const quizDetails = useSelector(selectQuizDetails);
 
   // Redux action'larını tetiklemek için kullanılır
   const dispatch = useDispatch();
@@ -305,17 +301,28 @@ const SpeechRecordScreen = ({ route, navigation }) => {
       const assignedTaskId = taskId;
       const uesId = username?.uesId || username?.id || username || '';
       const speechTaskId = taskId;
-      const audioFileUri = Platform.OS === 'ios' ? recordedUri : recordedUri?.replace('file://', '');
+      const audioFile = Platform.OS === 'ios' ? recordedUri : recordedUri?.replace('file://', '');
       const stage = __DEV__ ? 'test' : 'prod';
       const fullName = username?.fullName || username?.name || username?.username || '';
       const speechDuration = recordingDuration || 0;
 
+      console.log("***********************************************");
+
+      console.log("assignedTaskId:", assignedTaskId);
+      console.log("uesId:", uesId);
+      console.log("speechTaskId:", speechTaskId);
+      console.log("audioFile:", audioFile);
+      console.log("stage:", stage);
+      console.log("fullName:", fullName);
+      console.log("speechDuration:", speechDuration);
+
+      console.log("***********************************************");
       // Yeni API çağrısı
       const response = await speechService.evaluateSpeechMobileTask({
         assignedTaskId,
         uesId,
         speechTaskId,
-        audioFileUri,
+        audioFile,
         stage,
         username: fullName,
         speechDuration: String(speechDuration)
