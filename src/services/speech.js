@@ -1,5 +1,5 @@
-import api, { API_ENDPOINTS } from '../config/api';
 import * as SecureStore from 'expo-secure-store';
+import api, { API_ENDPOINTS } from '../config/api';
 
 export const fetchSpeechTasks = async (params) => {
   const token = await SecureStore.getItemAsync('accessToken');
@@ -60,24 +60,28 @@ export const saveSpeechResult = async (formData) => {
   return response.data;
 };
 
-export const evaluateSpeechMobileTask = async ({
-  assignedTaskId,
-  uesId,
-  speechTaskId,
-  audioFileUri,
-  stage,
-  username,
-  speechDuration
-}) => {
+export const evaluateSpeechMobileTask = async (rawParams) => {
+  // console.log('[speech.js] evaluateSpeechMobileTask - RAW INCOMING PARAMS:', rawParams);
+  const {
+    assignedTaskId,
+    uesId,
+    speechTaskId,
+    audioFile,
+    stage,
+    username,
+    speechDuration
+  } = rawParams || {}; // Add fallback for safety, though rawParams should exist
+  // console.log('[speech.js] evaluateSpeechMobileTask - audioFileUri (after destructuring):', audioFileUri);
+  // console.log('[speech.js] evaluateSpeechMobileTask - all params (after destructuring):', { assignedTaskId, uesId, speechTaskId, audioFileUri, stage, username, speechDuration });
   const token = await SecureStore.getItemAsync('accessToken');
   const formData = new FormData();
   formData.append('assignedTaskId', assignedTaskId);
   formData.append('uesId', uesId);
   formData.append('speechTaskId', speechTaskId);
   formData.append('audioFile', {
-    uri: audioFileUri,
-    name: audioFileUri.split('/').pop(),
-    type: 'audio/wav',
+    uri: audioFile,
+    name: audioFile.split('/').pop(),
+    type: 'audio/m4a',
   });
   formData.append('stage', stage);
   formData.append('username', username);
@@ -89,7 +93,6 @@ export const evaluateSpeechMobileTask = async ({
     {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
       },
     }
   );

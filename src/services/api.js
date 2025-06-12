@@ -28,18 +28,24 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
 
       if (config.method === "post") {
-        if (
+        if (config.data instanceof FormData) {
+          // If data is FormData, ensure Axios sets the Content-Type.
+          // Delete any pre-existing Content-Type to allow Axios to set it.
+          delete config.headers["Content-Type"];
+        } else if (
           config.headers["Content-Type"] &&
           config.headers["Content-Type"].includes("multipart/form-data")
         ) {
+          // Data is NOT FormData, but Content-Type is multipart (odd case).
+          // Leave Content-Type as is.
         } else {
+          // Data is NOT FormData, and Content-Type is not (or not correctly) multipart.
+          // Set to x-www-form-urlencoded and transform data if it's an object.
           config.headers["Content-Type"] = "application/x-www-form-urlencoded";
-
           if (
             config.data &&
             typeof config.data === "object" &&
-            !(config.data instanceof URLSearchParams) &&
-            !(config.data instanceof FormData)
+            !(config.data instanceof URLSearchParams) // FormData case handled by the first 'if'
           ) {
             const urlencoded = new URLSearchParams();
             Object.keys(config.data).forEach((key) => {

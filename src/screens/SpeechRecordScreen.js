@@ -1,17 +1,18 @@
-import React, {useEffect, useState} from "react";
-import {ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View,} from "react-native";
-import {Audio} from "expo-av";
-import colors from "../styles/colors";
-import speechService from "../services/speech";
+import { Audio } from "expo-av";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import Icon from "../components/Icon";
-import {useDispatch, useSelector} from "react-redux";
-import {selectCurrentUser} from "../store/slices/authSlice";
+import speechService from "../services/speech";
+import { selectCurrentUser } from "../store/slices/authSlice";
 import { setSpeechResults } from "../store/slices/speechSlice";
+import colors from "../styles/colors";
 import { cleanHtmlAndBreaks } from "../utils/helpers";
 
 const SpeechRecordScreen = ({ route, navigation }) => {
   const {
     taskId,
+    questionId,
     quizName,
     speechData,
     taskDetails,
@@ -296,40 +297,47 @@ const SpeechRecordScreen = ({ route, navigation }) => {
   const handleSubmit = async () => {
     setIsLoading(true);
     setError(null);
+
+    // Check if recordedUri is available
+    if (!recordedUri) {
+      Alert.alert('Uyarı', 'Ses kaydı bulunamadı. Lütfen tekrar kayıt yapmayı deneyin.');
+      setIsLoading(false);
+      setError('Ses kaydı URI mevcut değil.'); // Set an error state for more detailed debugging if needed
+      return;
+    }
     try {
       // Gerekli parametreleri hazırla
-      const assignedTaskId = taskId;
-      const uesId = username?.uesId || username?.id || username || '';
-      const speechTaskId = taskId;
+      const uesId = username?.id;
       const audioFile = Platform.OS === 'ios' ? recordedUri : recordedUri?.replace('file://', '');
+      // Robust check for audioFile validity
+      // if (typeof audioFile !== 'string' || audioFile.trim() === '') {
+        // console.error('handleSubmit Error: audioFile is invalid. Value:', audioFile, 'Original recordedUri:', recordedUri);
+        // Alert.alert('Hata', 'Geçersiz ses dosyası referansı. Lütfen ses kaydını kontrol edip tekrar deneyin.');
+        // setIsLoading(false);
+        // setError('Geçersiz ses dosyası referansı.');
+        // return;
+      // }
       const stage = __DEV__ ? 'test' : 'prod';
-      const fullName = username?.fullName || username?.name || username?.username || '';
+      const fullName = username?.name + ' ' + username?.surname;
       const speechDuration = recordingDuration || 0;
 
-      console.log("***********************************************");
-
-      console.log("assignedTaskId:", assignedTaskId);
-      console.log("uesId:", uesId);
-      console.log("speechTaskId:", speechTaskId);
-      console.log("audioFile:", audioFile);
-      console.log("stage:", stage);
-      console.log("fullName:", fullName);
-      console.log("speechDuration:", speechDuration);
-
-      console.log("***********************************************");
-      // Yeni API çağrısı
-      const response = await speechService.evaluateSpeechMobileTask({
-        assignedTaskId,
+      const paramsForAPI = {
+        assignedTaskId: taskId,
+        speechTaskId: questionId,
         uesId,
-        speechTaskId,
         audioFile,
         stage,
         username: fullName,
-        speechDuration: String(speechDuration)
-      });
+        speechDuration,
+      };
+      console.log("[SpeechRecordScreen.js] handleSubmit - Parameters being sent to API:", paramsForAPI);
+
+      // Yeni API çağrısı
+      const response = await speechService.evaluateSpeechMobileTask(paramsForAPI);
+      console.log("[SpeechRecordScreen.js] handleSubmit - Speech evaluation response:", response);
 
       if (response?.status_code !== 200) {
-        throw new Error('Speech evaluation failed');
+        throw new Error('Speech evaluation failedxx');
       }
       // Redux ile sonucu kaydet
       dispatch(setSpeechResults({ speechResults: response.data }));
@@ -344,9 +352,25 @@ const SpeechRecordScreen = ({ route, navigation }) => {
         questionSubDetails
       });
     } catch (error) {
-      console.error('Speech evaluation error:', error);
-      Alert.alert('Error', 'There was an error when evaluating the speech');
+      // if (error.isAxiosError) {
+      //   console.error('Speech evaluation Axios error details:', error.toJSON());
+      //   console.error('Speech evaluation Axios error request:', error.request);
+      //   console.error('Speech evaluation Axios error response:', error.response);
+      // } else {
+      //   console.error('Speech evaluation generic error:', error);
+      // }
+      // Alert.alert('Error', 'There was an error when evaluating the speech. Check console for details.');
       setError(error.message);
+      // For more user-friendly error, consider parsing error.response.data if available
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+        Alert.alert('Error', error.response.data.message);
+      } else if (error.request) {
+        setError('Network error: No response received from server.');
+        Alert.alert('Error', 'Network error: No response received from server.');
+      } else {
+        setError(error.message);
+      }
     } finally {
       setIsLoading(false);
     }

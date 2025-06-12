@@ -1,26 +1,26 @@
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   ActivityIndicator,
-  RefreshControl,
-  TouchableOpacity,
-  Platform,
+  Alert,
   Animated,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useSelector, useDispatch } from "react-redux";
-import {
-  selectCurrentUser,
-  selectAccessToken,
-} from "../store/slices/authSlice";
-import {setCurrentQuiz} from "../store/slices/speechSlice";
-import colors from "../styles/colors";
-import speechService from "../services/speech";
+import { useDispatch, useSelector } from "react-redux";
 import Icon from "../components/Icon";
-import * as Haptics from "expo-haptics";
+import speechService from "../services/speech";
+import {
+  selectAccessToken,
+  selectCurrentUser,
+} from "../store/slices/authSlice";
+import { setCurrentQuiz } from "../store/slices/speechSlice";
+import colors from "../styles/colors";
 import { cleanHtmlAndBreaks } from "../utils/helpers";
-import { Alert } from 'react-native';
 
 export default function SpeechTasksScreen({ navigation, route }) {
   const { taskType } = route.params;
@@ -161,6 +161,7 @@ export default function SpeechTasksScreen({ navigation, route }) {
     if (taskType === "speaking-topic") {
       navigation.navigate("SpeechRecord", {
         taskId: task.quizId,
+        questionId: task.question._id,
         quizName: speechCard.data,
         speechData: speechCard.data,
         taskDetails: speechCard.settings,
@@ -169,6 +170,7 @@ export default function SpeechTasksScreen({ navigation, route }) {
     } else {
       navigation.navigate("SpeechRecord", {
         taskId: task.quizId,
+        questionId: task.question._id,
         quizName: task.quizName,
         speechData: speechCard.data.replace(/<[^>]*>/g, ""),
         taskType: "read-aloud",
