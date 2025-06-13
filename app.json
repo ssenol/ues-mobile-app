@@ -1,8 +1,8 @@
 {
   "expo": {
     "entryPoint": "./App.js",
-    "name": "ues-speech-app",
-    "slug": "ues-speech-app",
+    "name": "UES Mobile App",
+    "slug": "ues-mobile-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -17,9 +17,10 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSFaceIDUsageDescription": "Bu uygulama Face ID ile giriş yapmanıza izin verir.",
+        "NSMicrophoneUsageDescription": "Uygulama, sesinizi kaydedip telaffuzunuzu değerlendirmek için mikrofonunuza erişim gerektirir.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.ues.uesspeechapp",
+      "bundleIdentifier": "com.ues.uesmobileapp",
       "buildNumber": "1.0.1"
     },
     "android": {
@@ -27,20 +28,21 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "background": "#ffffff"
       },
-      "package": "com.ues.uesspeechapp"
+      "package": "com.ues.uesmobileapp"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "8d7d268f-f363-4dc8-9657-b9ee544b79a7"
-      }
     },
     "owner": "selcuksenol",
     "plugins": [
       "expo-secure-store",
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b8b1afb1-2bd6-4bf6-b5b7-1aa24aa9b757"
+      }
+    }
   }
 }
