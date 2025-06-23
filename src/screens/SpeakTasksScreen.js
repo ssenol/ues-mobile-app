@@ -186,84 +186,93 @@ export default function SpeakTasksScreen({ navigation, route }) {
       onPress={() => handleTaskPress(task)}
     >
       <View style={styles.taskContent}>
-        <Text style={styles.taskTitle}>
-          {(() => {
-            const rawTitle =
-              taskType === "speaking-topic"
-                ? task.question.questionAnswersData.speechCards[0].data
-                : task.quizName;
-            const cleaned = cleanHtmlAndBreaks(rawTitle);
-            return cleaned.length > 100
-              ? cleaned.substring(0, 100) + "..."
-              : cleaned;
-          })()}
-        </Text>
-        <View style={styles.taskDetails}>
-          {taskType === "read-aloud" &&
-            task.question.questionAnswersData.speechCards[0].ai_filters && (
-              <>
-                <View style={styles.taskDetailItem}>
-                  <Icon
-                    iosName="star"
-                    androidName="star"
-                    size={Platform.OS === "ios" ? 14 : 16}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.taskDetailText}>
-                    { task.question.questionAnswersData.speechCards[0].ai_filters.cefr_level }
-                  </Text>
-                </View>
-                <View style={styles.taskDetailItem}>
-                  <Icon
-                    iosName="book"
-                    androidName="menu-book"
-                    size={Platform.OS === "ios" ? 14 : 16}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.taskDetailText}>
-                    { task.question.questionAnswersData.speechCards[0].ai_filters.subject }
-                  </Text>
-                </View>
-              </>
-            )}
-          {taskType === "speaking-topic" &&
-            task.question.questionAnswersData.speechCards[0].settings && (
-              <>
-                <View style={styles.taskDetailItem}>
-                  <Icon
-                    iosName="clock"
-                    androidName="av-timer"
-                    size={Platform.OS === "ios" ? 14 : 16}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.taskDetailText}>
-                    { task.question.questionAnswersData.speechCards[0].settings.duration }{" "}seconds
-                  </Text>
-                </View>
-                <View style={styles.taskDetailItem}>
-                  <Icon
-                    iosName="text.alignleft"
-                    androidName="text-snippet"
-                    size={Platform.OS === "ios" ? 14 : 16}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.taskDetailText}>
-                    { task.question.questionAnswersData.speechCards[0].settings.wordCount }{" "}words
-                  </Text>
-                </View>
-                <View style={styles.taskDetailItem}>
-                  <Icon
-                    iosName="text.quote"
-                    androidName="wrap-text"
-                    size={Platform.OS === "ios" ? 14 : 16}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.taskDetailText}>
-                    { task.question.questionAnswersData.speechCards[0].settings.sentenceCount }{" "}sentences
-                  </Text>
-                </View>
-              </>
-            )}
+        <View style={styles.taskTitleRow}>
+          <Text style={styles.taskTitle}>
+            {(() => {
+              const rawTitle =
+                taskType === "speaking-topic"
+                  ? task.question.questionAnswersData.speechCards[0].data
+                  : task.quizName;
+              const cleaned = cleanHtmlAndBreaks(rawTitle);
+              return cleaned.length > 100
+                ? cleaned.substring(0, 100) + "..."
+                : cleaned;
+            })()}
+          </Text>
+        </View>
+        <View style={styles.taskDetailsRow}>
+          {task.prevSolvedTask && typeof task.prevSolvedTask.totalSolvedTaskCount === 'number' && task.prevSolvedTask.totalSolvedTaskCount > 0 && (
+            <View style={styles.solvedBadge}>
+              <Text style={styles.solvedBadgeText}>{task.prevSolvedTask.totalSolvedTaskCount}</Text>
+            </View>
+          )}
+          <View style={styles.taskDetails}>
+            {taskType === "read-aloud" &&
+              task.question.questionAnswersData.speechCards[0].ai_filters && (
+                <>
+                  <View style={styles.taskDetailItem}>
+                    <Icon
+                      iosName="star"
+                      androidName="star"
+                      size={Platform.OS === "ios" ? 14 : 16}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.taskDetailText}>
+                      { task.question.questionAnswersData.speechCards[0].ai_filters.cefr_level }
+                    </Text>
+                  </View>
+                  <View style={styles.taskDetailItem}>
+                    <Icon
+                      iosName="book"
+                      androidName="menu-book"
+                      size={Platform.OS === "ios" ? 14 : 16}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.taskDetailText}>
+                      { task.question.questionAnswersData.speechCards[0].ai_filters.subject }
+                    </Text>
+                  </View>
+                </>
+              )}
+            {taskType === "speaking-topic" &&
+              task.question.questionAnswersData.speechCards[0].settings && (
+                <>
+                  <View style={styles.taskDetailItem}>
+                    <Icon
+                      iosName="clock"
+                      androidName="av-timer"
+                      size={Platform.OS === "ios" ? 14 : 16}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.taskDetailText}>
+                      { task.question.questionAnswersData.speechCards[0].settings.duration }{" "}seconds
+                    </Text>
+                  </View>
+                  <View style={styles.taskDetailItem}>
+                    <Icon
+                      iosName="text.alignleft"
+                      androidName="text-snippet"
+                      size={Platform.OS === "ios" ? 14 : 16}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.taskDetailText}>
+                      { task.question.questionAnswersData.speechCards[0].settings.wordCount }{" "}words
+                    </Text>
+                  </View>
+                  <View style={styles.taskDetailItem}>
+                    <Icon
+                      iosName="text.quote"
+                      androidName="wrap-text"
+                      size={Platform.OS === "ios" ? 14 : 16}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.taskDetailText}>
+                      { task.question.questionAnswersData.speechCards[0].settings.sentenceCount }{" "}sentences
+                    </Text>
+                  </View>
+                </>
+              )}
+          </View>
         </View>
       </View>
       <Icon
@@ -382,11 +391,21 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
+  taskTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   taskTitle: {
     fontSize: 16,
     fontWeight: "500",
     color: colors.text,
     marginBottom: 8,
+  },
+  taskDetailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4, // React Native 0.71+ destekler, değilse aşağıdaki margin uygulanır
   },
   taskDetails: {
     flexDirection: "row",
@@ -401,5 +420,21 @@ const styles = StyleSheet.create({
   taskDetailText: {
     fontSize: 12,
     color: colors.slate600,
+  },
+  solvedBadge: {
+    backgroundColor: '#1976d2',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+    marginLeft: 0,
+    minWidth: 28,
+    alignItems: 'center',
+    marginRight: 4, // badge ile detaylar arası boşluk
+  },
+  solvedBadgeText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
 });
