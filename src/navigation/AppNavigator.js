@@ -9,9 +9,9 @@ import Icon from "../components/Icon";
 
 import LoginScreen from "../screens/LoginScreen";
 import DashboardScreen from "../screens/DashboardScreen";
-import SpeechTasksScreen from "../screens/SpeechTasksScreen";
-import SpeechRecordScreen from "../screens/SpeechRecordScreen";
-import SpeechReportScreen from "../screens/SpeechReportScreen";
+import SpeakTasksScreen from "../screens/SpeakTasksScreen";
+import SpeakRecordScreen from "../screens/SpeakRecordScreen";
+import SpeakReportScreen from "../screens/SpeakReportScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import WritingTasksScreen from "../screens/WritingTasksScreen";
 import WritingTaskDetailScreen from "../screens/WritingTaskDetailScreen";
@@ -124,28 +124,28 @@ export default function AppNavigator() {
               }}
             />
             <Stack.Screen
-              name="SpeechTasks"
-              component={SpeechTasksScreen}
+              name="SpeakTasks"
+              component={SpeakTasksScreen}
               options={{
                 headerShown: true,
                 title: ""
               }}
             />
             <Stack.Screen
-              name="SpeechRecord"
-              component={SpeechRecordScreen}
+              name="SpeakRecord"
+              component={SpeakRecordScreen}
               options={{
                 headerShown: true,
-                title: "Speech Recording",
+                title: "Speak Recording",
                 headerLeft: null,
               }}
             />
             <Stack.Screen
-              name="SpeechReport"
-              component={SpeechReportScreen}
+              name="SpeakReport"
+              component={SpeakReportScreen}
               options={({ navigation }) => ({
                 headerShown: true,
-                title: "Speech Report",
+                title: "Speak Report",
                 headerLeft: null,
                 headerRight: () => (
                   <TouchableOpacity

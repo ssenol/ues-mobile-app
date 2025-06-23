@@ -39,11 +39,11 @@ export default function DashboardScreen({ navigation }) {
     setHasPermission(await getMicrophoneEnabled());
   };
 
-  const handleSpeechOnTopic = () => {
+  const handleSpeakOnTopic = () => {
     if (!hasPermission) {
       Alert.alert(
         "Permission Required",
-        "You need to grant microphone permission to use the speech feature.",
+        "You need to grant microphone permission to use the speak feature.",
         [
           {
             text: "Open Settings",
@@ -54,14 +54,14 @@ export default function DashboardScreen({ navigation }) {
       );
       return;
     }
-    navigation.navigate("SpeechTasks", { taskType: "speaking-topic" });
+    navigation.navigate("SpeakTasks", { taskType: "speaking-topic" });
   };
 
   const handleReadAloud = () => {
     if (!hasPermission) {
       Alert.alert(
         "Permission Required",
-        "You need to grant microphone permission to use the speech feature.",
+        "You need to grant microphone permission to use the speak feature.",
         [
           {
             text: "Open Settings",
@@ -72,7 +72,7 @@ export default function DashboardScreen({ navigation }) {
       );
       return;
     }
-    navigation.navigate("SpeechTasks", { taskType: "read-aloud" });
+    navigation.navigate("SpeakTasks", { taskType: "read-aloud" });
   };
 
   return (
@@ -87,9 +87,9 @@ export default function DashboardScreen({ navigation }) {
 
         <View style={styles.buttonContainer}>
           <MenuButton
-            title="Speech On Topic"
-            subtitle="Practice a speech on a specific subject"
-            onPress={handleSpeechOnTopic}
+            title="Speak On Topic"
+            subtitle="Practice a speak on a specific subject"
+            onPress={handleSpeakOnTopic}
             iconIos="waveform"
             iconAndroid="graphic-eq"
           />
@@ -115,7 +115,7 @@ export default function DashboardScreen({ navigation }) {
           <View style={styles.permissionWarning}>
             <Text style={styles.permissionText}>
               <Text style={{fontWeight: 'bold', color: '#c62828'}}>⚠️ Microphone permission required!{"\n"}</Text>
-              You must grant microphone permission to use the speech features.
+              You must grant microphone permission to use the speak features.
             </Text>
             <ActionButton
               title="Microphone Permission"

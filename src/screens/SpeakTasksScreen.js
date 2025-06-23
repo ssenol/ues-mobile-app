@@ -13,17 +13,18 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import Icon from "../components/Icon";
-import speechService from "../services/speech";
+import speakService, {fetchSpeakTasks} from "../services/speak";
 import {
   selectAccessToken,
   selectCurrentUser,
 } from "../store/slices/authSlice";
-import { setCurrentQuiz } from "../store/slices/speechSlice";
+import { setCurrentQuiz } from "../store/slices/speakSlice";
 import colors from "../styles/colors";
 import { cleanHtmlAndBreaks } from "../utils/helpers";
 
-export default function SpeechTasksScreen({ navigation, route }) {
-  const { taskType } = route.params;
+export default function SpeakTasksScreen({ navigation, route }) {
+  // Güvenli parametre kontrolü eklendi
+  const taskType = route?.params?.taskType || "read-aloud";
   const dispatch = useDispatch();
   const user = useSelector(selectCurrentUser);
   const accessToken = useSelector(selectAccessToken);
@@ -39,7 +40,7 @@ export default function SpeechTasksScreen({ navigation, route }) {
   const HEADER_HEIGHT = 50;
 
   const getHeaderTitle = () => {
-    if (taskType === "speaking-topic") return "Speech on Topic";
+    if (taskType === "speaking-topic") return "Speak on Topic";
     return "Read Aloud";
   };
 
@@ -88,7 +89,7 @@ export default function SpeechTasksScreen({ navigation, route }) {
         activityType: taskType,
         perPageCount: 10,
       };
-      const response = await speechService.fetchSpeechTasks(requestParams);
+      const response = await speakService.fetchSpeechTasks(requestParams);
       // API'dan dönen veri yeni backend yapısına uygun şekilde işleniyor
       if (
         response &&
@@ -149,7 +150,7 @@ export default function SpeechTasksScreen({ navigation, route }) {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>
-          No speech assignment found.
+          No speak assignment found.
         </Text>
       </View>
     );
@@ -159,7 +160,7 @@ export default function SpeechTasksScreen({ navigation, route }) {
     dispatch(setCurrentQuiz(task));
     const speechCard = task.question.questionAnswersData.speechCards[0];
     if (taskType === "speaking-topic") {
-      navigation.navigate("SpeechRecord", {
+      navigation.navigate("SpeakRecord", {
         taskId: task.quizId,
         questionId: task.question._id,
         quizName: speechCard.data,
@@ -168,7 +169,7 @@ export default function SpeechTasksScreen({ navigation, route }) {
         taskType: "speaking-topic",
       });
     } else {
-      navigation.navigate("SpeechRecord", {
+      navigation.navigate("SpeakRecord", {
         taskId: task.quizId,
         questionId: task.question._id,
         quizName: task.quizName,

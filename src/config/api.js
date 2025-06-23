@@ -13,8 +13,12 @@ export const API_ENDPOINTS = {
     logout: `${BASE_URL}/auth/mobile-app-logout`,
     refresh: `${BASE_URL}/auth/refresh-mobile-app-access-token`,
   },
-  speech: {
+  speak: {
     evaluateMobileTask: `${BASE_URL}/question/evaluate-speech-mobile-task`,
+    // evaluation: `${BASE_URL}/question/evaluate-speech`,
+    // fetchTasks: `${BASE_URL}/quiz/get-speech-quizzes-to-mobile-app`,
+    // topicScore: `${BASE_URL}/question/get-speech-topic-score`,
+    // evaluationByAI: `${BASE_URL}/question/evaluate-speech-ai`,
   },
   quiz: {
     fetchTasks: `${BASE_URL}/quiz/get-speech-quizzes-to-mobile-app`,

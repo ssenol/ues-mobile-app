@@ -2,7 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import authReducer from './slices/authSlice';
-import speechReducer from './slices/speechSlice';
+import speakReducer from './slices/speakSlice';
 import writingReducer from './slices/writingSlice';
 
 const authPersistConfig = {
@@ -11,10 +11,10 @@ const authPersistConfig = {
   whitelist: ['accessToken', 'currentUser', 'refreshToken', 'isAuthenticated']
 };
 
-const speechPersistConfig = {
-  key: 'speech',
+const speakPersistConfig = {
+  key: 'speak',
   storage: AsyncStorage,
-  whitelist: ['assignedQuizzes', 'totalQuizCount']
+  whitelist: ['speakResults', 'currentQuiz']
 };
 
 const writingPersistConfig = {
@@ -25,7 +25,7 @@ const writingPersistConfig = {
 
 const rootReducer = {
   auth: persistReducer(authPersistConfig, authReducer),
-  speech: persistReducer(speechPersistConfig, speechReducer),
+  speak: persistReducer(speakPersistConfig, speakReducer),
   writing: persistReducer(writingPersistConfig, writingReducer)
 };
 

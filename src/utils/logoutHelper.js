@@ -1,4 +1,4 @@
-import { Alert, Platform } from "react-native";
+import { Alert } from "react-native";
 import * as Haptics from "expo-haptics";
 import authService from "../services/auth";
 import { logout as logoutAction } from "../store/slices/authSlice";

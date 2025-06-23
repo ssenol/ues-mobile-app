@@ -1,7 +1,4 @@
-import { Alert, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as LocalAuthentication from "expo-local-authentication";
-import * as Permissions from "expo-permissions";
 import { Audio } from 'expo-av';
 
 export const BIOMETRIC_KEY = "biometric_auth_enabled";

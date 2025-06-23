@@ -5,7 +5,7 @@ const initialState = {
   evaluationResult: null,
   topicScoreResult: null,
   aiEvaluationResult: null,
-  speechResults: null,
+  speakResults: null,
 
   // Quiz ve soru detayları
   assignedQuizzes: [],
@@ -18,8 +18,8 @@ const initialState = {
   error: null,
 };
 
-const speechSlice = createSlice({
-  name: "speech",
+const speakSlice = createSlice({
+  name: "speak",
   initialState,
   reducers: {
     // Görev listesi işlemleri
@@ -46,7 +46,7 @@ const speechSlice = createSlice({
 
     // Değerlendirme sonuçları işlemleri
     setSpeechResults: (state, action) => {
-      state.speechResults = action.payload;
+      state.speakResults = action.payload;
     },
 
     // Durum işlemleri
@@ -73,18 +73,18 @@ export const {
   // setLoading,
   // setError,
   // clearSpeechState,
-} = speechSlice.actions;
+} = speakSlice.actions;
 
 // Selectors
-// export const selectAssignedQuizzes = (state) => state.speech?.assignedQuizzes || [];
-// export const selectTotalQuizCount = (state) => state.speech?.totalQuizCount || 0;
-// export const selectCurrentQuiz = (state) => state.speech?.currentQuiz;
-// export const selectQuizSettings = (state) => state.speech?.quizSettings;
-// export const selectSpeechResults = (state) => state.speech?.speechResults;
-// export const selectEvaluationResult = (state) => state.speech?.evaluationResult;
-// export const selectTopicScoreResult = (state) => state.speech?.topicScoreResult;
-// export const selectAiEvaluationResult = (state) => state.speech?.aiEvaluationResult;
-// export const selectLoading = (state) => state.speech?.loading;
-// export const selectError = (state) => state.speech?.error;
+// export const selectAssignedQuizzes = (state) => state.speak?.assignedQuizzes || [];
+// export const selectTotalQuizCount = (state) => state.speak?.totalQuizCount || 0;
+// export const selectCurrentQuiz = (state) => state.speak?.currentQuiz;
+// export const selectQuizSettings = (state) => state.speak?.quizSettings;
+// export const selectSpeechResults = (state) => state.speak?.speakResults;
+// export const selectEvaluationResult = (state) => state.speak?.evaluationResult;
+// export const selectTopicScoreResult = (state) => state.speak?.topicScoreResult;
+// export const selectAiEvaluationResult = (state) => state.speak?.aiEvaluationResult;
+// export const selectLoading = (state) => state.speak?.loading;
+// export const selectError = (state) => state.speak?.error;
 
-export default speechSlice.reducer;
+export default speakSlice.reducer;
