@@ -1,15 +1,19 @@
 import { Audio } from "expo-av";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useLayoutEffect } from "react";
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import Icon from "../components/Icon";
 import speakService from "../services/speak";
 import { selectCurrentUser } from "../store/slices/authSlice";
-import { setSpeakResults } from "../store/slices/speakSlice";
+import { setSpeechResults } from "../store/slices/speakSlice";
 import colors from "../styles/colors";
 import { cleanHtmlAndBreaks } from "../utils/helpers";
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
 
-const SpeakRecordScreen = ({ route, navigation }) => {
+const SpeakRecordScreen = (props) => {
+  const navigation = useNavigation();
+  const route = useRoute();
   const {
     taskId,
     questionId,
@@ -18,6 +22,7 @@ const SpeakRecordScreen = ({ route, navigation }) => {
     taskDetails,
     taskType,
     questionSubDetails,
+    prevResults = [],
   } = route.params;
 
   const [recording, setRecording] = useState(null);
@@ -31,6 +36,32 @@ const SpeakRecordScreen = ({ route, navigation }) => {
   const [pendingSubmit, setPendingSubmit] = useState(false);
   const username = useSelector(selectCurrentUser);
   const dispatch = useDispatch();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        prevResults.length > 0 ? (
+          <MaterialIcons
+            name="insert-chart"
+            size={26}
+            color="#fff"
+            style={{ marginRight: 16 }}
+            onPress={() => {
+              navigation.navigate('SpeakReport', {
+                taskId,
+                results: prevResults,
+                quizName,
+                speechData,
+                taskDetails,
+                taskType,
+                questionSubDetails,
+              });
+            }}
+          />
+        ) : null
+      ),
+    });
+  }, [navigation, prevResults]);
 
   useEffect(() => {
     return () => {
@@ -240,19 +271,37 @@ const SpeakRecordScreen = ({ route, navigation }) => {
         speechDuration,
       };
       const response = await speakService.evaluateSpeechMobileTask(paramsForAPI);
+      console.log('API RESPONSE:', JSON.stringify(response, null, 2));
       if (response?.status_code !== 200) {
         throw new Error('Speech evaluation failed');
       }
-      dispatch(setSpeakResults({ speechResults: response.data }));
-      navigation.navigate('SpeakReport', {
-        taskId,
-        speechResults: response.data,
-        quizName,
-        speechData,
-        taskDetails,
-        taskType,
-        questionSubDetails
-      });
+      // API yanıtını güvenli kontrol et
+      const results = response?.data?.results;
+      console.log('API results:', results);
+      if (Array.isArray(results) && results.length > 0) {
+        dispatch(setSpeechResults(results));
+        console.log('Navigate with results:', results);
+        navigation.navigate('SpeakReport', {
+          taskId,
+          results,
+          quizName,
+          speechData,
+          taskDetails,
+          taskType,
+          questionSubDetails
+        });
+      } else {
+        dispatch(setSpeechResults([]));
+        navigation.navigate('SpeakReport', {
+          taskId,
+          results: [],
+          quizName,
+          speechData,
+          taskDetails,
+          taskType,
+          questionSubDetails
+        });
+      }
     } catch (error) {
       setError(error.message);
       if (error.response && error.response.data && error.response.data.message) {

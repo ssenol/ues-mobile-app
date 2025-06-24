@@ -67,12 +67,12 @@ const speakSlice = createSlice({
 });
 
 export const {
-  // setSpeechResults,
-  // setAssignedQuizzes,
+  setSpeechResults,
+  setAssignedQuizzes,
   setCurrentQuiz,
-  // setLoading,
-  // setError,
-  // clearSpeechState,
+  setLoading,
+  setError,
+  clearSpeechState,
 } = speakSlice.actions;
 
 // Selectors

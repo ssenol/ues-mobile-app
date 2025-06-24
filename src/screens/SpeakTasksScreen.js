@@ -157,24 +157,30 @@ export default function SpeakTasksScreen({ navigation, route }) {
   }
 
   const handleTaskPress = (task) => {
-    dispatch(setCurrentQuiz(task));
+    const solvedCount = task.prevSolvedTask?.totalSolvedTaskCount || 0;
     const speechCard = task.question.questionAnswersData.speechCards[0];
-    if (taskType === "speaking-topic") {
-      navigation.navigate("SpeakRecord", {
+    if (solvedCount >= 3) {
+      // Haklar doluysa doğrudan rapor ekranına yönlendir
+      navigation.navigate("SpeakReport", {
         taskId: task.quizId,
-        questionId: task.question._id,
-        quizName: speechCard.data,
+        results: task.prevSolvedTask?.results || [],
+        quizName: task.quizName,
         speechData: speechCard.data,
         taskDetails: speechCard.settings,
-        taskType: "speaking-topic",
+        taskType,
+        questionSubDetails: task.question.questionSubDetails
       });
     } else {
+      // Ses kaydı ekranına yönlendir
       navigation.navigate("SpeakRecord", {
         taskId: task.quizId,
         questionId: task.question._id,
         quizName: task.quizName,
-        speechData: speechCard.data.replace(/<[^>]*>/g, ""),
-        taskType: "read-aloud",
+        speechData: speechCard.data,
+        taskDetails: speechCard.settings,
+        taskType,
+        questionSubDetails: task.question.questionSubDetails,
+        prevResults: task.prevSolvedTask?.results || []
       });
     }
   };
