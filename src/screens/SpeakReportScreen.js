@@ -145,9 +145,9 @@ const SpeakReportScreen = ({ route, navigation }) => {
   const suggestions = { data: { suggestion: Array.isArray(reportData.suggestions) ? reportData.suggestions : [] } };
   const recordedUri = reportData.audioUrl;
   const questionText = reportData.questionText;
-  const userAnswerText = reportData.userAnswerText;
-  const totalScore = reportData.totalScore;
-  const rubric = reportData.rubric;
+  // const userAnswerText = reportData.userAnswerText;
+  // const totalScore = reportData.totalScore;
+  // const rubric = reportData.rubric;
 
   // Radar chart çizimi için parametreler
   const numPoints = chartScores.length;
@@ -168,7 +168,7 @@ const SpeakReportScreen = ({ route, navigation }) => {
 
   // Başlık ve açıklama için fallback
   const displayQuizName = questionText || quizName || restParams.quizName || "Speak Report";
-  const displaySpeechData = userAnswerText || speechData || speakData || "";
+  // const displaySpeechData = userAnswerText || speechData || speakData || "";
 
   const [sound, setSound] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
