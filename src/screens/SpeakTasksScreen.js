@@ -28,7 +28,8 @@ export default function SpeakTasksScreen({ navigation, route }) {
   const dispatch = useDispatch();
   const user = useSelector(selectCurrentUser);
   const accessToken = useSelector(selectAccessToken);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [paginationIndex, setPaginationIndex] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -60,9 +61,10 @@ export default function SpeakTasksScreen({ navigation, route }) {
 
   useEffect(() => {
     if (user && accessToken) {
-      fetchTasks(1, true);
+      setInitialLoading(true);
+      fetchTasks(1, true).finally(() => setInitialLoading(false));
     } else {
-      setLoading(false);
+      setInitialLoading(false);
     }
   }, [user, accessToken]);
 
@@ -138,7 +140,7 @@ export default function SpeakTasksScreen({ navigation, route }) {
     fetchTasks(nextPage);
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -325,7 +327,15 @@ export default function SpeakTasksScreen({ navigation, route }) {
         renderItem={renderTask}
         keyExtractor={(item) => item.quizId.toString()}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            progressBackgroundColor={colors.background}
+            enabled={true}
+            progressViewOffset={HEADER_HEIGHT + 10}
+          />
         }
         onEndReached={loadMoreTasks}
         onEndReachedThreshold={0.5}
