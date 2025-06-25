@@ -14,6 +14,7 @@ import Icon from "../components/Icon";
 import colors from "../styles/colors";
 import { useSelector } from "react-redux";
 import { Audio } from "expo-av";
+import { PanGestureHandler } from 'react-native-gesture-handler';
 
 const { width } = Dimensions.get("window");
 const CARD_PADDING = 18;
@@ -63,6 +64,7 @@ const SpeakReportScreen = ({ route, navigation }) => {
   // Eğer tekli rapor ise swipe ve sayfa geçişini gizle
   // currentPage ve setCurrentPage sadece isMultiReport true ise kullanılacak
   const [currentPage, setCurrentPage] = useState(0);
+  const [feedbackPage, setFeedbackPage] = useState(0);
   const scrollRef = useRef();
   const currentResult = isMultiReport ? normalizedResults[currentPage] : normalizedResults[0];
 
@@ -256,6 +258,24 @@ const SpeakReportScreen = ({ route, navigation }) => {
     }
   };
 
+  // 1. isFeedbackScrolling state'i ekle
+  const [isFeedbackScrolling, setIsFeedbackScrolling] = useState(false);
+
+  // FEEDBACK_TYPES kullanılmasın, başlıklar dinamik olarak işlenmeli
+  function formatFeedbackTitle(type) {
+    if (!type) return '';
+    // tireleri boşlukla değiştir, her kelimenin baş harfini büyüt
+    return type
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  // currentPage değişince feedbackPage'i sıfırla
+  useEffect(() => {
+    setFeedbackPage(0);
+    scrollRef.current?.scrollTo({ x: 0, animated: false });
+  }, [currentPage]);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -421,35 +441,51 @@ const SpeakReportScreen = ({ route, navigation }) => {
         <View style={styles.feedbackContainer}>
           <View style={styles.feedbackBorder}>
             {suggestions?.data?.suggestion?.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                pagingEnabled
-                snapToAlignment="start"
-                snapToInterval={width - 2 * CARD_PADDING}
-                decelerationRate={0}
-                onScroll={(event) => {
-                  const x = event.nativeEvent.contentOffset.x;
-                  const page = Math.round(x / (width - 2 * CARD_PADDING));
-                  setCurrentPage(page);
+              <PanGestureHandler
+                activeOffsetX={[-10, 10]} // Sadece yatay kaydırmayı yakala
+                onGestureEvent={() => {}}
+                onHandlerStateChange={(event) => {
+                  // Gesture başladıysa parent swipe'ı engelle
+                  if (event.nativeEvent.state === 2) { // BEGAN
+                    setIsFeedbackScrolling(true);
+                  }
+                  // Gesture bittiğinde tekrar izin ver
+                  if (event.nativeEvent.state === 5) { // END
+                    setIsFeedbackScrolling(false);
+                  }
                 }}
-                scrollEventThrottle={16}
-                ref={scrollRef}
               >
-                {suggestions.data.suggestion.map((item, index) => (
-                  <View key={index} style={styles.feedbackCard}>
-                    <Text style={styles.feedbackTitle}>
-                      {FEEDBACK_TYPES[item.type] || item.type}
-                    </Text>
-                    <ScrollView
-                      style={styles.feedbackTextContainer}
-                      showsVerticalScrollIndicator={false}
-                    >
-                      <Text style={styles.feedbackText}>{item.feedback}</Text>
-                    </ScrollView>
-                  </View>
-                ))}
-              </ScrollView>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  pagingEnabled
+                  snapToAlignment="start"
+                  snapToInterval={width - 2 * CARD_PADDING}
+                  decelerationRate={0}
+                  onScroll={(event) => {
+                    if (!isFeedbackScrolling) return;
+                    const x = event.nativeEvent.contentOffset.x;
+                    const page = Math.round(x / (width - 2 * CARD_PADDING));
+                    setFeedbackPage(page);
+                  }}
+                  scrollEventThrottle={16}
+                  ref={scrollRef}
+                >
+                  {suggestions.data.suggestion.map((item, index) => (
+                    <View key={index} style={styles.feedbackCard}>
+                      <Text style={styles.feedbackTitle}>
+                        {formatFeedbackTitle(item.type)}
+                      </Text>
+                      <ScrollView
+                        style={styles.feedbackTextContainer}
+                        showsVerticalScrollIndicator={false}
+                      >
+                        <Text style={styles.feedbackText}>{item.feedback}</Text>
+                      </ScrollView>
+                    </View>
+                  ))}
+                </ScrollView>
+              </PanGestureHandler>
             ) : (
               <View style={styles.noSuggestionsContainer}>
                 <Text style={styles.noSuggestionsText}>
@@ -462,9 +498,12 @@ const SpeakReportScreen = ({ route, navigation }) => {
           {suggestions?.data?.suggestion?.length > 0 && (
             <View style={styles.pageIndicator}>
               <TouchableOpacity
-                onPress={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
-                disabled={currentPage === 0}
-                style={{ opacity: currentPage === 0 ? 0.4 : 1, marginRight: 8 }}
+                onPress={() => {
+                  setFeedbackPage((prev) => Math.max(prev - 1, 0));
+                  scrollRef.current?.scrollTo({ x: (Math.max(feedbackPage - 1, 0)) * (width - 2 * CARD_PADDING), animated: true });
+                }}
+                disabled={feedbackPage === 0}
+                style={{ opacity: feedbackPage === 0 ? 0.4 : 1, marginRight: 8 }}
               >
                 <Icon iosName="chevron-back" androidName="chevron-left" size={24} color={colors.primary} />
               </TouchableOpacity>
@@ -473,14 +512,17 @@ const SpeakReportScreen = ({ route, navigation }) => {
                   key={index}
                   style={[
                     styles.pageDot,
-                    currentPage === index && styles.pageDotActive,
+                    feedbackPage === index && styles.pageDotActive,
                   ]}
                 />
               ))}
               <TouchableOpacity
-                onPress={() => setCurrentPage((prev) => Math.min(prev + 1, suggestions.data.suggestion.length - 1))}
-                disabled={currentPage === suggestions.data.suggestion.length - 1}
-                style={{ opacity: currentPage === suggestions.data.suggestion.length - 1 ? 0.4 : 1, marginLeft: 8 }}
+                onPress={() => {
+                  setFeedbackPage((prev) => Math.min(prev + 1, suggestions.data.suggestion.length - 1));
+                  scrollRef.current?.scrollTo({ x: (Math.min(feedbackPage + 1, suggestions.data.suggestion.length - 1)) * (width - 2 * CARD_PADDING), animated: true });
+                }}
+                disabled={feedbackPage === suggestions.data.suggestion.length - 1}
+                style={{ opacity: feedbackPage === suggestions.data.suggestion.length - 1 ? 0.4 : 1, marginLeft: 8 }}
               >
                 <Icon iosName="chevron-forward" androidName="chevron-right" size={24} color={colors.primary} />
               </TouchableOpacity>
@@ -525,8 +567,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.secondary,
     padding: 12,
     borderRadius: 8,
+    // marginTop: 16,
+    // marginBottom: 16,
     marginVertical: 16,
-    marginHorizontal: 26,
+    marginHorizontal: 20,
   },
   listenButtonText: {
     color: colors.white,
@@ -607,18 +651,18 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     alignSelf: 'center',
     backgroundColor: colors.white,
-    borderRadius: 14, // Sekmeli alanla aynı
-    borderWidth: 1.2,
-    borderColor: colors.slate200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
+    borderRadius: 8, // Sekmeli alanla aynı
+    borderWidth: 1,
+    borderColor: colors.slate300,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.07,
+    // shadowRadius: 8,
     elevation: 2,
-    marginBottom: 22,
-    marginTop: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 0,
+    // marginBottom: 0,
+    // marginTop: 0,
+    // paddingVertical: 6,
+    // paddingHorizontal: 0,
   },
 });
 
