@@ -96,7 +96,8 @@ export default function DashboardScreen({ navigation }) {
 
           <MenuButton
             title="Read Aloud"
-            subtitle="Practice reading text with proper articulation"
+            subtitle="Practice clear reading"
+            // subtitle="Practice reading text with proper articulation"
             onPress={handleReadAloud}
             iconIos="book"
             iconAndroid="menu-book"

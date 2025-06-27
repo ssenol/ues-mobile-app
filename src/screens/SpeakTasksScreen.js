@@ -13,12 +13,11 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import Icon from "../components/Icon";
-import speakService, {fetchSpeakTasks} from "../services/speak";
+import speakService from "../services/speak";
 import {
   selectAccessToken,
   selectCurrentUser,
 } from "../store/slices/authSlice";
-import { setCurrentQuiz } from "../store/slices/speakSlice";
 import colors from "../styles/colors";
 import { cleanHtmlAndBreaks } from "../utils/helpers";
 
@@ -143,7 +142,7 @@ export default function SpeakTasksScreen({ navigation, route }) {
   if (initialLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: 8 }} />
       </View>
     );
   }
@@ -245,17 +244,17 @@ export default function SpeakTasksScreen({ navigation, route }) {
             {taskType === "speaking-topic" &&
               task.question.questionAnswersData.speechCards[0].settings && (
                 <>
-                  <View style={styles.taskDetailItem}>
-                    <Icon
-                      iosName="clock"
-                      androidName="av-timer"
-                      size={Platform.OS === "ios" ? 14 : 16}
-                      color={colors.primary}
-                    />
-                    <Text style={styles.taskDetailText}>
-                      { task.question.questionAnswersData.speechCards[0].settings.duration }{" "}seconds
-                    </Text>
-                  </View>
+                  {/*<View style={styles.taskDetailItem}>*/}
+                  {/*  <Icon*/}
+                  {/*    iosName="clock"*/}
+                  {/*    androidName="av-timer"*/}
+                  {/*    size={Platform.OS === "ios" ? 14 : 16}*/}
+                  {/*    color={colors.primary}*/}
+                  {/*  />*/}
+                  {/*  <Text style={styles.taskDetailText}>*/}
+                  {/*    { task.question.questionAnswersData.speechCards[0].settings.duration }{" "}seconds*/}
+                  {/*  </Text>*/}
+                  {/*</View>*/}
                   <View style={styles.taskDetailItem}>
                     <Icon
                       iosName="text.alignleft"
@@ -332,9 +331,11 @@ export default function SpeakTasksScreen({ navigation, route }) {
             onRefresh={onRefresh}
             colors={[colors.primary]}
             tintColor={colors.primary}
-            progressBackgroundColor={colors.background}
+            title="Pull to refresh"
+            titleColor={colors.primary}
             enabled={true}
-            progressViewOffset={HEADER_HEIGHT + 10}
+            progressViewOffset="30"
+            style={{ alignSelf: "center" }}
           />
         }
         onEndReached={loadMoreTasks}
@@ -342,7 +343,7 @@ export default function SpeakTasksScreen({ navigation, route }) {
         ListFooterComponent={
           isNextPageLoading ? (
             <View style={{ padding: 20, alignItems: "center" }}>
-              <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: 8 }} />
             </View>
           ) : null
         }

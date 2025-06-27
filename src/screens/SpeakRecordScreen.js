@@ -331,7 +331,9 @@ const SpeakRecordScreen = (props) => {
             <Text style={styles.speakText}>{cleanHtmlAndBreaks(speechData)}</Text>
           </ScrollView>
         ) : (
-          <Text style={styles.speakText}>{cleanHtmlAndBreaks(speechData)}</Text>
+          <ScrollView style={styles.scrollTextContainer2}>
+            <Text style={styles.speakText}>{cleanHtmlAndBreaks(speechData)}</Text>
+          </ScrollView>
         )}
       </View>
       <View style={styles.recordContainer}>
@@ -433,6 +435,7 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: colors.background,
     justifyContent: "space-between",
+
   },
   taskDescription: {
     fontSize: 15,
@@ -443,8 +446,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   taskContainer: {
-    backgroundColor: colors.white,
-    padding: 16,
+    // backgroundColor: colors.white,
+    backgroundColor: "red",
+    padding: 12,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
@@ -467,13 +471,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   scrollTextContainer: {
-    maxHeight: 210,
+    maxHeight: 170,
+    width: "100%",
+  },
+  scrollTextContainer2: {
+    maxHeight: 120,
     width: "100%",
   },
   recordContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "yellow",
   },
   recordButtonWrapper: {
     height: 200,
@@ -516,7 +525,8 @@ const styles = StyleSheet.create({
     height: 80,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 0,
+    backgroundColor: "green",
   },
   actionButtons: {
     flexDirection: "row",
@@ -544,8 +554,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   recordInfoContainer: {
-    marginTop: 20,
-    height: 80,
+    marginTop: 0,
+    height: 40,
+    backgroundColor: "lime",
   },
   recordInfoText: {
     fontSize: 12,

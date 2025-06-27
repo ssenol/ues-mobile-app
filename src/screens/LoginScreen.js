@@ -205,7 +205,7 @@ export default function LoginScreen({ navigation }) {
         const type = await BiometricAuthService.getBiometricType();
         if (type) {
           Alert.alert(
-            `Login with${type}`,
+            `Login with ${type}`,
             `Would you like to log in with ${type}?`,
             [
               {
