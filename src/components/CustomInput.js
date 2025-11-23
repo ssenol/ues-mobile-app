@@ -1,27 +1,40 @@
 import React from "react";
-import { View, TextInput, StyleSheet, Platform } from "react-native";
-import colors from "../styles/colors";
-import Icon from './Icon';
+import {View, TextInput, StyleSheet, Platform} from "react-native";
+import ThemedIcon from "./ThemedIcon";
+import { useTheme } from "../theme/ThemeContext";
 
 const CustomInput = ({
-  iconIos,
-  iconAndroid,
+  iconName,
   placeholder,
   secureTextEntry,
   value,
   onChangeText,
 }) => {
-  return (
-    <View style={styles.inputContainer}>
-      <Icon
-        iosName={iconIos}
-        androidName={iconAndroid}
-        size={Platform.OS === 'ios' ? 18 : 20}
+  const { colors, fonts } = useTheme();
+  const styles = makeStyles(colors, fonts);
+
+  const renderIcon = () => {
+    if (!iconName) {
+      return null;
+    }
+
+    return (
+      <ThemedIcon
+        iconName={iconName}
+        size={Platform.OS === "ios" ? 16 : 18}
+        tintColor={colors.placeholder}
         style={styles.icon}
       />
+    );
+  };
+
+  return (
+    <View style={styles.inputContainer}>
+      {renderIcon()}
       <TextInput
         style={styles.input}
         placeholder={placeholder}
+        placeholderTextColor={colors.placeholder}
         secureTextEntry={secureTextEntry}
         value={value}
         onChangeText={onChangeText}
@@ -30,27 +43,30 @@ const CustomInput = ({
   );
 };
 
-const styles = StyleSheet.create({
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    backgroundColor: colors.white,
-    borderRadius: 6,
-  },
-  icon: {
-    // width: 16,
-    // height: 16,
-    tintColor: colors.slate400,
-    color: colors.slate400,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: colors.white,
-    padding: 10,
-    fontSize: 16,
-  },
-});
+const makeStyles = (colors, fonts) =>
+  StyleSheet.create({
+    inputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    icon: {
+      marginHorizontal: 10,
+    },
+    input: {
+      flex: 1,
+      backgroundColor: "transparent",
+      paddingVertical: 12,
+      fontSize: 16,
+      lineHeight: 22,
+      color: colors.text,
+      fontFamily: fonts.semiBold,
+    },
+  });
 
 export default CustomInput;

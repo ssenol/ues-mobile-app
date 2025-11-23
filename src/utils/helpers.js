@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Audio } from 'expo-av';
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio';
+import * as SecureStore from 'expo-secure-store';
 
 export const BIOMETRIC_KEY = "biometric_auth_enabled";
 export const MICROPHONE_KEY = "microphone_permission_enabled";
@@ -16,12 +17,12 @@ export async function setBiometricEnabled(enabled) {
 }
 
 export async function getMicrophoneEnabled() {
-  const { status } = await Audio.getPermissionsAsync();
+  const { status } = await getRecordingPermissionsAsync();
   return status === "granted";
 }
 
 export async function requestMicrophonePermission() {
-  const { status } = await Audio.requestPermissionsAsync();
+  const { status } = await requestRecordingPermissionsAsync();
   return status === "granted";
 }
 
@@ -39,5 +40,29 @@ export function cleanHtmlAndBreaks(str) {
 
 // Tüm uygulama verilerini tamamen temizler. Hiçbir anahtar saklanmaz.
 export async function clearAllAppData() {
-  await AsyncStorage.clear();
+  try {
+    // AsyncStorage'ı temizle
+    await AsyncStorage.clear();
+    
+    // SecureStore'daki tüm anahtarları temizle
+    // SecureStore.clear() yok, bu yüzden bilinen anahtarları tek tek silelim
+    try {
+      await SecureStore.deleteItemAsync('accessToken');
+    } catch (e) {
+      // Anahtar yoksa hata vermez, devam et
+    }
+    
+    // Diğer olası SecureStore anahtarlarını da temizle
+    const possibleKeys = ['refreshToken', 'userCredentials', 'biometricToken'];
+    for (const key of possibleKeys) {
+      try {
+        await SecureStore.deleteItemAsync(key);
+      } catch (e) {
+        // Anahtar yoksa hata vermez, devam et
+      }
+    }
+  } catch (error) {
+    console.error('clearAllAppData error:', error);
+    // Hata olsa bile AsyncStorage.clear() çalışmış olabilir, devam et
+  }
 }

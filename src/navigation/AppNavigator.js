@@ -1,186 +1,225 @@
-import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useSelector, useDispatch } from "react-redux";
-import { TouchableOpacity, Alert, Platform } from "react-native";
-import * as Haptics from "expo-haptics";
-import colors from "../styles/colors";
-import Icon from "../components/Icon";
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useSelector } from "react-redux";
 
+import NotificationModal from "../components/NotificationModal";
+import ThemedIcon from "../components/ThemedIcon";
+import { useTheme } from "../theme/ThemeContext";
+
+import AssignmentDetailScreen from "../screens/AssignmentDetailScreen";
+import AssignmentReportScreen from "../screens/AssignmentReportScreen";
+import AssignmentsScreen from "../screens/AssignmentsScreen";
+import CompletedScreen from "../screens/CompletedScreen";
+import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
-import DashboardScreen from "../screens/DashboardScreen";
-import SpeakTasksScreen from "../screens/SpeakTasksScreen";
-import SpeakRecordScreen from "../screens/SpeakRecordScreen";
-import SpeakReportScreen from "../screens/SpeakReportScreen";
-import SettingsScreen from "../screens/SettingsScreen";
-import WritingTasksScreen from "../screens/WritingTasksScreen";
-import WritingTaskDetailScreen from "../screens/WritingTaskDetailScreen";
+import NotificationsScreen from "../screens/NotificationsScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 
 import {
   selectIsAuthenticated,
-  selectRefreshToken,
 } from "../store/slices/authSlice";
-import { handleLogout } from "../utils/logoutHelper";
 
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
-  const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const refreshToken = useSelector((state) => selectRefreshToken(state));
+  const { colors, shadows } = useTheme();
 
-  const handleRefresh = (navigation) => {
-    Alert.alert(
-      "Restart",
-      "Are you sure you want to start again?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Yes",
-          style: "destructive",
-          onPress: async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate("Dashboard");
-          },
-        },
-      ]
+  // Styles'ı colors hook'undan sonra tanımla
+  const tabBarStyles = StyleSheet.create({
+    tabBarContainer: {
+      position: "absolute",
+      bottom: 30,
+      left: 30,
+      right: 30,
+      height: 56,
+      backgroundColor: colors.primary,
+      borderRadius: 28,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingLeft: 25,
+      paddingRight: 25,
+      zIndex: 10,
+      ...shadows.dark,
+    },
+    tabItem: {
+      alignItems: "center",
+      justifyContent: "center",
+      width: 40,
+      height: 40,
+    },
+  });
+
+  // 🔹 Custom TabBar (tasarıma uygun)
+  const CustomTabBar = ({ state, descriptors, navigation, notificationModalVisible, setNotificationModalVisible }) => {
+    return (
+      <View style={tabBarStyles.tabBarContainer}>
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const isFocused = state.index === index;
+          const iconName = options.tabBarIconName || "tabAssignment";
+          const opacity = isFocused ? 1 : 0.4;
+
+          const onPress = () => {
+            // Notifications tab'ı için özel işlem
+            if (route.name === 'Notifications') {
+              setNotificationModalVisible(true);
+              return;
+            }
+
+            const event = navigation.emit({
+              type: "tabPress",
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (!isFocused && !event.defaultPrevented) {
+              // Tabbar'dan geldiğinde params'ı temizle (özellikle Assignments için)
+              if (route.name === 'Assignments') {
+                navigation.navigate({
+                  name: route.name,
+                  params: { filter: null },
+                  merge: false,
+                });
+              } else {
+                navigation.navigate(route.name);
+              }
+            }
+          };
+
+          return (
+            <TouchableOpacity
+              key={route.key}
+              onPress={onPress}
+              activeOpacity={0.8}
+              style={tabBarStyles.tabItem}
+            >
+              <ThemedIcon 
+                iconName={iconName} 
+                size={24} 
+                tintColor={colors.white}
+                style={{ opacity }}
+              />
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     );
   };
 
-  const handleLogoutPress = async () => {
-    await handleLogout({
-      dispatch,
-      refreshToken,
-      navigation: null,
-    });
+  // 🔹 Tabbar ekranları
+  const MainTabs = () => {
+    const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+
+    return (
+      <>
+        <Tab.Navigator
+          initialRouteName="HomeScreen"
+          screenOptions={{ 
+            headerShown: false,
+          }}
+          tabBar={(props) => (
+            <CustomTabBar 
+              {...props} 
+              notificationModalVisible={notificationModalVisible}
+              setNotificationModalVisible={setNotificationModalVisible}
+            />
+          )}
+        >
+          <Tab.Screen
+            name="Assignments"
+            component={AssignmentsScreen}
+            options={{ tabBarIconName: "tabAssignment" }}
+          />
+          <Tab.Screen
+            name="Notifications"
+            component={NotificationsScreen}
+            options={{ tabBarIconName: "tabNotification" }}
+          />
+          <Tab.Screen
+            name="HomeScreen"
+            component={HomeScreen}
+            options={{ tabBarIconName: "tabHome" }}
+          />
+          <Tab.Screen
+            name="Completed"
+            component={CompletedScreen}
+            options={{ tabBarIconName: "tabCompleted" }}
+          />
+          <Tab.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{ tabBarIconName: "tabProfile" }}
+          />
+        </Tab.Navigator>
+
+        {/* Global Notification Modal */}
+        <NotificationModal
+          visible={notificationModalVisible}
+          onClose={() => setNotificationModalVisible(false)}
+        />
+      </>
+    );
   };
 
+  // 🔹 Ana Stack yapısı
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          headerStyle: {
-            backgroundColor: colors.primary,
-          },
-          headerTintColor: colors.white,
-          headerShadowVisible: false,
-          headerBackTitle: "Back",
-        }}
-      >
-        {!isAuthenticated ? (
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{
-              animation: "slide_from_left",
-            }}
-          />
-        ) : (
-          <>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          {!isAuthenticated ? (
             <Stack.Screen
-              name="Dashboard"
-              component={DashboardScreen}
-              options={({ navigation }) => ({
-                headerShown: true,
-                headerTitle: "Choose Section",
-                headerLeft: () => (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate("SettingsScreen")}
-                    style={{ padding: 8 }}
-                  >
-                    <Icon
-                      iosName="gearshape.fill"
-                      androidName="settings"
-                      size={22}
-                      color={colors.white}
-                    />
-                  </TouchableOpacity>
-                ),
-                headerRight: () => (
-                  <TouchableOpacity
-                    onPress={handleLogoutPress}
-                    style={{ padding: 8 }}
-                  >
-                    <Icon
-                      iosName="power"
-                      androidName="power-settings-new"
-                      size={Platform.OS === "ios" ? 20 : 22}
-                      color={colors.white}
-                    />
-                  </TouchableOpacity>
-                ),
-              })}
+              name="Login"
+              component={LoginScreen}
             />
-            <Stack.Screen
-              name="SettingsScreen"
-              component={SettingsScreen}
-              options={{
-                headerShown: true,
-                headerTitle: "Settings",
-              }}
-            />
-            <Stack.Screen
-              name="SpeakTasks"
-              component={SpeakTasksScreen}
-              options={{
-                headerShown: true,
-                title: ""
-              }}
-            />
-            <Stack.Screen
-              name="SpeakRecord"
-              component={SpeakRecordScreen}
-              options={{
-                headerShown: true,
-                title: "Speak Recording",
-                headerLeft: null,
-              }}
-            />
-            <Stack.Screen
-              name="SpeakReport"
-              component={SpeakReportScreen}
-              options={({ navigation }) => ({
-                headerShown: true,
-                title: "Speak Report",
-                headerLeft: null,
-                headerRight: () => (
-                  <TouchableOpacity
-                    onPress={() => handleRefresh(navigation)}
-                    style={{ padding: 8 }}
-                  >
-                    <Icon
-                      iosName="arrow.clockwise"
-                      androidName="refresh"
-                      size={Platform.OS === "ios" ? 24 : 22}
-                      color={colors.white}
-                    />
-                  </TouchableOpacity>
-                ),
-              })}
-            />
-            <Stack.Screen
-              name="WritingTasks"
-              component={WritingTasksScreen}
-              options={{
-                headerShown: true,
-                title: ""
-              }}
-            />
-            <Stack.Screen
-              name="WritingTaskDetail"
-              component={WritingTaskDetailScreen}
-              options={{
-                headerShown: true,
-                title: "Writing Task Detail",
-              }}
-            />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+          ) : (
+            <>
+              {/* Tabbar yapısı */}
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+              {/* Assignment Detail Screen - Tabbar olmadan (hem speech_on_topic hem read_aloud için) */}
+              <Stack.Screen 
+                name="ReadAloud" 
+                component={AssignmentDetailScreen}
+                options={{ 
+                  headerShown: false,
+                  presentation: 'card',
+                }}
+              />
+              {/* Assignment Detail Screen için alternatif route (geriye dönük uyumluluk) */}
+              <Stack.Screen 
+                name="SpeechTask" 
+                component={AssignmentDetailScreen}
+                options={{ 
+                  headerShown: false,
+                  presentation: 'card',
+                }}
+              />
+              {/* Assignment Report Screen */}
+              <Stack.Screen 
+                name="AssignmentReport" 
+                component={AssignmentReportScreen}
+                options={{ 
+                  headerShown: false,
+                  presentation: 'card',
+                }}
+              />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

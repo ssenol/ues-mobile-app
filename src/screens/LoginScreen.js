@@ -1,51 +1,49 @@
-import React, {useEffect, useState} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
-  StatusBar,
+  ScrollView,
   StyleSheet,
-  Text,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import {useDispatch} from "react-redux";
-import {setCredentials} from "../store/slices/authSlice";
-import {store} from "../store/index";
-import colors from "../styles/colors";
-import authService from "../services/auth";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch } from "react-redux";
 import ActionButton from "../components/ActionButton";
 import CustomInput from "../components/CustomInput";
+import { ThemedText } from "../components/ThemedText";
+import authService from "../services/auth";
 import BiometricAuthService from "../services/biometricAuth";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SecureStore from 'expo-secure-store';
+import { store } from "../store/index";
+import { setCredentials } from "../store/slices/authSlice";
+import { useTheme } from "../theme/ThemeContext";
 
+// Biyometrik hatırlatma Alert'inin daha önce gösterilip gösterilmediğini tutan anahtar.
 const BIOMETRIC_PROMPT_SHOWN_KEY = "biometric_prompt_shown";
 
 export default function LoginScreen({ navigation }) {
   const dispatch = useDispatch();
-  const [username, setUsername] = useState("ues-meq-student1");
-  const [password, setPassword] = useState("123456");
+  const { colors } = useTheme();
+  const [username, setUsername] = useState("ues-meq-student1"); //
+  const [password, setPassword] = useState("123456"); //
   const [loading, setLoading] = useState(false);
-  const [biometricType, setBiometricType] = useState("");
+  // Biyometrik giriş butonunun gösterilip gösterilmeyeceğini belirler.
   const [showBiometricButton, setShowBiometricButton] = useState(false);
+  // Biyometrik butonunda yazacak olan doğrulama tipinin adını tutar.
   const [biometricButtonType, setBiometricButtonType] = useState("");
+  // Biyometrik doğrulama işlemi sırasında yüklenme durumunu yönetir.
   const [biometricLoading, setBiometricLoading] = useState(false);
-  const [biometricPromptShown, setBiometricPromptShown] = useState(false);
-  const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
 
   useEffect(() => {
-    StatusBar.setBarStyle("dark-content");
-    if (Platform.OS === "android") {
-      StatusBar.setBackgroundColor("transparent");
-      StatusBar.setTranslucent(true);
-    }
-    StatusBar.setHidden(false);
     // Otomatik biyometrik giriş kaldırıldı
     // Biyometrik buton görünürlüğü kontrolü
+    // Biyometrik butonun görünürlüğünü ve tipini belirleyen kontrol fonksiyonu.
     const checkBiometricButton = async () => {
       const enabled = await BiometricAuthService.isBiometricEnabled();
       // Eğer ayarlarda biyometrik toggle açık ise, buton mutlaka görünsün
@@ -56,7 +54,7 @@ export default function LoginScreen({ navigation }) {
         return;
       }
       const creds = await BiometricAuthService.getCredentials();
-      if (enabled && creds) {
+      if (creds) {
         const type = await BiometricAuthService.getBiometricType();
         setBiometricButtonType(type);
         setShowBiometricButton(true);
@@ -66,40 +64,17 @@ export default function LoginScreen({ navigation }) {
     };
     checkBiometricButton();
 
-    const checkBiometricPrompt = async () => {
-      const promptShown = await AsyncStorage.getItem(
-        BIOMETRIC_PROMPT_SHOWN_KEY
-      );
-      setBiometricPromptShown(!!promptShown);
-    };
-    checkBiometricPrompt();
-
     // --- EKRANA HER GELİŞTE BUTON KONTROLÜ ---
     return navigation.addListener("focus", () => {
       checkBiometricButton();
-      checkBiometricPrompt();
     });
   }, [navigation]);
 
   // Biyometrik ile otomatik giriş fonksiyonu
+  // Biyometrik doğrulama sonrası kaydedilmiş kimlik bilgileriyle giriş yapar.
   const handleLoginWithCredentials = async (username, password) => {
     try {
       setLoading(true);
-      // DEBUG: Fetch ile login API test
-      try {
-        const fetchResponse = await fetch('https://test-dot-uesquizmaker-api.ey.r.appspot.com/api/v0.0.1/auth/mobile-app-login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({ username, password }),
-        });
-        const fetchJson = await fetchResponse.json();
-      } catch (fetchErr) {
-        console.error('FETCH LOGIN ERROR:', fetchErr);
-      }
-      // ---
       const response = await authService.login(username, password);
       if (!response || !response.token || !response.user) {
         throw new Error("Invalid login response - missing token or user data");
@@ -107,6 +82,7 @@ export default function LoginScreen({ navigation }) {
       const credentials = {
         token: response.token,
         user: response.user,
+        tokenAcquiredAt: Date.now(),
       };
       dispatch(setCredentials(credentials));
       // navigation ile yönlendirme kaldırıldı, AppNavigator otomatik yönlendirecek
@@ -121,6 +97,7 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  // Biyometrik doğrulamayı başlatır ve başarılı ise kullanıcının giriş yapmasını sağlar.
   const handleBiometricLogin = async () => {
     setBiometricLoading(true);
     try {
@@ -157,21 +134,6 @@ export default function LoginScreen({ navigation }) {
 
     try {
       setLoading(true);
-      // DEBUG: Fetch ile login API test
-      try {
-        const fetchResponse = await fetch('https://test-dot-uesquizmaker-api.ey.r.appspot.com/api/v0.0.1/auth/mobile-app-login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({ username, password }),
-        });
-        const fetchJson = await fetchResponse.json();
-      } catch (fetchErr) {
-        console.error('FETCH LOGIN ERROR:', fetchErr);
-      }
-      // ---
       const response = await authService.login(username, password);
       if (!response || !response.token || !response.user) {
         throw new Error("Invalid login response - missing token or user data");
@@ -179,6 +141,7 @@ export default function LoginScreen({ navigation }) {
       const credentials = {
         token: response.token,
         user: response.user,
+        tokenAcquiredAt: Date.now(),
       };
       setTimeout(() => {
         try {
@@ -193,7 +156,7 @@ export default function LoginScreen({ navigation }) {
         "last_login_credentials",
         JSON.stringify({ username, password })
       );
-      // <--- TOKENI SECURESTORE'A KAYDET --->
+      // <--- TOKEN'I SECURESTORE'A KAYDET --->
       try {
         await SecureStore.setItemAsync('accessToken', response.token);
       } catch (err) {
@@ -213,8 +176,6 @@ export default function LoginScreen({ navigation }) {
                 onPress: async () => {
                   await AsyncStorage.setItem(BIOMETRIC_PROMPT_SHOWN_KEY, "true");
                   await BiometricAuthService.setBiometricEnabled(false);
-                  setShowBiometricPrompt(false);
-                  setBiometricPromptShown(true);
                   setShowBiometricButton(false);
                   dispatch(setCredentials(credentials));
                   // navigation ile yönlendirme kaldırıldı, AppNavigator otomatik yönlendirecek
@@ -228,13 +189,11 @@ export default function LoginScreen({ navigation }) {
                   await BiometricAuthService.setBiometricEnabled(true);
                   // Kullanıcı adı ve şifreyi kaydet
                   await BiometricAuthService.saveCredentials(username, password);
-                  setShowBiometricPrompt(false);
-                  setBiometricPromptShown(true);
                   setShowBiometricButton(true);
-                  Alert.alert(
-                    "Success",
-                    `You can now use ${type} for authentication during logins.`
-                  );
+                  // Alert.alert(
+                  //   "Success",
+                  //   `You can now use ${type} for authentication during logins.`
+                  // );
                   dispatch(setCredentials(credentials));
                   // navigation ile yönlendirme kaldırıldı, AppNavigator otomatik yönlendirecek
                 },
@@ -257,141 +216,173 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const handleAcceptBiometric = async () => {
-    await AsyncStorage.setItem(BIOMETRIC_PROMPT_SHOWN_KEY, "true");
-    await BiometricAuthService.setBiometricEnabled(true);
-    setShowBiometricPrompt(false);
-    setBiometricPromptShown(true);
-    setShowBiometricButton(true);
-    Alert.alert(
-      "Success",
-      "You can now use biometric authentication at entrances."
-    );
-  };
-
-  const handleDeclineBiometric = async () => {
-    await AsyncStorage.setItem(BIOMETRIC_PROMPT_SHOWN_KEY, "true");
-    await BiometricAuthService.setBiometricEnabled(false);
-    setShowBiometricPrompt(false);
-    setBiometricPromptShown(true);
-    setShowBiometricButton(false);
-    Alert.alert(
-      "Info",
-      "You can turn on the biometric login feature later from the Settings screen."
-    );
-  };
-
-  // Biyometrik prompt state'i true olduğunda kullanıcıya Alert ile sor
-  useEffect(() => {
-    if (showBiometricPrompt) {
-      Alert.alert(
-        `${biometricType || 'Biometric Login'}`,
-        `Would you like to log in with ${biometricType || 'Biometric Login'}`,
-        [
-          {
-            text: "No",
-            onPress: handleDeclineBiometric,
-            style: "cancel",
-          },
-          {
-            text: "Yes",
-            onPress: handleAcceptBiometric,
-          },
-        ]
-      );
-    }
-  }, [showBiometricPrompt]);
+  const styles = StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      backgroundColor: colors.background,
+      flex: 1,
+      alignItems: 'center',
+    },
+    headerContainer: {
+      position: 'relative',
+      width: '100%',
+      height: 285,
+    },
+    headerImage: {
+      width: '100%',
+      height: '100%',
+    },
+    headerContent: {
+      position: 'absolute',
+      top: 70,
+      width: '100%',
+      alignItems: 'center',
+    },
+    logo: {
+      width: 180,
+      marginBottom: 4,
+    },
+    subtitle: {
+      color: colors.white,
+      fontSize: 12,
+    },
+    formContainer: {
+      width: '85%',
+      backgroundColor: colors.white,
+      marginTop: -100,
+      borderRadius: 16,
+      padding: 24,
+    },
+    welcome: {
+      fontSize: 24,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    description: {
+      fontSize: 14,
+      textAlign: 'center',
+      marginTop: 6,
+      marginBottom: 20,
+      paddingHorizontal: 18,
+    },
+    inputs: {
+      gap: 16,
+    },
+    forgotPassword: {
+      alignSelf: 'flex-end',
+      marginTop: 12,
+    },
+    forgotPasswordText: {
+      color: colors.text,
+      textDecorationLine: 'underline',
+      fontSize: 14,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: '#eee',
+      marginTop: 24,
+      marginBottom: 16,
+    },
+    otherLogins: {
+      textAlign: 'center',
+      color: colors.color555,
+      fontSize: 14,
+      lineHeight: 18,
+      marginBottom: 24,
+    },
+    footer: {
+      color: "#969696",
+      fontSize: 12,
+      lineHeight: 16,
+      textAlign: 'center',
+      marginTop: 40,
+      marginBottom: 24,
+    },
+  });
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <SafeAreaView style={styles.container}>
-          <Image
-            style={styles.logo}
-            source={require("../../assets/images/meqLogo.png")}
-          />
-
-          <View style={styles.formContainer}>
-            <CustomInput
-              iconIos={"person.fill"}
-              iconAndroid={"person"}
-              placeholder="Username"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-            />
-
-            <CustomInput
-              iconIos={"lock.fill"}
-              iconAndroid={"lock"}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-
-            <ActionButton
-              title={loading ? "Logging in..." : "Sign in"}
-              onPress={handleLogin}
-              variant="secondary"
-              width="75%"
-              loading={loading}
-              iconIos={"arrow.forward"}
-              iconAndroid={"arrow-forward"}
-              style={{ marginTop: 32 }}
-            />
-            {/* Biyometrik ile giriş butonu sadece destekleniyorsa ve kullanıcı izin verdiyse görünür */}
-            {showBiometricButton && (
-              <ActionButton
-                title={`${biometricButtonType}`}
-                onPress={handleBiometricLogin}
-                variant="tertiary"
-                width="75%"
-                iconLeft
-                loading={biometricLoading}
-                iconIos={
-                  biometricButtonType === "Face ID" ? "faceid" : "touchid"
-                }
-                iconAndroid={
-                  biometricButtonType === "Face ID" ? "face" : "fingerprint"
-                }
+    <SafeAreaView style={styles.safeArea} edges={["left", "right", "bottom"]}>
+      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView contentContainerStyle={styles.container}>
+            <View style={styles.headerContainer}>
+              <Image
+                source={require('../../assets/images/screenHeader.png')}
+                style={styles.headerImage}
+                resizeMode="cover"
               />
-            )}
-          </View>
-          <Text style={styles.footer}> 2025 Unlimited Education Services</Text>
-        </SafeAreaView>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+              <View style={styles.headerContent}>
+                <Image
+                  source={require('../../assets/images/meqLogo.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+                <ThemedText style={styles.subtitle}>
+                  Unlimited Education Services product.
+                </ThemedText>
+              </View>
+            </View>
+            <View style={styles.formContainer}>
+              <ThemedText weight="bold" style={styles.welcome}>Welcome Back</ThemedText>
+              <ThemedText style={styles.description}>Enter your username and password to access your account.</ThemedText>
+
+              <View style={styles.inputs}>
+                <CustomInput
+                  iconName="user"
+                  placeholder="Enter username"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                />
+                <CustomInput
+                  iconName="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                />
+              </View>
+
+              {/*<TouchableOpacity style={styles.forgotPassword}>
+                <ThemedText style={styles.forgotPasswordText}>Forgot Password?</ThemedText>
+              </TouchableOpacity>*/}
+
+              <ActionButton
+                title={loading ? "Logging in..." : "Log in"}
+                onPress={handleLogin}
+                loading={loading}
+                variant={'primary'}
+                style={{ marginTop: 24 }}
+              />
+              {/* Biyometrik ile giriş butonu sadece destekleniyorsa ve kullanıcı izin verdiyse görünür */}
+              {showBiometricButton && (
+                <>
+                <View style={styles.divider} />
+                <ThemedText style={styles.otherLogins}>Other Logins</ThemedText>
+
+                <ActionButton
+                  title={`Login with ${biometricButtonType}`}
+                  onPress={handleBiometricLogin}
+                  variant="outline"
+                  iconLeft
+                  loading={biometricLoading}
+                  iconName={biometricButtonType === "Face ID" ? "faceId" : "touchId"}
+                  iconSize={24}
+                />
+                </>
+              )}
+            </View>
+            <ThemedText style={styles.footer}>© 2025 MyEDUQUIZ</ThemedText>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  logo: {
-    width: 150,
-    height: 100,
-    resizeMode: "contain",
-  },
-  formContainer: {
-    backgroundColor: colors.primary,
-    borderRadius: 6,
-    marginTop: 60,
-    width: "80%",
-    padding: 30,
-    justifyContent: "center",
-    gap: 20,
-  },
-  footer: {
-    marginTop: 60,
-    fontSize: 11,
-    color: colors.slate400,
-  },
-});

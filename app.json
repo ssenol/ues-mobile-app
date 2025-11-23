@@ -9,8 +9,8 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
+      "image": "./assets/images/splash.png",
+      "resizeMode": "cover",
       "background": "#ffffff"
     },
     "ios": {
@@ -36,7 +36,9 @@
     "owner": "selcuksenol",
     "plugins": [
       "expo-secure-store",
-      "expo-router"
+      "expo-router",
+      "expo-font",
+      "expo-audio"
     ],
     "extra": {
       "router": {},

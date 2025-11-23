@@ -2,31 +2,38 @@ import React from "react";
 import {
   TouchableOpacity,
   View,
-  Text,
   StyleSheet,
   ActivityIndicator,
   Platform,
 } from "react-native";
-import colors from "../styles/colors";
-import Icon from "./Icon";
+import ThemedIcon from "./ThemedIcon";
+import {ThemedText} from "./ThemedText";
+import {useTheme} from "../theme/ThemeContext";
 
 export default function ActionButton({
   title,
   onPress,
   variant = "primary", // primary, secondary, tertiary
   width = "100%",
-  iconIos,
-  iconAndroid,
+  iconName,
+  iconSize,
   loading = false,
   iconLeft = false,
+  style,
 }) {
+  const { colors } = useTheme();
   const buttonStyle = {
     primary: { backgroundColor: colors.primary },
     secondary: { backgroundColor: colors.secondary },
     tertiary: {
-      backgroundColor: "",
+      backgroundColor: "t",
       borderWidth: 1,
       borderColor: colors.white,
+    },
+    outline: {
+      backgroundColor: "white",
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     danger: { backgroundColor: colors.danger },
   };
@@ -38,11 +45,30 @@ export default function ActionButton({
     danger: { color: colors.white },
   };
 
-  const iconStyle = {
-    primary: { tintColor: colors.white, color: colors.white },
-    secondary: { tintColor: colors.white, color: colors.white },
-    tertiary: { tintColor: colors.white, color: colors.white },
-    danger: { tintColor: colors.white, color: colors.white },
+  const iconTintByVariant = {
+    primary: colors.white,
+    secondary: colors.white,
+    tertiary: colors.white,
+    danger: colors.white,
+    outline: colors.primary,
+  };
+
+  const renderIcon = () => {
+    if (!iconName) {
+      return null;
+    }
+
+    const resolvedSize = iconSize ?? (Platform.OS === "ios" ? 16 : 18);
+    const tintColor = iconTintByVariant[variant];
+
+    return (
+      <ThemedIcon
+        iconName={iconName}
+        size={resolvedSize}
+        tintColor={tintColor}
+        style={styles.icon}
+      />
+    );
   };
 
   return (
@@ -52,6 +78,7 @@ export default function ActionButton({
         buttonStyle[variant],
         { width },
         loading && styles.buttonDisabled,
+        style,
       ]}
       onPress={onPress}
       disabled={loading}
@@ -61,27 +88,13 @@ export default function ActionButton({
           <ActivityIndicator color={colors.white} />
         ) : iconLeft ? (
           <>
-            {(iconIos || iconAndroid) && (
-              <Icon
-                iosName={iconIos}
-                androidName={iconAndroid}
-                size={Platform.OS === "ios" ? 18 : 20}
-                style={[styles.icon, iconStyle[variant]]}
-              />
-            )}
-            <Text style={[styles.buttonText, textStyle[variant]]}>{title}</Text>
+            {renderIcon()}
+            <ThemedText weight="bold" style={[styles.buttonText, textStyle[variant]]}>{title}</ThemedText>
           </>
         ) : (
           <>
-            <Text style={[styles.buttonText, textStyle[variant]]}>{title}</Text>
-            {(iconIos || iconAndroid) && (
-              <Icon
-                iosName={iconIos}
-                androidName={iconAndroid}
-                size={Platform.OS === "ios" ? 18 : 20}
-                style={[styles.icon, iconStyle[variant]]}
-              />
-            )}
+            <ThemedText weight="bold" style={[styles.buttonText, textStyle[variant]]}>{title}</ThemedText>
+            {renderIcon()}
           </>
         )}
       </View>
@@ -92,7 +105,7 @@ export default function ActionButton({
 const styles = StyleSheet.create({
   button: {
     padding: 12,
-    borderRadius: 6,
+    borderRadius: 8,
     alignSelf: "center",
   },
   buttonContent: {
@@ -102,8 +115,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 17,
   },
   buttonDisabled: {
     opacity: 0.7,

@@ -4,7 +4,7 @@ import api, { API_ENDPOINTS } from '../config/api';
 export const fetchSpeechTasks = async (params) => {
   const token = await SecureStore.getItemAsync('accessToken');
   const response = await api.post(
-    API_ENDPOINTS.quiz.fetchTasks,
+    API_ENDPOINTS.assignment.fetchTasks,
     params,
     {
       headers: {
@@ -16,42 +16,9 @@ export const fetchSpeechTasks = async (params) => {
   return response.data;
 };
 
-// export const evaluateSpeech = async (formData) => {
-//   const token = await SecureStore.getItemAsync('accessToken');
-//   const response = await api.post(API_ENDPOINTS.speech.evaluation, formData, {
-//     headers: {
-//       'Authorization': `Bearer ${token}`,
-//       'Content-Type': 'multipart/form-data',
-//     },
-//   });
-//   return response.data;
-// };
-
-// export const getSpeechQuestionTopicRelatedScore = async (payload) => {
-//   const token = await SecureStore.getItemAsync('accessToken');
-//   const response = await api.post(API_ENDPOINTS.speech.topicScore, payload, {
-//     headers: {
-//       'Authorization': `Bearer ${token}`,
-//       'Content-Type': 'application/json',
-//     },
-//   });
-//   return response.data;
-// };
-
-// export const getSpeechAssessmentResultEvaluationByAI = async (payload) => {
-//   const token = await SecureStore.getItemAsync('accessToken');
-//   const response = await api.post(API_ENDPOINTS.speech.evaluationByAI, payload, {
-//     headers: {
-//       'Authorization': `Bearer ${token}`,
-//       'Content-Type': 'application/json',
-//     },
-//   });
-//   return response.data;
-// };
-
 export const saveSpeechResult = async (formData) => {
   const token = await SecureStore.getItemAsync('accessToken');
-  const response = await api.post(API_ENDPOINTS.quiz.saveSpeechResult, formData, {
+  const response = await api.post(API_ENDPOINTS.assignment.saveSpeechResult, formData, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'multipart/form-data',
@@ -99,11 +66,144 @@ export const evaluateSpeechMobileTask = async (rawParams) => {
   return response.data;
 };
 
+export const fetchAssignedSpeechTasks = async (params) => {
+  try {
+    const token = await SecureStore.getItemAsync('accessToken');
+    
+    const response = await api.post(
+      API_ENDPOINTS.assignment.getAssignedSpeechTasks,
+      params,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Generate Exercise Token
+export const generateExerciseToken = async (params) => {
+  try {
+    const token = await SecureStore.getItemAsync('accessToken');
+    
+    const response = await api.post(
+      API_ENDPOINTS.student.generateExerciseToken,
+      params,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Submit Speech Task
+export const submitSpeechTask = async (audioUri, duration, exerciseToken) => {
+  try {
+    const formData = new FormData();
+    formData.append('durationAsSeconds', Math.round(duration));
+    formData.append('file', {
+      uri: audioUri,
+      name: audioUri.split('/').pop() || 'recording.m4a',
+      type: 'audio/m4a',
+    });
+
+    const response = await api.post(
+      API_ENDPOINTS.student.submitSpeechTask,
+      formData,
+      {
+        headers: {
+          'Authorization': `Bearer ${exerciseToken}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get Completed Exercises
+export const getCompletedExercises = async (params) => {
+  try {
+    const token = await SecureStore.getItemAsync('accessToken');
+    
+    const response = await api.post(
+      API_ENDPOINTS.student.getCompletedExercises,
+      params,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get Solved Exercise Detail
+export const getSolvedExerciseDetail = async (reportId) => {
+  try {
+    const token = await SecureStore.getItemAsync('accessToken');
+    
+    const response = await api.post(
+      API_ENDPOINTS.student.getSolvedExerciseDetail,
+      { reportId },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Generate temporary file URL
+export const generateFileUrl = async (fileUrl) => {
+  try {
+    const token = await SecureStore.getItemAsync('accessToken');
+    const response = await api.post(
+      'https://quizmaker-api.onrender.com/api/v0.0.1/storage/generate-file-url',
+      { fileUrl },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export default {
   fetchSpeechTasks,
-  // evaluateSpeech,
-  // getSpeechQuestionTopicRelatedScore,
-  // getSpeechAssessmentResultEvaluationByAI,
   saveSpeechResult,
   evaluateSpeechMobileTask,
+  fetchAssignedSpeechTasks,
+  generateExerciseToken,
+  submitSpeechTask,
+  getCompletedExercises,
+  getSolvedExerciseDetail,
+  generateFileUrl,
 };

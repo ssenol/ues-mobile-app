@@ -1,7 +1,6 @@
 import axios from "axios";
 
-const BASE_URL =
-  "https://test-dot-uesquizmaker-api.ey.r.appspot.com/api/v0.0.1";
+const BASE_URL = "https://quizmaker-api.onrender.com/api/v0.0.1";
 
 const api = axios.create({
   timeout: 20000,
@@ -9,23 +8,17 @@ const api = axios.create({
 
 export const API_ENDPOINTS = {
   auth: {
-    login: `${BASE_URL}/auth/mobile-app-login`,
-    logout: `${BASE_URL}/auth/mobile-app-logout`,
+    login: `${BASE_URL}/auth/login`,
     refresh: `${BASE_URL}/auth/refresh-mobile-app-access-token`,
   },
-  speak: {
-    evaluateMobileTask: `${BASE_URL}/question/evaluate-speech-mobile-task`,
-    // evaluation: `${BASE_URL}/question/evaluate-speech`,
-    // fetchTasks: `${BASE_URL}/quiz/get-speech-quizzes-to-mobile-app`,
-    // topicScore: `${BASE_URL}/question/get-speech-topic-score`,
-    // evaluationByAI: `${BASE_URL}/question/evaluate-speech-ai`,
+  assignment: {
+    getAssignedSpeechTasks: `${BASE_URL}/student/get-assigned-speech-tasks`,
   },
-  quiz: {
-    fetchTasks: `${BASE_URL}/quiz/get-speech-quizzes-to-mobile-app`,
-    saveSpeechResult: `${BASE_URL}/quiz/save-speech-task-result`,
-  },
-  writing: {
-    fetchWriting: `${BASE_URL}/quiz/get-writing-quizzes-to-mobile-app`,
+  student: {
+    generateExerciseToken: `${BASE_URL}/student/generate-exercise-auth-token`,
+    submitSpeechTask: `${BASE_URL}/student/submit-speech-task`,
+    getCompletedExercises: `${BASE_URL}/student/get-student-completed-exercises`,
+    getSolvedExerciseDetail: `${BASE_URL}/student/get-solved-exercise-detail`,
   },
 };
 

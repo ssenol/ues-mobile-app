@@ -7,11 +7,11 @@ const initialState = {
   aiEvaluationResult: null,
   speakResults: null,
 
-  // Quiz ve soru detayları
-  assignedQuizzes: [],
-  totalQuizCount: 0,
-  currentQuiz: null,
-  quizSettings: null,
+  // Assignment ve soru detayları
+  assignedAssignments: [],
+  totalAssignmentCount: 0,
+  currentAssignment: null,
+  assignmentSettings: null,
 
   // Durum bilgileri
   loading: false,
@@ -23,24 +23,24 @@ const speakSlice = createSlice({
   initialState,
   reducers: {
     // Görev listesi işlemleri
-    setAssignedQuizzes: (state, action) => {
+    setAssignedAssignments: (state, action) => {
       if (Array.isArray(action.payload)) {
         // Eski format: doğrudan dizi
-        state.assignedQuizzes = action.payload;
-        state.totalQuizCount = action.payload.length;
+        state.assignedAssignments = action.payload;
+        state.totalAssignmentCount = action.payload.length;
       } else {
-        // Yeni format: {quizzes, totalCount} nesnesi
-        state.assignedQuizzes = action.payload.quizzes || [];
-        state.totalQuizCount = action.payload.totalCount || 0;
+        // Yeni format: {assignments, totalCount} nesnesi
+        state.assignedAssignments = action.payload.assignments || [];
+        state.totalAssignmentCount = action.payload.totalCount || 0;
       }
       state.error = null;
     },
 
     // Mevcut görev işlemleri
-    setCurrentQuiz: (state, action) => {
+    setCurrentAssignment: (state, action) => {
       const { payload } = action;
-      state.currentQuiz = payload;
-      state.quizSettings = null;
+      state.currentAssignment = payload;
+      state.assignmentSettings = null;
       return;
     },
 
@@ -68,18 +68,18 @@ const speakSlice = createSlice({
 
 export const {
   setSpeechResults,
-  setAssignedQuizzes,
-  setCurrentQuiz,
+  setAssignedAssignments,
+  setCurrentAssignment,
   setLoading,
   setError,
   clearSpeechState,
 } = speakSlice.actions;
 
 // Selectors
-// export const selectAssignedQuizzes = (state) => state.speak?.assignedQuizzes || [];
-// export const selectTotalQuizCount = (state) => state.speak?.totalQuizCount || 0;
-// export const selectCurrentQuiz = (state) => state.speak?.currentQuiz;
-// export const selectQuizSettings = (state) => state.speak?.quizSettings;
+// export const selectAssignedAssignments = (state) => state.speak?.assignedAssignments || [];
+// export const selectTotalAssignmentCount = (state) => state.speak?.totalAssignmentCount || 0;
+// export const selectCurrentAssignment = (state) => state.speak?.currentAssignment;
+// export const selectAssignmentSettings = (state) => state.speak?.assignmentSettings;
 // export const selectSpeechResults = (state) => state.speak?.speakResults;
 // export const selectEvaluationResult = (state) => state.speak?.evaluationResult;
 // export const selectTopicScoreResult = (state) => state.speak?.topicScoreResult;
