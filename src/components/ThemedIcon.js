@@ -1,27 +1,13 @@
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
-import { getIconSource } from '../constants/iconMap';
+import { icons } from '../constants/iconMap';
 
-const ThemedIcon = ({ iconName, style, size = 24, tintColor }) => {
-  const source = getIconSource(iconName);
+const ThemedIcon = ({ iconName, style, size = 24, tintColor, opacity = 1 }) => {
+  const IconComponent = icons[iconName];
 
-  if (!source) {
-    return null;
-  }
+  if (!IconComponent) return null;
 
-  return (
-    <Image
-      source={source}
-      style={[styles.icon, { width: size, height: size }, tintColor != null ? { tintColor } : null, style]}
-      resizeMode="contain"
-    />
-  );
+  // Artık sadece SVG component'ler var
+  return <IconComponent tintColor={tintColor} size={size} opacity={opacity} style={style} />;
 };
-
-const styles = StyleSheet.create({
-  icon: {
-    tintColor: undefined,
-  },
-});
 
 export default ThemedIcon;

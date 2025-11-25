@@ -60,7 +60,7 @@ export default function AssignmentDetailScreen() {
     {
       android: {
         extension: '.m4a',
-        outputFormat: 'mpeg_4',
+        outputFormat: 'mpeg4',
         audioEncoder: 'aac',
         sampleRate: 44100,
         numberOfChannels: 1,

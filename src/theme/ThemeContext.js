@@ -17,7 +17,7 @@ export const theme = {
     white: '#ffffff',
     black: '#000000',
     border: '#cccccc',
-    placeholder: '#949494',
+    placeholder: '#969696',
     color555: '#555',
     // Goal Progress renkleri
     goalGreen: '#34C759',

@@ -60,7 +60,7 @@ export default function AppNavigator() {
     },
   });
 
-  // 🔹 Custom TabBar (tasarıma uygun)
+  // 🔹 Custom TabBar
   const CustomTabBar = ({ state, descriptors, navigation, notificationModalVisible, setNotificationModalVisible }) => {
     return (
       <View style={tabBarStyles.tabBarContainer}>
@@ -107,7 +107,7 @@ export default function AppNavigator() {
                 iconName={iconName} 
                 size={24} 
                 tintColor={colors.white}
-                style={{ opacity }}
+                opacity={opacity}
               />
             </TouchableOpacity>
           );
@@ -136,24 +136,24 @@ export default function AppNavigator() {
           )}
         >
           <Tab.Screen
-            name="Assignments"
-            component={AssignmentsScreen}
-            options={{ tabBarIconName: "tabAssignment" }}
-          />
-          <Tab.Screen
-            name="Notifications"
-            component={NotificationsScreen}
-            options={{ tabBarIconName: "tabNotification" }}
-          />
-          <Tab.Screen
             name="HomeScreen"
             component={HomeScreen}
             options={{ tabBarIconName: "tabHome" }}
           />
           <Tab.Screen
+            name="Assignments"
+            component={AssignmentsScreen}
+            options={{ tabBarIconName: "tabAssignment" }}
+          />
+          <Tab.Screen
             name="Completed"
             component={CompletedScreen}
             options={{ tabBarIconName: "tabCompleted" }}
+          />
+          <Tab.Screen
+            name="Notifications"
+            component={NotificationsScreen}
+            options={{ tabBarIconName: "tabNotification" }}
           />
           <Tab.Screen
             name="Profile"

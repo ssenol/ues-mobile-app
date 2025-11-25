@@ -86,7 +86,7 @@ export default function AssignmentsScreen({ navigation, route }) {
 
     return {
       id: task.assignedTaskId,
-      type: isSpeechOnTopic ? 'speech_on_topic' : 'readAloud',
+      type: isSpeechOnTopic ? 'speechOnTopic' : 'readAloud',
       title: isSpeechOnTopic ? 'Speech On Topic' : 'Read Aloud',
       description: description,
       image: isSpeechOnTopic 
@@ -235,7 +235,7 @@ export default function AssignmentsScreen({ navigation, route }) {
   const unsolvedAssignments = allQuizzes.filter(q => !q.isSolved).length;
 
   // Filter options with counts
-  const speechOnTopicCount = allQuizzes.filter(q => q.type === 'speech_on_topic').length;
+  const speechOnTopicCount = allQuizzes.filter(q => q.type === 'speechOnTopic').length;
   const readAloudCount = allQuizzes.filter(q => q.type === 'readAloud').length;
   
   const filters = [
@@ -248,7 +248,7 @@ export default function AssignmentsScreen({ navigation, route }) {
   const filteredAssignmentsRaw = selectedFilter === 'All' 
     ? allQuizzes 
     : allQuizzes.filter(assignment => {
-      if (selectedFilter === 'Speech On Topic') return assignment.type === 'speech_on_topic';
+      if (selectedFilter === 'Speech On Topic') return assignment.type === 'speechOnTopic';
       if (selectedFilter === 'Read Aloud') return assignment.type === 'readAloud';
       return false;
     });
@@ -288,7 +288,7 @@ export default function AssignmentsScreen({ navigation, route }) {
     }
     
     // Completed değilse normal akış
-    if (assignment.type === 'readAloud' || assignment.type === 'speech_on_topic') {
+    if (assignment.type === 'readAloud' || assignment.type === 'speechOnTopic') {
       navigation.navigate('ReadAloud', { 
         task: assignment.originalTask, // Orijinal task objesini gönder
         assignedTaskId: assignment.assignedTaskId,

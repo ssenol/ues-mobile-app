@@ -1,28 +1,16 @@
 /**
- * ⚠️ iPhone 6s (iOS 15.4) SCROLL/TAP SORUNU - ÇÖZÜLMEDİ
+ * ✅ OPTİMİZASYON: Scroll performansı iyileştirildi
  * 
- * DURUM:
- * - iPhone 6s cihazda (iOS 15.4, A9 chip) scroll ve dokunma olayları çalışmıyor
- * - Yeni cihazlarda (A12+), simülatörde ve çentikli cihazlarda sorun yok
- * - HomeScreen ve AssignmentsScreen'de benzer yapı sorunsuz çalışıyor
+ * YAPILAN DEĞİŞİKLİKLER:
+ * 1. ✅ setValue() çağrıları requestAnimationFrame ile optimize edildi
+ * 2. ✅ State güncellemeleri sadece değiştiğinde yapılıyor
+ * 3. ✅ Animated.ScrollView kullanılıyor
  * 
- * DENENENLERİ:
- * 1. ✗ Tüm pointerEvents ayarları (none, box-none, auto) → Sonuç yok
- * 2. ✗ zIndex değerleri kaldırıldı/değiştirildi → Sonuç yok
- * 3. ✗ Tüm position:'absolute' katmanlar yoruma alındı → Yine scroll olmuyor
- * 4. ✗ Animated.View transform devre dışı bırakıldı (isLegacyIOS) → Sonuç yok
- * 5. ✗ ScrollView/Animated.ScrollView değiştirildi → CircularProgress import hatası
- * 
- * SONRAKI ADIMLAR:
- * 1. CircularProgress import hatasını düzelt
- * 2. handleScrollListener içindeki state güncellemelerini requestAnimationFrame ile throttle et
- * 3. ScrollView yerine sadece ScrollView kullan (Animated.ScrollView değil):
- *    const ScrollContainer = ScrollView;
- * 4. Minimal test içeriği ile dene (sadece kırmızı View + text)
- * 5. onScroll listener'ını geçici olarak yoruma al ve test et
- * 
- * NOT: Sorun muhtemelen Animated.ScrollView + ağır onScroll handler kombinasyonundan
- * kaynaklanıyor. A9 çipli cihazda UI thread kilitlenir.
+ * NOT: Eski cihazlarda (A9 chip) test edilmesi gerekiyor.
+ * Eğer hala sorun varsa, ek optimizasyonlar yapılabilir:
+ * - State güncellemelerini de requestAnimationFrame içine almak
+ * - Hesaplamaları throttle etmek veya önbelleğe almak
+ * - Gereksiz setValue() çağrılarını önlemek (değer değişmediyse çağırma)
  */
 
 import { useRoute } from '@react-navigation/native';
@@ -86,6 +74,7 @@ export default function AssignmentReportScreen({ navigation }) {
   const [showMoreCharts, setShowMoreCharts] = useState(false);
   const [isFilterSticky, setIsFilterSticky] = useState(false);
   const [filterTabsY, setFilterTabsY] = useState(0);
+  const [filterTabsHeight, setFilterTabsHeight] = useState(70); // Filter tabs yüksekliği (başlangıç tahmini)
   const [headerHeight, setHeaderHeight] = useState(STATUSBAR_HEIGHT + 30); // Başlangıç tahmini
   const [blueSectionActualHeight, setBlueSectionActualHeight] = useState(284); // Mavi zemin gerçek yüksekliği
   const [audioModalVisible, setAudioModalVisible] = useState(false);
@@ -97,6 +86,7 @@ export default function AssignmentReportScreen({ navigation }) {
   const filterTabsRef = useRef(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerTranslateYValue = useRef(new Animated.Value(0)).current;
+  const lastTranslateYRef = useRef(0); // Son translateY değerini sakla (gereksiz setValue çağrılarını önlemek için)
 
   // Fetch report data
   const fetchReportData = useCallback(async () => {
@@ -180,54 +170,67 @@ export default function AssignmentReportScreen({ navigation }) {
       ? filterTabsY - FILTER_TABS_STICKY_PADDING
       : BLUE_SECTION_HEIGHT;
     
-    if (offsetY >= stickyThreshold && stickyThreshold > 0) {
-      if (!isFilterSticky) {
-        setIsFilterSticky(true);
-      }
-    } else if (isFilterSticky) {
-      setIsFilterSticky(false);
-    }
-    
-    // Mavi zemin kaydırma kontrolü
-    // Filter tabs mavi zeminin altına gelince birlikte hareket ederler
-    // Filter tabs sticky olduğunda paddingVertical: 12 var, bu yüzden 12px erken başlamalı
-    
-    if (filterTabsY > 0) {
-      // Filter tabs'ın üst kenarı mavi zeminin alt kenarına 12px kala geldiği scroll pozisyonu
-      // Sticky filter tabs'ın padding'i (12px) nedeniyle mavi zemin 12px erken hareket etmeli
-      // Böylece sticky olduğunda pürüzsüz geçiş sağlanır
-      // Scroll pozisyonu X olduğunda filter tabs ekranda (filterTabsY - X) pozisyonunda
-      // Filter tabs mavi zeminin altına 12px kala geldiğinde: filterTabsY - X = BLUE_SECTION_HEIGHT - 12
-      // Yani: X = filterTabsY - BLUE_SECTION_HEIGHT - 12 (eksi işareti çünkü "kala" = daha erken)
-      const blueSectionBottomReached = filterTabsY - BLUE_SECTION_HEIGHT - FILTER_TABS_STICKY_PADDING;
-      
-      if (offsetY < blueSectionBottomReached) {
-        // Durum 1: Filter tabs henüz mavi zeminin altına gelmedi - Mavi zemin sabit
-        headerTranslateYValue.setValue(0);
+    // Tüm güncellemeleri requestAnimationFrame içine al (eski cihazlar için optimizasyon)
+    requestAnimationFrame(() => {
+      // State güncellemelerini optimize et - sadece değiştiğinde güncelle
+      if (offsetY >= stickyThreshold && stickyThreshold > 0) {
+        if (!isFilterSticky) {
+          setIsFilterSticky(true);
+        }
       } else if (isFilterSticky) {
-        // Durum 2: Filter tabs sticky - Mavi zemin tamamen yukarı kaymış, sabit
-        // Filter tabs sticky olduğunda padding 12px var, bu yüzden mavi zemin 12px daha az kaymalı
-        // Böylece filter tabs'ın üst kenarı (padding dahil) mavi zeminin alt kenarına 12px kala olur
-        const maxTranslateY = -(BLUE_SECTION_HEIGHT - FILTER_TABS_STICKY_PADDING);
-        headerTranslateYValue.setValue(maxTranslateY);
-      } else {
-        // Durum 3: Filter tabs mavi zeminin altında ama sticky değil - Birlikte kayıyorlar
-        // Filter tabs ve mavi zemin 1:1 oranında birlikte yukarı kayıyor
-        const scrolledDistance = offsetY - blueSectionBottomReached;
-        const translateY = -scrolledDistance;
-        // Maksimum translateY: Filter tabs sticky olduğunda ulaşacağı değer (12px padding hesaba katılıyor)
-        const maxTranslateY = -(BLUE_SECTION_HEIGHT - FILTER_TABS_STICKY_PADDING);
-        // translateY'yi maxTranslateY ile sınırla
-        headerTranslateYValue.setValue(Math.max(translateY, maxTranslateY - FILTER_TABS_STICKY_PADDING));
+        setIsFilterSticky(false);
       }
-    } else {
-      // Filter tabs pozisyonu henüz bilinmiyor - HomeScreen'deki gibi basit kaydırma
-      if (offsetY >= BLUE_SECTION_HEIGHT) {
-        headerTranslateYValue.setValue(-(offsetY - BLUE_SECTION_HEIGHT));
+      
+      // Mavi zemin kaydırma kontrolü
+      if (filterTabsY > 0) {
+        // Filter tabs'ın üst kenarı mavi zeminin alt kenarına 12px kala geldiği scroll pozisyonu
+        // Sticky filter tabs'ın padding'i (12px) nedeniyle mavi zemin 12px erken hareket etmeli
+        // Böylece sticky olduğunda pürüzsüz geçiş sağlanır
+        // Scroll pozisyonu X olduğunda filter tabs ekranda (filterTabsY - X) pozisyonunda
+        // Filter tabs mavi zeminin altına 12px kala geldiğinde: filterTabsY - X = BLUE_SECTION_HEIGHT - 12
+        // Yani: X = filterTabsY - BLUE_SECTION_HEIGHT - 12 (eksi işareti çünkü "kala" = daha erken)
+        const blueSectionBottomReached = filterTabsY - BLUE_SECTION_HEIGHT - FILTER_TABS_STICKY_PADDING;
+        
+        let newTranslateY = 0;
+        
+        if (offsetY < blueSectionBottomReached) {
+          // Durum 1: Filter tabs henüz mavi zeminin altına gelmedi - Mavi zemin sabit
+          newTranslateY = 0;
+        } else if (isFilterSticky) {
+          // Durum 2: Filter tabs sticky - Mavi zemin tamamen yukarı kaymış, sabit
+          // Filter tabs sticky olduğunda padding 12px var, bu yüzden mavi zemin 12px daha az kaymalı
+          // Böylece filter tabs'ın üst kenarı (padding dahil) mavi zeminin alt kenarına 12px kala olur
+          newTranslateY = -(BLUE_SECTION_HEIGHT - FILTER_TABS_STICKY_PADDING);
+        } else {
+          // Durum 3: Filter tabs mavi zeminin altında ama sticky değil - Birlikte kayıyorlar
+          // Filter tabs ve mavi zemin 1:1 oranında birlikte yukarı kayıyor
+          const scrolledDistance = offsetY - blueSectionBottomReached;
+          const translateY = -scrolledDistance;
+          // Maksimum translateY: Filter tabs sticky olduğunda ulaşacağı değer (12px padding hesaba katılıyor)
+          const maxTranslateY = -(BLUE_SECTION_HEIGHT - FILTER_TABS_STICKY_PADDING);
+          // translateY'yi maxTranslateY ile sınırla
+          newTranslateY = Math.max(translateY, maxTranslateY - FILTER_TABS_STICKY_PADDING);
+        }
+        
+        // Sadece değer değiştiyse setValue çağır (gereksiz çağrıları önle)
+        if (Math.abs(newTranslateY - lastTranslateYRef.current) > 0.5) {
+          headerTranslateYValue.setValue(newTranslateY);
+          lastTranslateYRef.current = newTranslateY;
+        }
       } else {
-        headerTranslateYValue.setValue(0);
+        // Filter tabs pozisyonu henüz bilinmiyor - HomeScreen'deki gibi basit kaydırma
+        let newTranslateY = 0;
+        if (offsetY >= BLUE_SECTION_HEIGHT) {
+          newTranslateY = -(offsetY - BLUE_SECTION_HEIGHT);
+        }
+        
+        // Sadece değer değiştiyse setValue çağır (gereksiz çağrıları önle)
+        if (Math.abs(newTranslateY - lastTranslateYRef.current) > 0.5) {
+          headerTranslateYValue.setValue(newTranslateY);
+          lastTranslateYRef.current = newTranslateY;
+        }
       }
-    }
+    });
   }, [filterTabsY, isFilterSticky, BLUE_SECTION_HEIGHT, blueSectionActualHeight, headerHeight]);
 
   const handleScroll = Animated.event(
@@ -294,7 +297,7 @@ export default function AssignmentReportScreen({ navigation }) {
   if (loading || !reportData) {
     return (
       <View style={styles.container}>
-        <StatusBar style="dark" translucent backgroundColor="transparent" />
+        <StatusBar style="light" translucent backgroundColor="transparent" />
         <LoadingOverlay visible={loading} message="Loading report..." />
       </View>
     );
@@ -384,19 +387,18 @@ export default function AssignmentReportScreen({ navigation }) {
             tintColor="#fff"
           />
         </TouchableOpacity>
-        <ThemedText weight="bold" style={styles.headerTitle}>
+        <ThemedText weight="bold" style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
           {reportData.taskName || 'Assignment Report'}
         </ThemedText>
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView
-        pointerEvents="auto"
+      <Animated.ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        onScroll={handleScrollListener}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
       >
         {/* User Info Card */}
@@ -404,9 +406,9 @@ export default function AssignmentReportScreen({ navigation }) {
           <View style={styles.userInfoLeft}>
             <View style={styles.profileImageContainer}>
               <ThemedIcon
-                iconName="user"
+                iconName="avatar"
                 size={40}
-                tintColor="#3E4EF0"
+                // tintColor="#3E4EF0"
               />
             </View>
             <View style={styles.userInfoText}>
@@ -541,6 +543,7 @@ export default function AssignmentReportScreen({ navigation }) {
             onLayout={(event) => {
               const { y, height, width, x } = event.nativeEvent.layout;
               setFilterTabsY(y);
+              setFilterTabsHeight(height); // Filter tabs yüksekliğini dinamik olarak kaydet
             }}
           >
             <ScrollView
@@ -583,8 +586,8 @@ export default function AssignmentReportScreen({ navigation }) {
           </View>
         )}
         
-        {/* Sticky Filter Tabs için spacer */}
-        {isFilterSticky && <View style={{ height: 60 }} />}
+        {/* Sticky Filter Tabs için spacer - Dinamik yükseklik + 24px paddingTop */}
+        {isFilterSticky && <View style={{ height: filterTabsHeight + 24 }} />}
 
         {/* Tab Content - Sekme yapısı */}
         {activeTab === 'speech-components' && (
@@ -692,7 +695,7 @@ export default function AssignmentReportScreen({ navigation }) {
             )}
           </View>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Sticky Filter Tabs - Header'ın altında */}
       {isFilterSticky && (
@@ -854,6 +857,7 @@ const styles = StyleSheet.create({
   headerBackButton: {
     width: 24,
     height: 24,
+    marginRight: 12,
     justifyContent: 'center',
     alignItems: 'flex-start',
   },

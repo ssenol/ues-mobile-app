@@ -23,6 +23,7 @@ import BiometricAuthService from "../services/biometricAuth";
 import { store } from "../store/index";
 import { setCredentials } from "../store/slices/authSlice";
 import { useTheme } from "../theme/ThemeContext";
+import ThemedIcon from "../components/ThemedIcon";
 
 // Biyometrik hatırlatma Alert'inin daha önce gösterilip gösterilmediğini tutan anahtar.
 const BIOMETRIC_PROMPT_SHOWN_KEY = "biometric_prompt_shown";

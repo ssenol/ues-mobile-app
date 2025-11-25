@@ -114,7 +114,7 @@ export default function HomeScreen({ navigation }) {
 
     return {
       id: task.assignedTaskId || task.speechTaskId,
-      type: isSpeechOnTopic ? 'speech_on_topic' : 'readAloud',
+      type: isSpeechOnTopic ? 'speechOnTopic' : 'readAloud',
       title: isSpeechOnTopic ? 'Speech On Topic' : 'Read Aloud',
       description: description,
       image: isSpeechOnTopic 
@@ -291,10 +291,10 @@ export default function HomeScreen({ navigation }) {
       marginTop: 16,
     },
     avatarButton: {
-      width: 48,
-      height: 48,
+      width: 40,
+      height: 40,
       borderRadius: 24,
-      backgroundColor: '#fff',
+      // backgroundColor: '#fff',
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 12,
@@ -425,7 +425,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
       
       {/* Status bar için sabit alan */}
       <View style={styles.statusBarArea} />
@@ -472,9 +472,9 @@ export default function HomeScreen({ navigation }) {
               style={styles.avatarButton}
             >
               <ThemedIcon
-                iconName="user"
-                size={32}
-                tintColor={colors.primary}
+                iconName="avatar"
+                size={40}
+                // tintColor={colors.primary}
               />
             </TouchableOpacity>
 
@@ -593,7 +593,7 @@ export default function HomeScreen({ navigation }) {
                     }
                     
                     // Navigate to assignment detail
-                    if (assignment.type === 'speech_on_topic' || assignment.type === 'readAloud') {
+                    if (assignment.type === 'speechOnTopic' || assignment.type === 'readAloud') {
                       navigation.navigate('ReadAloud', { 
                         task: assignment.originalTask, // Orijinal task objesini gönder
                         assignedTaskId: assignment.assignedTaskId,

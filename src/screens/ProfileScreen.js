@@ -252,7 +252,7 @@ export default function ProfileScreen({ navigation }) {
         width: 98,
         height: 98,
         borderRadius: 50,
-        backgroundColor: '#F3F4FF',
+        // backgroundColor: '#F3F4FF',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 16,
@@ -397,9 +397,9 @@ export default function ProfileScreen({ navigation }) {
         <View style={[styles.profileCard, shadows.light]}>
           <View style={styles.avatarContainer}>
             <ThemedIcon
-              iconName="user"
-              size={60}
-              tintColor="#3E4EF0"
+              iconName="avatar"
+              size={98}
+              // tintColor="#3E4EF0"
             />
           </View>
           <ThemedText weight="bold" style={styles.userName}>

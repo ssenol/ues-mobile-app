@@ -1,5 +1,5 @@
 import React from "react";
-import {View, TextInput, StyleSheet, Platform} from "react-native";
+import {View, TextInput, StyleSheet} from "react-native";
 import ThemedIcon from "./ThemedIcon";
 import { useTheme } from "../theme/ThemeContext";
 
@@ -21,7 +21,7 @@ const CustomInput = ({
     return (
       <ThemedIcon
         iconName={iconName}
-        size={Platform.OS === "ios" ? 16 : 18}
+        size={16}
         tintColor={colors.placeholder}
         style={styles.icon}
       />
@@ -61,6 +61,7 @@ const makeStyles = (colors, fonts) =>
     input: {
       flex: 1,
       backgroundColor: "transparent",
+      marginLeft: 8,
       paddingVertical: 12,
       fontSize: 16,
       lineHeight: 22,
