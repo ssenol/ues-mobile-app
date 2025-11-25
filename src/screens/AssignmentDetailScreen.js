@@ -1,11 +1,12 @@
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { AudioQuality, IOSOutputFormat, setAudioModeAsync, useAudioPlayer, useAudioRecorder } from 'expo-audio';
+import { AudioQuality, IOSOutputFormat, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Dimensions, LayoutAnimation, Linking, Platform, ScrollView, StyleSheet, TouchableOpacity, UIManager, View } from 'react-native';
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
+import AudioPlayer from '../components/AudioPlayer';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedIcon from '../components/ThemedIcon';
 import { ThemedText } from '../components/ThemedText';
@@ -43,17 +44,12 @@ export default function AssignmentDetailScreen() {
   const [finishModalVisible, setFinishModalVisible] = useState(false);
   const [activeWaveformIndex, setActiveWaveformIndex] = useState(0);
   const [waveformHeights, setWaveformHeights] = useState([]);
-  const [audioWaveformIndex, setAudioWaveformIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const countdownIntervalRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const waveformIntervalRef = useRef(null);
-  const audioWaveformIntervalRef = useRef(null);
   const pausedDurationRef = useRef(0);
   const notificationSlideAnim = useRef(new Animated.Value(0)).current; // 0 = gizli (record button içinde)
-  
-  // Audio player hook
-  const player = useAudioPlayer(recordedUri || '');
   
   // expo-audio recorder hook
   const recorder = useAudioRecorder(
@@ -401,22 +397,12 @@ export default function AssignmentDetailScreen() {
   };
 
   const handleRetry = () => {
-    // Audio'yu durdur
-    if (player.playing) {
-      player.pause();
-    }
-    if (audioWaveformIntervalRef.current) {
-      clearInterval(audioWaveformIntervalRef.current);
-      audioWaveformIntervalRef.current = null;
-    }
-    
     setFinishModalVisible(false);
     setRecordingState('idle');
     setRecordingDuration(0);
     setRecordedUri(null);
     setActiveWaveformIndex(0);
     setWaveformHeights(generateRandomHeights());
-    setAudioWaveformIndex(0);
     pausedDurationRef.current = 0;
   };
 
@@ -429,15 +415,6 @@ export default function AssignmentDetailScreen() {
     try {
       setIsSubmitting(true);
       
-      // Audio'yu durdur
-      if (player.playing) {
-        player.pause();
-      }
-      if (audioWaveformIntervalRef.current) {
-        clearInterval(audioWaveformIntervalRef.current);
-        audioWaveformIntervalRef.current = null;
-      }
-
       // Get user ID
       const studentId = user?.id || user?._id || user?.userId;
       if (!studentId) {
@@ -501,65 +478,16 @@ export default function AssignmentDetailScreen() {
       setIsSubmitting(false);
     }
   };
-
-  // Audio player fonksiyonları
-  const playAudio = () => {
-    player.play();
-    
-    // Waveform animasyonunu başlat
-    if (!audioWaveformIntervalRef.current) {
-      audioWaveformIntervalRef.current = setInterval(() => {
-        setAudioWaveformIndex((prev) => (prev + 1) % 20);
-      }, 250);
-    }
-  };
-
-  const pauseAudio = () => {
-    player.pause();
-    
-    // Waveform animasyonunu durdur
-    if (audioWaveformIntervalRef.current) {
-      clearInterval(audioWaveformIntervalRef.current);
-      audioWaveformIntervalRef.current = null;
-    }
-  };
-
-  const stopAudio = () => {
-    player.seekTo(0);
-    player.pause();
-    setAudioWaveformIndex(0);
-    
-    // Waveform animasyonunu durdur
-    if (audioWaveformIntervalRef.current) {
-      clearInterval(audioWaveformIntervalRef.current);
-      audioWaveformIntervalRef.current = null;
-    }
-  };
-
+  
   // Player durumunu izle
-  useEffect(() => {
-    // Eğer ses bittiyse
-    if (player.duration > 0 && player.currentTime >= player.duration && player.playing === false) {
-      setAudioWaveformIndex(0);
-      if (audioWaveformIntervalRef.current) {
-        clearInterval(audioWaveformIntervalRef.current);
-        audioWaveformIntervalRef.current = null;
-      }
-    }
-  }, [player.currentTime, player.duration, player.playing]);
+  // useEffect(() => {
+  //   // AudioPlayer component'i kendi durumunu yönetir
+  // }, []);
 
   // Modal açıldığında/kapandığında cleanup
   useEffect(() => {
     if (!finishModalVisible) {
-      // Modal kapandığında player'ı durdur ve temizle
-      if (player.playing) {
-        player.pause();
-      }
-      if (audioWaveformIntervalRef.current) {
-        clearInterval(audioWaveformIntervalRef.current);
-        audioWaveformIntervalRef.current = null;
-      }
-      setAudioWaveformIndex(0);
+      // Modal kapandığında temizle
     }
   }, [finishModalVisible]);
 
@@ -661,10 +589,6 @@ export default function AssignmentDetailScreen() {
       if (waveformIntervalRef.current) {
         clearInterval(waveformIntervalRef.current);
         waveformIntervalRef.current = null;
-      }
-      if (audioWaveformIntervalRef.current) {
-        clearInterval(audioWaveformIntervalRef.current);
-        audioWaveformIntervalRef.current = null;
       }
     };
   }, []);
@@ -980,52 +904,14 @@ export default function AssignmentDetailScreen() {
           </ThemedText>
 
           {/* Audio Player */}
-          <View style={styles.audioPlayerContainer}>
-            <TouchableOpacity
-              style={styles.playPauseButton}
-              activeOpacity={0.8}
-              onPress={() => {
-                if (player.playing) {
-                  pauseAudio();
-                } else {
-                  playAudio();
-                }
-              }}
-            >
-              <ThemedIcon
-                iconName={player.playing ? 'pause' : 'play'}
-                size={24}
-                tintColor="#fff"
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.stopButton}
-              activeOpacity={0.8}
-              onPress={stopAudio}
-            >
-              <View style={styles.stopButtonInner} />
-            </TouchableOpacity>
-
-            {/* Waveform */}
-            <View style={styles.audioWaveformContainer}>
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map((i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.audioWaveformBar,
-                    { height: getWaveformHeight(i) },
-                    player.playing && i === audioWaveformIndex && styles.audioWaveformBarActive
-                  ]}
-                />
-              ))}
-            </View>
-
-            {/* Timer */}
-            <ThemedText style={styles.audioTimerText}>
-              {formatTimer(Math.floor(player.currentTime))} / {formatTimer(recordingDuration)}
-            </ThemedText>
-          </View>
+          <AudioPlayer 
+            audioUri={recordedUri}
+            duration={recordingDuration}
+            onError={(error) => {
+              console.error('Audio playback error:', error);
+            }}
+          />
+          <View style={styles.audioPlayer} />
 
           {/* Action Buttons */}
           <View style={styles.finishModalButtons}>
@@ -1361,6 +1247,9 @@ const styles = StyleSheet.create({
     fontSize: 128,
     color: '#fff',
   },
+  audioPlayer: {
+    marginBottom: 64,
+  },
   finishModal: {
     justifyContent: 'flex-end',
     margin: 0,
@@ -1388,66 +1277,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 64,
   },
-  audioPlayerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E7E9FF',
-    borderRadius: 12,
-    padding: 24,
-    width: '100%',
-    marginBottom: 32,
-  },
-  playPauseButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#3E4EF0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  stopButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#3E4EF0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  stopButtonInner: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#fff',
-    borderRadius: 4,
-  },
-  audioWaveformContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 32,
-    marginRight: 12,
-  },
-  audioWaveformBar: {
-    width: 2,
-    backgroundColor: '#3E4EF0',
-    borderRadius: 1,
-    opacity: 0.8,
-  },
-  audioWaveformBarActive: {
-    backgroundColor: '#FE1900',
-    opacity: 1,
-  },
-  audioTimerText: {
-    fontSize: 14,
-    lineHeight: 24,
-    color: '#3E4EF0',
-    backgroundColor: '#D9DDFF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
   finishModalButtons: {
     width: '100%',
     flexDirection: 'row',
@@ -1455,13 +1284,9 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     flex: 1,
-    // backgroundColor: '#fff',
-    // borderRadius: 50,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    // borderWidth: 2,
-    // borderColor: '#3E4EF0',
   },
   retryButtonText: {
     fontSize: 16,
@@ -1534,13 +1359,8 @@ const styles = StyleSheet.create({
   },
   declineButton: {
     marginTop: 8,
-    // backgroundColor: '#fff',
-    // borderRadius: 50,
-    // paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    // borderWidth: 2,
-    // borderColor: '#3E4EF0',
   },
   declineButtonText: {
     fontSize: 16,

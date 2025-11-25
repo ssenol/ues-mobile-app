@@ -268,7 +268,7 @@ export default function CompletedScreen({ navigation }) {
       </ScrollView>
 
       {/* Loading Overlay */}
-      <LoadingOverlay visible={loading} message="Loading completed tasks..." />
+      <LoadingOverlay visible={loading} message="Loading completed assignments..." />
     </View>
   );
 }

@@ -544,7 +544,7 @@ export default function AssignmentsScreen({ navigation, route }) {
       </Animated.ScrollView>
 
       {/* Loading Overlay */}
-      <LoadingOverlay visible={loading} message="Loading tasks..." />
+      <LoadingOverlay visible={loading} message="Loading assignments..." />
     </View>
   );
 }

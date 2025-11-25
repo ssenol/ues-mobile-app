@@ -219,7 +219,11 @@ export default function AudioPlayer({ audioUri, duration, onError }) {
         activeOpacity={0.8}
         onPress={stopAudio}
       >
-        <View style={styles.stopButtonInner} />
+        <ThemedIcon
+          iconName="stop"
+          size={24}
+          tintColor="#fff"
+        />
       </TouchableOpacity>
 
       {/* Waveform */}
@@ -270,12 +274,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-  },
-  stopButtonInner: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#fff',
-    borderRadius: 3,
   },
   audioWaveformContainer: {
     flex: 1,
