@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState } from 'react';
+import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, ImageBackground, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
@@ -163,6 +163,8 @@ export default function AssignmentsScreen({ navigation, route }) {
   // Ekrana focus olduğunda filtreyi kontrol et ve sticky'yi sıfırla
   useFocusEffect(
     React.useCallback(() => {
+      setStatusBarStyle('dark');
+      
       // Route params varsa onu kullan, yoksa veya null ise 'All' yap
       // Tabbar'dan geldiğinde route.params.filter null veya undefined olacak
       const filter = route?.params?.filter;

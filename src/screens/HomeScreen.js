@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useRef, useState } from "react";
 import {
   Animated,
@@ -37,6 +37,14 @@ export default function HomeScreen({ navigation }) {
   const [isSticky, setIsSticky] = useState(false);
   const lastAssignmentsHeaderRef = useRef(null);
   const [lastAssignmentsHeaderY, setLastAssignmentsHeaderY] = useState(0);
+
+  // HomeScreen focus olduğunda StatusBar'ı sıfırla
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => {};
+    }, [])
+  );
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -425,8 +433,8 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
-      
+      <StatusBar style="light" translucent backgroundColor="transparent" />
+
       {/* Status bar için sabit alan */}
       <View style={styles.statusBarArea} />
 

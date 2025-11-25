@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -190,6 +190,8 @@ export default function CompletedScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
+      
+      setStatusBarStyle('dark');
       
       const loadData = async () => {
         setNextCursor(null);

@@ -1,7 +1,7 @@
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { AudioQuality, IOSOutputFormat, setAudioModeAsync, useAudioPlayer, useAudioRecorder } from 'expo-audio';
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState } from 'react';
+import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Dimensions, LayoutAnimation, Linking, Platform, ScrollView, StyleSheet, TouchableOpacity, UIManager, View } from 'react-native';
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -89,6 +89,14 @@ export default function AssignmentDetailScreen() {
         }
       }
     }
+  );
+
+  // AssignmentDetailScreen focus olduğunda StatusBar'ı sıfırla
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('dark');
+      return () => {};
+    }, [])
   );
 
   // HTML'den metni temizle
