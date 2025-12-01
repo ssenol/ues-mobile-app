@@ -1,46 +1,30 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useState } from "react";
-import {
-  StyleSheet,
-  View
-} from "react-native";
+import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
+import React, { useCallback } from "react";
+import { StyleSheet, View } from "react-native";
 import NotificationModal from "../components/NotificationModal";
 
-export default function NotificationsScreen({ navigation }) {
-  const [notificationModalVisible, setNotificationModalVisible] = useState(false);
-
-  // Ekrana her focus olduğunda modal'ı aç
+export default function NotificationsScreen() {
   useFocusEffect(
     useCallback(() => {
-      setNotificationModalVisible(true);
-      return () => {
-        // Cleanup - ekrandan çıkarken modal'ı kapat
-        setNotificationModalVisible(false);
-      };
+      setStatusBarStyle('dark');
+      return () => {};
     }, [])
   );
-
-  const handleClose = () => {
-    setNotificationModalVisible(false);
-    // Modal kapandığında HomeScreen'e dön
-    navigation.navigate('HomeScreen');
-  };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#F3F4FF',
+      backgroundColor: '#fff',
     },
   });
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
-      
+      <StatusBar style="dark" translucent backgroundColor="transparent" />
+
       <NotificationModal
-        visible={notificationModalVisible}
-        onClose={handleClose}
+        mode="screen"
       />
     </View>
   );

@@ -71,10 +71,8 @@ export default function AppNavigator() {
           const opacity = isFocused ? 1 : 0.4;
 
           const onPress = () => {
-            // Notifications tab'ı için özel işlem
             if (route.name === 'Notifications') {
-              setNotificationModalVisible(true);
-              return;
+              setNotificationModalVisible(false);
             }
 
             const event = navigation.emit({

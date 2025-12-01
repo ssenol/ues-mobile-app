@@ -16,13 +16,14 @@ import { ThemedText } from './ThemedText';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export default function NotificationModal({ visible, onClose }) {
+export default function NotificationModal({ visible = false, onClose = () => {}, mode = 'modal' }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef(null);
   const isClosing = useRef(false);
+  const isScreenMode = mode === 'screen';
 
   // PanResponder for swipe down to close
   const panResponder = useRef(
@@ -77,7 +78,7 @@ export default function NotificationModal({ visible, onClose }) {
     banner: {
       title: "Don't Miss Any Update!",
       message: "Turn on notifications to get the latest lessons and reports.",
-      icon: 'noti',
+      icon: 'notiFill',
     },
     lastWeek: [
       {
@@ -191,11 +192,14 @@ export default function NotificationModal({ visible, onClose }) {
     },
     headerTitle: {
       fontSize: 18,
-      lineHeight: 32,
+      lineHeight: 24,
       color: '#3A3A3A',
+      textAlign: 'center',
+      marginTop: 16,
     },
     scrollableContent: {
       flex: 1,
+      backgroundColor: '#fff',
     },
     scrollContent: {
       paddingHorizontal: 16,
@@ -205,26 +209,29 @@ export default function NotificationModal({ visible, onClose }) {
     },
     bannerCard: {
       backgroundColor: '#E7E9FF',
-      borderRadius: 12,
-      padding: 16,
+      borderRadius: 8,
+      paddingVertical: 24,
+      paddingHorizontal: 16,
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 24,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: '#D9DDFF',
+      gap: 16,
     },
     bannerIconContainer: {
-      width: 48,
-      height: 48,
-      borderRadius: 8,
-      backgroundColor: '#3E4EF0',
+      width: 32,
+      height: 32,
+      // backgroundColor: '#3E4EF0',
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 12,
+      // marginRight: 12,
       position: 'relative',
     },
     bannerBadge: {
       position: 'absolute',
-      top: -4,
-      right: -4,
+      top: -6,
+      right: -6,
       backgroundColor: '#FF3B30',
       width: 20,
       height: 20,
@@ -232,13 +239,12 @@ export default function NotificationModal({ visible, onClose }) {
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 2,
-      borderColor: '#E7E9FF',
+      borderColor: '#fff',
     },
     bannerBadgeText: {
-      fontSize: 10,
-      fontWeight: 'bold',
+      fontSize: 12,
       color: '#fff',
-      lineHeight: 12,
+      lineHeight: 16,
     },
     bannerContent: {
       flex: 1,
@@ -246,16 +252,16 @@ export default function NotificationModal({ visible, onClose }) {
     bannerTitle: {
       fontSize: 14,
       lineHeight: 20,
-      color: '#3A3A3A',
+      color: '#000',
       marginBottom: 4,
     },
     bannerMessage: {
       fontSize: 12,
       lineHeight: 18,
-      color: '#727272',
+      color: '#000',
     },
     bannerArrow: {
-      marginLeft: 8,
+      // marginLeft: 8,
     },
     sectionTitle: {
       fontSize: 16,
@@ -278,7 +284,6 @@ export default function NotificationModal({ visible, onClose }) {
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 12,
-      marginTop: 2,
     },
     notificationContent: {
       flex: 1,
@@ -298,9 +303,108 @@ export default function NotificationModal({ visible, onClose }) {
     notificationTime: {
       fontSize: 12,
       lineHeight: 18,
-      color: '#B7B7B7',
+      color: '#949494',
+    },
+    screenContainer: {
+      flex: 1,
+      backgroundColor: '#fff',
+    },
+    screenHeaderContainer: {
+      paddingHorizontal: 16,
+      paddingBottom: 16,
+      backgroundColor: '#fff',
+      borderBottomWidth: 1,
+      borderBottomColor: '#F3F4FF',
     },
   });
+
+  const renderNotificationList = () => (
+    <ScrollView
+      style={styles.scrollableContent}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      bounces={true}
+      scrollEventThrottle={16}
+      nestedScrollEnabled={true}
+    >
+      {/* Banner Card */}
+      <View style={styles.bannerCard}>
+        <View style={styles.bannerIconContainer}>
+          <ThemedIcon
+            iconName={notifications.banner.icon}
+            size={32}
+            tintColor="#3E4EF0"
+          />
+          <View style={styles.bannerBadge}>
+            <ThemedText style={styles.bannerBadgeText}>4</ThemedText>
+          </View>
+        </View>
+        <View style={styles.bannerContent}>
+          <ThemedText weight="semiBold" style={styles.bannerTitle}>
+            {notifications.banner.title}
+          </ThemedText>
+          <ThemedText style={styles.bannerMessage}>
+            {notifications.banner.message}
+          </ThemedText>
+        </View>
+        <View style={styles.bannerArrow}>
+          <ThemedIcon
+            iconName="back"
+            size={16}
+            tintColor="#ABB3FF"
+            style={{ transform: [{ rotate: '180deg' }] }}
+          />
+        </View>
+      </View>
+
+      {/* Last Week Section */}
+      <ThemedText weight="semiBold" style={styles.sectionTitle}>
+        Last Week
+      </ThemedText>
+
+      {notifications.lastWeek.map((item, index) => (
+        <View 
+          key={item.id} 
+          style={[
+            styles.notificationItem,
+            index === notifications.lastWeek.length - 1 && { borderBottomWidth: 0 }
+          ]}
+        >
+          <View style={styles.notificationIconContainer}>
+            <ThemedIcon
+              iconName={item.icon}
+              size={24}
+              tintColor="#FF9500"
+            />
+          </View>
+          <View style={styles.notificationContent}>
+            <ThemedText weight="bold" style={styles.notificationTitle}>
+              {item.title}
+            </ThemedText>
+            <ThemedText style={styles.notificationMessage}>
+              {item.message}
+            </ThemedText>
+            <ThemedText style={styles.notificationTime}>
+              {item.time}
+            </ThemedText>
+          </View>
+        </View>
+      ))}
+    </ScrollView>
+  );
+
+  if (isScreenMode) {
+    return (
+      <View style={[styles.screenContainer, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <View style={styles.screenHeaderContainer}>
+          <ThemedText weight="bold" style={styles.headerTitle}>
+            Notifications
+          </ThemedText>
+        </View>
+        {renderNotificationList()}
+      </View>
+    );
+  }
 
   return (
     <Modal
@@ -359,78 +463,7 @@ export default function NotificationModal({ visible, onClose }) {
             </View>
 
             {/* Scrollable content */}
-            <ScrollView
-              style={styles.scrollableContent}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-              bounces={true}
-              scrollEventThrottle={16}
-              nestedScrollEnabled={true}
-            >
-              {/* Banner Card */}
-              <View style={styles.bannerCard}>
-                <View style={styles.bannerIconContainer}>
-                  <ThemedIcon
-                    iconName={notifications.banner.icon}
-                    size={24}
-                    tintColor="#fff"
-                  />
-                  <View style={styles.bannerBadge}>
-                    <ThemedText style={styles.bannerBadgeText}>4</ThemedText>
-                  </View>
-                </View>
-                <View style={styles.bannerContent}>
-                  <ThemedText weight="bold" style={styles.bannerTitle}>
-                    {notifications.banner.title}
-                  </ThemedText>
-                  <ThemedText style={styles.bannerMessage}>
-                    {notifications.banner.message}
-                  </ThemedText>
-                </View>
-                <View style={styles.bannerArrow}>
-                  <ThemedIcon
-                    iconName="back"
-                    size={20}
-                    tintColor="#B7B7B7"
-                    style={{ transform: [{ rotate: '180deg' }] }}
-                  />
-                </View>
-              </View>
-
-              {/* Last Week Section */}
-              <ThemedText weight="semiBold" style={styles.sectionTitle}>
-                Last Week
-              </ThemedText>
-
-              {notifications.lastWeek.map((item, index) => (
-                <View 
-                  key={item.id} 
-                  style={[
-                    styles.notificationItem,
-                    index === notifications.lastWeek.length - 1 && { borderBottomWidth: 0 }
-                  ]}
-                >
-                  <View style={styles.notificationIconContainer}>
-                    <ThemedIcon
-                      iconName={item.icon}
-                      size={24}
-                      tintColor="#FF9500"
-                    />
-                  </View>
-                  <View style={styles.notificationContent}>
-                    <ThemedText weight="bold" style={styles.notificationTitle}>
-                      {item.title}
-                    </ThemedText>
-                    <ThemedText style={styles.notificationMessage}>
-                      {item.message}
-                    </ThemedText>
-                    <ThemedText style={styles.notificationTime}>
-                      {item.time}
-                    </ThemedText>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
+            {renderNotificationList()}
         </Animated.View>
       </View>
     </Modal>

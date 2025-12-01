@@ -13,6 +13,7 @@ export const icons = {
   faceId: (props) => <SvgIcon name="faceId" {...props} />,
   touchId: (props) => <SvgIcon name="touchId" {...props} />,
   noti: (props) => <SvgIcon name="noti" {...props} />,
+  notiFill: (props) => <SvgIcon name="noti.fill" {...props} />,
   avatar: (props) => <SvgIcon name="avatar" {...props} />,
   back: (props) => <SvgIcon name="back" {...props} />,
   info: (props) => <SvgIcon name="info" {...props} />,
