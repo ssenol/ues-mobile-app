@@ -5,7 +5,6 @@ import { Dimensions, RefreshControl, ScrollView, StyleSheet, View } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import CompletedAssignmentCard from '../components/CompletedAssignmentCard';
-import LoadingOverlay from '../components/LoadingOverlay';
 import { ThemedText } from '../components/ThemedText';
 import { getCompletedExercises } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
@@ -190,7 +189,7 @@ export default function CompletedScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
-      
+
       setStatusBarStyle('dark');
       
       const loadData = async () => {
@@ -260,8 +259,11 @@ export default function CompletedScreen({ navigation }) {
         )}
       </ScrollView>
 
-      {/* Loading Overlay */}
-      <LoadingOverlay visible={loading} message="Loading completed assignments..." />
+      {loading && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <ThemedText style={styles.loadingTextOverlay}>Loading completed assignments...</ThemedText>
+        </View>
+      )}
     </View>
   );
 }
@@ -300,10 +302,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4FF',
   },
   scrollContent: {
+    padding: 16,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  loadingTextOverlay: {
+    backgroundColor: 'rgba(62, 78, 240, 0.1)',
+    color: '#3E4EF0',
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 100, // Tabbar için boşluk
-    backgroundColor: '#F3F4FF',
+    paddingVertical: 8,
+    borderRadius: 16,
   },
 });
-

@@ -186,6 +186,10 @@ export default function AssignmentsScreen({ navigation, route }) {
       }
       // Assignment'ları çek
       fetchAssignments();
+
+      return () => {
+        setIsFilterSticky(false);
+      };
     }, [route?.params?.filter, fetchAssignments])
   );
 
