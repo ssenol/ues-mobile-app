@@ -225,7 +225,6 @@ export default function LoginScreen({ navigation }) {
     container: {
       backgroundColor: colors.background,
       flex: 1,
-      alignItems: 'center',
     },
     headerContainer: {
       position: 'relative',
@@ -238,20 +237,20 @@ export default function LoginScreen({ navigation }) {
     },
     headerContent: {
       position: 'absolute',
-      top: 70,
+      top: 90,
       width: '100%',
       alignItems: 'center',
     },
     logo: {
-      width: 180,
-      marginBottom: 4,
+      marginBottom: 8,
     },
     subtitle: {
       color: colors.white,
       fontSize: 12,
+      lineHeight: 16,
     },
     formContainer: {
-      width: '85%',
+      marginHorizontal: 16,
       backgroundColor: colors.white,
       marginTop: -100,
       borderRadius: 16,
@@ -259,15 +258,16 @@ export default function LoginScreen({ navigation }) {
     },
     welcome: {
       fontSize: 24,
+      lineHeight: 30,
       textAlign: 'center',
       marginBottom: 8,
     },
     description: {
       fontSize: 14,
+      lineHeight: 22,
       textAlign: 'center',
       marginTop: 6,
-      marginBottom: 20,
-      paddingHorizontal: 18,
+      marginBottom: 24,
     },
     inputs: {
       gap: 16,
@@ -284,13 +284,12 @@ export default function LoginScreen({ navigation }) {
     divider: {
       height: 1,
       backgroundColor: '#eee',
-      marginTop: 24,
-      marginBottom: 16,
+      marginVertical: 24,
     },
     otherLogins: {
       textAlign: 'center',
       color: colors.color555,
-      fontSize: 14,
+      fontSize: 16,
       lineHeight: 18,
       marginBottom: 24,
     },
@@ -320,10 +319,12 @@ export default function LoginScreen({ navigation }) {
                 resizeMode="cover"
               />
               <View style={styles.headerContent}>
-                <Image
-                  source={require('../../assets/images/meqLogo.png')}
+                <ThemedIcon
+                  iconName="myeduquiz"
                   style={styles.logo}
-                  resizeMode="contain"
+                  width={181}
+                  height={31}
+                  tintColor="#fff"
                 />
                 <ThemedText style={styles.subtitle}>
                   Unlimited Education Services product.
@@ -332,7 +333,7 @@ export default function LoginScreen({ navigation }) {
             </View>
             <View style={styles.formContainer}>
               <ThemedText weight="bold" style={styles.welcome}>Welcome Back</ThemedText>
-              <ThemedText style={styles.description}>Enter your username and password to access your account.</ThemedText>
+              <ThemedText style={styles.description}>Enter your username and password to {"\n"}access your account.</ThemedText>
 
               <View style={styles.inputs}>
                 <CustomInput
@@ -380,7 +381,7 @@ export default function LoginScreen({ navigation }) {
                 </>
               )}
             </View>
-            <ThemedText style={styles.footer}>© 2025 MyEDUQUIZ</ThemedText>
+            <ThemedText style={styles.footer}>© 2025 UES</ThemedText>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>

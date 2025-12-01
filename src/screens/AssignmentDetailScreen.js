@@ -87,7 +87,7 @@ export default function AssignmentDetailScreen() {
     }
   );
 
-  // AssignmentDetailScreen focus olduğunda StatusBar'ı sıfırla
+  // Ekran focus olduğunda StatusBar'ı sıfırla
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle('dark');

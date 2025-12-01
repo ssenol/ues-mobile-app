@@ -9,12 +9,12 @@ import LoadingOverlay from '../components/LoadingOverlay';
 import { ThemedText } from '../components/ThemedText';
 import { getCompletedExercises } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
-import { useTheme } from '../theme/ThemeContext';
+// import { useTheme } from '../theme/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function CompletedScreen({ navigation }) {
-  const { colors } = useTheme();
+  // const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
   const user = useSelector((state) => selectCurrentUser(state));
@@ -104,7 +104,7 @@ export default function CompletedScreen({ navigation }) {
           const status = firstAttempt?.status || 'success'; // status bilgisini al
           
           // TEST: İlk sonucun status'ünü 'pending' yap
-          const testStatus = index === 0 ? 'pending' : status;
+          // const testStatus = index === 0 ? 'pending' : status;
 
           return {
             id: exercise.assignedTaskId,
@@ -230,13 +230,6 @@ export default function CompletedScreen({ navigation }) {
         <View style={styles.headerLeft} />
         <ThemedText weight="bold" style={styles.headerTitle}>Completed</ThemedText>
         <View style={styles.headerRight} />
-        {/* <TouchableOpacity activeOpacity={0.7} style={styles.headerRight}>
-          <ThemedIcon
-            iconName="filter"
-            size={24}
-            tintColor="#3A3A3A"
-          />
-        </TouchableOpacity> */}
       </View>
 
       <ScrollView 
@@ -292,9 +285,11 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    lineHeight: 24,
     color: '#3A3A3A',
     flex: 1,
     textAlign: 'center',
+    marginTop: 16,
   },
   headerRight: {
     width: 24,

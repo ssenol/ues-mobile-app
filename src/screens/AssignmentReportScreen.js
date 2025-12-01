@@ -335,7 +335,7 @@ export default function AssignmentReportScreen({ navigation }) {
   const scoreColor = getScoreColor(mainScore);
   const scoreBackgroundColor = getScoreBackgroundColor(mainScore);
   const scoreIcon = getScoreIcon(mainScore);
-  
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" translucent backgroundColor="transparent" />

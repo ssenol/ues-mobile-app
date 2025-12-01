@@ -30,7 +30,7 @@ export default function HomeScreen({ navigation }) {
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
   const STATUSBAR_HEIGHT = insets.top;
   const BANNER_WIDTH = SCREEN_WIDTH - 32; // 16px padding sağ + sol
-  const BANNER_ASPECT_RATIO = 346 / 149; // senin banner görsel oranı (örneğin 346x149px)
+  const BANNER_ASPECT_RATIO = 343 / 128; // senin banner görsel oranı (örneğin 346x149px)
   const BANNER_HEIGHT = BANNER_WIDTH / BANNER_ASPECT_RATIO;
 
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -38,7 +38,7 @@ export default function HomeScreen({ navigation }) {
   const lastAssignmentsHeaderRef = useRef(null);
   const [lastAssignmentsHeaderY, setLastAssignmentsHeaderY] = useState(0);
 
-  // HomeScreen focus olduğunda StatusBar'ı sıfırla
+  // Sayfa focus olduğunda StatusBar'ı sıfırla
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle('light');
@@ -248,6 +248,13 @@ export default function HomeScreen({ navigation }) {
       icon: 'readAloud',
       onPress: () => navigation.navigate('Assignments', { filter: 'Read Aloud' }),
     },
+    {
+      id: 'senario',
+      title: 'Speech on Senario',
+      description: 'Read Well, Feel Confident.',
+      icon: 'readAloud',
+      onPress: () => navigation.navigate('Assignments', { filter: 'Read Aloud' }),
+    },
   ];
 
   const styles = StyleSheet.create({
@@ -296,26 +303,26 @@ export default function HomeScreen({ navigation }) {
     avatarContainer: {
       flexDirection: 'row',
       alignItems: 'top',
-      marginTop: 16,
+      marginTop: 24,
+      // backgroundColor: "red"
     },
     avatarButton: {
       width: 40,
       height: 40,
       borderRadius: 24,
-      // backgroundColor: '#fff',
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 12,
+      marginRight: 16,
     },
     username: {
       fontSize: 18,
-      lineHeight: 24,
-      color: '#fff'
+      lineHeight: 20,
+      color: '#fff',
     },
-    subtitle: {
+    campusname: {
       fontSize: 14,
-      lineHeight: 22,
-      color: '#909bff'
+      lineHeight: 20,
+      color: '#909BFF',
     },
     notification: {
       width: 32,
@@ -329,7 +336,9 @@ export default function HomeScreen({ navigation }) {
     // banner
     bannerContainer: {
       alignItems: 'center',
-      paddingHorizontal: 16,
+      // paddingHorizontal: 16,
+      // backgroundColor: "red",
+      marginTop: 16,
     },
     banner: {
       borderRadius: 12,
@@ -488,7 +497,7 @@ export default function HomeScreen({ navigation }) {
 
             <View style={{ flex: 1 }}>
               <ThemedText weight="bold" style={styles.username}>Hello, {user?.name}!</ThemedText>
-              <ThemedText style={styles.subtitle}>{user?.campusName}</ThemedText>
+              <ThemedText style={styles.campusname}>{user?.campusName}</ThemedText>
             </View>
 
             <TouchableOpacity

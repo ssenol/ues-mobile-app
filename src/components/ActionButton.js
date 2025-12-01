@@ -3,8 +3,7 @@ import {
   TouchableOpacity,
   View,
   StyleSheet,
-  ActivityIndicator,
-  Platform,
+  // ActivityIndicator,
 } from "react-native";
 import ThemedIcon from "./ThemedIcon";
 import {ThemedText} from "./ThemedText";
@@ -58,13 +57,12 @@ export default function ActionButton({
       return null;
     }
 
-    const resolvedSize = iconSize ?? (Platform.OS === "ios" ? 16 : 18);
     const tintColor = iconTintByVariant[variant];
 
     return (
       <ThemedIcon
         iconName={iconName}
-        size={resolvedSize}
+        size={iconSize}
         tintColor={tintColor}
         style={styles.icon}
       />
@@ -84,9 +82,8 @@ export default function ActionButton({
       disabled={loading}
     >
       <View style={styles.buttonContent}>
-        {loading ? (
-          <ActivityIndicator color={colors.white} />
-        ) : iconLeft ? (
+        {/*{loading ? ( <ActivityIndicator color={colors.white} />) : ""}*/}
+        {iconLeft ? (
           <>
             {renderIcon()}
             <ThemedText weight="bold" style={[styles.buttonText, textStyle[variant]]}>{title}</ThemedText>
@@ -104,8 +101,9 @@ export default function ActionButton({
 
 const styles = StyleSheet.create({
   button: {
-    padding: 12,
-    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 36,
+    borderRadius: 50,
     alignSelf: "center",
   },
   buttonContent: {
@@ -115,12 +113,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   buttonText: {
-    fontSize: 17,
+    fontSize: 16,
+    lineHeight: 22
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   icon: {
-    marginLeft: 6,
+    marginHorizontal: 4,
   },
 });

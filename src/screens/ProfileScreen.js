@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { StatusBar } from 'expo-status-bar';
-import React, { useState } from "react";
+import {StatusBar, setStatusBarStyle} from 'expo-status-bar';
+import React, {useCallback, useState} from "react";
 import {
   Alert,
   Animated,
@@ -28,6 +28,7 @@ import {
   setBiometricEnabled
 } from "../utils/helpers";
 import { handleLogout } from "../utils/logoutHelper";
+import {useFocusEffect} from "@react-navigation/native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -43,6 +44,14 @@ export default function ProfileScreen({ navigation }) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricType, setBiometricType] = useState("");
   const [clearLoading, setClearLoading] = useState(false);
+
+  // Ekran fokus olduğunda StatusBar'ı ayarla
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => {};
+    }, [])
+  );
 
   React.useEffect(() => {
     (async () => {
@@ -174,7 +183,6 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-
   // User yoksa loading göster
   if (!user) {
     return (
@@ -222,7 +230,7 @@ export default function ProfileScreen({ navigation }) {
       height: '100%',
     },
     header: {
-      paddingTop: STATUSBAR_HEIGHT,
+      paddingTop: STATUSBAR_HEIGHT + 16,
       paddingHorizontal: 16,
       paddingBottom: 16,
       zIndex: 2,

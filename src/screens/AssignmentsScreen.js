@@ -160,9 +160,9 @@ export default function AssignmentsScreen({ navigation, route }) {
     }
   }, [user]);
 
-  // Ekrana focus olduğunda filtreyi kontrol et ve sticky'yi sıfırla
+  // Ekrana focus olduğunda filtreyi kontrol et, sticky'yi sıfırla ve statusbar'ı ayarla
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       setStatusBarStyle('dark');
       
       // Route params varsa onu kullan, yoksa veya null ise 'All' yap
@@ -562,15 +562,18 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
+    backgroundColor: '#fff',
   },
   headerLeft: {
     width: 24,
   },
   headerTitle: {
     fontSize: 18,
+    lineHeight: 24,
     color: '#3A3A3A',
     flex: 1,
     textAlign: 'center',
+    marginTop: 16
   },
   headerRight: {
     width: 24,

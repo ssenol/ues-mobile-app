@@ -2,7 +2,7 @@ import React from 'react';
 import { SvgXml } from 'react-native-svg';
 import svgIcons from '../constants/svgIcons.json';
 
-const SvgIcon = ({ name, tintColor, size = 24, opacity = 1 }) => {
+const SvgIcon = ({ name, tintColor, size = 24, width, height, opacity = 1, style }) => {
   const svgContent = svgIcons[name];
   
   if (!svgContent) {
@@ -13,9 +13,10 @@ const SvgIcon = ({ name, tintColor, size = 24, opacity = 1 }) => {
   return (
     <SvgXml 
       xml={svgContent.replace(/currentColor/g, tintColor || '#969696')}
-      width={size}
-      height={size}
+      width={width || size}
+      height={height || size}
       opacity={opacity}
+      style={style}
     />
   );
 };

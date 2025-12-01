@@ -2,12 +2,12 @@ import React from 'react';
 import SvgIcon from '../components/SvgIcon';
 
 export const icons = {
+  myeduquiz: (props) => <SvgIcon name="myeduquiz" {...props} />,
   tabHome: (props) => <SvgIcon name="tabHome" {...props} />,
   tabAssignment: (props) => <SvgIcon name="tabAssignment" {...props} />,
   tabNotification: (props) => <SvgIcon name="tabNotification" {...props} />,
   tabProfile: (props) => <SvgIcon name="tabProfile" {...props} />,
   tabCompleted: (props) => <SvgIcon name="tabCompleted" {...props} />,
-
   user: (props) => <SvgIcon name="user" {...props} />,
   password: (props) => <SvgIcon name="password" {...props} />,
   faceId: (props) => <SvgIcon name="faceId" {...props} />,
@@ -45,6 +45,7 @@ export const icons = {
   stop: (props) => <SvgIcon name="stop" {...props} />,
   recorddone: (props) => <SvgIcon name="recorddone" {...props} />,
   close: (props) => <SvgIcon name="close" {...props} />,
+  hourglass: (props) => <SvgIcon name="hourglass" {...props} />,
 
 };
 

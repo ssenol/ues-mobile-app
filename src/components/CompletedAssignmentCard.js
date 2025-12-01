@@ -12,10 +12,16 @@ export default function CompletedAssignmentCard({ assignment, onPress }) {
     return (
       <View style={[styles.pendingCard, shadows.light]}>
         {/* Hourglass Icon */}
-        <Image 
-          source={require('../../assets/images/hourglass.png')}
+        {/*<Image */}
+        {/*  source={require('../../assets/images/hourglass.png')}*/}
+        {/*  style={styles.pendingIcon}*/}
+        {/*  resizeMode="contain"*/}
+        {/*/>*/}
+        <ThemedIcon
+          iconName="hourglass"
           style={styles.pendingIcon}
-          resizeMode="contain"
+          size={72}
+          tintColor="#3E4EF0"
         />
         
         {/* Title */}
@@ -198,8 +204,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pendingIcon: {
-    width: 96,
-    height: 96,
+    // width: 96,
+    // height: 96,
     marginBottom: 24,
   },
   pendingTitle: {
