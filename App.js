@@ -2,6 +2,7 @@ import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, useFonts } from 
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import AppContent from './src/AppContent';
@@ -49,7 +50,9 @@ export default function App() {
       <Provider store={store}>
         <PersistGate loading={<PersistGateLoading />} persistor={persistor}>
           <ThemeProvider>
-            <AppContent />
+            <SafeAreaProvider>
+              <AppContent />
+            </SafeAreaProvider>
           </ThemeProvider>
         </PersistGate>
       </Provider>
