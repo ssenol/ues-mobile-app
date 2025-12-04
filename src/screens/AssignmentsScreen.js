@@ -7,9 +7,9 @@ import { useSelector } from 'react-redux';
 import AssignmentCard from '../components/AssignmentCard';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { ThemedText } from '../components/ThemedText';
+import { useTheme } from '../theme/ThemeContext';
 import { fetchAssignedSpeechTasks } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
-import { useTheme } from '../theme/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

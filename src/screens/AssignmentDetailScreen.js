@@ -615,7 +615,6 @@ export default function AssignmentDetailScreen() {
     return 'Press record to start.';
   };
 
-
   if (!task) {
     return (
       <View style={styles.container}>
@@ -673,7 +672,7 @@ export default function AssignmentDetailScreen() {
       <View style={styles.infoBanner}>
         <ThemedIcon
           iconName="info"
-          size={20}
+          size={24}
           tintColor="#3E4EF0"
         />
         <ThemedText weight='semiBold' style={styles.infoBannerText}>
@@ -749,9 +748,17 @@ export default function AssignmentDetailScreen() {
         ]}
         pointerEvents={recordingState === 'paused' ? 'auto' : 'none'}
       >
-        <ThemedText weight="semibold" style={styles.notificationText}>
-          You can continue or end audio recording.
-        </ThemedText>
+        <View style={styles.recordingNotificationContent}>
+          <ThemedIcon
+            iconName="info"
+            size={24}
+            tintColor="#fff"
+            style={{ marginRight: 8 }}
+          />
+          <ThemedText weight="semibold" style={styles.notificationText}>
+            You can continue or end audio recording.
+          </ThemedText>
+        </View>
       </Animated.View>
 
       {/* Floating Record Button */}
@@ -1118,20 +1125,23 @@ const styles = StyleSheet.create({
     zIndex: 5,  // Record button'un altında (10'un altı)
     backgroundColor: '#3E4EF0',
     borderRadius: 50,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     shadowColor: '#3E4EF0',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
   },
+  recordingNotificationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   notificationText: {
     fontSize: 14,
     lineHeight: 20,
     color: '#fff',
-    textAlign: 'center',
+    textAlign: 'left',
   },
   floatingButtonContainer: {
     position: 'absolute',

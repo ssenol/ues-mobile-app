@@ -24,6 +24,7 @@ export const icons = {
   goalRed: (props) => <SvgIcon name="goalRed" {...props} />,
   readAloud: (props) => <SvgIcon name="readAloud" {...props} />,
   speechOnTopic: (props) => <SvgIcon name="speechOnTopic" {...props} />,
+  speechOnScenario: (props) => <SvgIcon name="speechOnScenario" {...props} />,
   sentences: (props) => <SvgIcon name="sentences" {...props} />,
   words: (props) => <SvgIcon name="words" {...props} />,
   solved: (props) => <SvgIcon name="solved" {...props} />,

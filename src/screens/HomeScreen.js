@@ -248,13 +248,13 @@ export default function HomeScreen({ navigation }) {
       icon: 'readAloud',
       onPress: () => navigation.navigate('Assignments', { filter: 'Read Aloud' }),
     },
-    {
-      id: 'senario',
-      title: 'Speech on Senario',
-      description: 'Read Well, Feel Confident.',
-      icon: 'readAloud',
-      onPress: () => navigation.navigate('Assignments', { filter: 'Read Aloud' }),
-    },
+    // {
+    //   id: 'scenario',
+    //   title: 'Speech on Scenario',
+    //   description: 'Speak According to The Given Scenario.',
+    //   icon: 'speechOnScenario',
+    //   onPress: () => navigation.navigate('Assignments', { filter: 'Read Aloud' }),
+    // },
   ];
 
   const styles = StyleSheet.create({
