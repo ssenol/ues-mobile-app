@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -17,13 +17,15 @@ import { ThemedText } from './ThemedText';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function NotificationModal({ visible = false, onClose = () => {}, mode = 'modal' }) {
-  const { colors } = useTheme();
+  const { colors, shadows } = useTheme();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef(null);
   const isClosing = useRef(false);
   const isScreenMode = mode === 'screen';
+  const [isSectionSticky, setIsSectionSticky] = useState(false);
+  const sectionHeaderY = useRef(0);
 
   // PanResponder for swipe down to close
   const panResponder = useRef(
@@ -222,10 +224,8 @@ export default function NotificationModal({ visible = false, onClose = () => {},
     bannerIconContainer: {
       width: 32,
       height: 32,
-      // backgroundColor: '#3E4EF0',
       alignItems: 'center',
       justifyContent: 'center',
-      // marginRight: 12,
       position: 'relative',
     },
     bannerBadge: {
@@ -263,16 +263,24 @@ export default function NotificationModal({ visible = false, onClose = () => {},
     bannerArrow: {
       // marginLeft: 8,
     },
+    sectionHeaderSticky: {
+      backgroundColor: '#fff',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginHorizontal: -16,
+      zIndex: 1,
+    },
     sectionTitle: {
       fontSize: 16,
       lineHeight: 24,
       color: '#3A3A3A',
-      marginBottom: 24,
+      marginBottom: 0,
     },
     notificationItem: {
+      marginTop: 16,
       flexDirection: 'row',
       paddingBottom: 16,
-      marginBottom: 16,
+      // marginBottom: 16,
       borderBottomWidth: 1,
       borderBottomColor: '#F3F4FF',
     },
@@ -318,6 +326,19 @@ export default function NotificationModal({ visible = false, onClose = () => {},
     },
   });
 
+  const handleScroll = ({ nativeEvent }) => {
+    if (!sectionHeaderY.current) {
+      return;
+    }
+
+    const offsetY = nativeEvent.contentOffset.y;
+    const shouldStick = offsetY >= sectionHeaderY.current;
+
+    if (shouldStick !== isSectionSticky) {
+      setIsSectionSticky(shouldStick);
+    }
+  };
+
   const renderNotificationList = () => (
     <ScrollView
       style={styles.scrollableContent}
@@ -326,6 +347,8 @@ export default function NotificationModal({ visible = false, onClose = () => {},
       bounces={true}
       scrollEventThrottle={16}
       nestedScrollEnabled={true}
+      stickyHeaderIndices={[1]}
+      onScroll={handleScroll}
     >
       {/* Banner Card */}
       <View style={styles.bannerCard}>
@@ -358,9 +381,16 @@ export default function NotificationModal({ visible = false, onClose = () => {},
       </View>
 
       {/* Last Week Section */}
-      <ThemedText weight="semiBold" style={styles.sectionTitle}>
-        Last Week
-      </ThemedText>
+      <View
+        style={[styles.sectionHeaderSticky, isSectionSticky && shadows.light]}
+        onLayout={(event) => {
+          sectionHeaderY.current = event.nativeEvent.layout.y;
+        }}
+      >
+        <ThemedText weight="semiBold" style={styles.sectionTitle}>
+          Last Week
+        </ThemedText>
+      </View>
 
       {notifications.lastWeek.map((item, index) => (
         <View 
