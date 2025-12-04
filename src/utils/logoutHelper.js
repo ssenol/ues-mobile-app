@@ -8,6 +8,16 @@ import { logout as logoutAction } from "../store/slices/authSlice";
  * @param {function} options.dispatch - Redux dispatch fonksiyonu
  * @param {object} [options.navigation] - Navigation nesnesi (isteğe bağlı)
  */
+export async function performLogout({ dispatch }) {
+  try {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  } catch (error) {
+    console.log("Logout haptics error:", error);
+  } finally {
+    dispatch(logoutAction());
+  }
+}
+
 export async function handleLogout({ dispatch, navigation }) {
   Alert.alert("Logout", "Are you sure you want to log out?", [
     {
@@ -18,15 +28,7 @@ export async function handleLogout({ dispatch, navigation }) {
       text: "Logout",
       style: "destructive",
       onPress: async () => {
-        try {
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          dispatch(logoutAction());
-        } catch (error) {
-          console.log("Logout error:", error);
-          dispatch(logoutAction());
-        } finally {
-          // Navigasyon ile yönlendirme kaldırıldı. Çünkü AppNavigator zaten isAuthenticated'a göre Login ekranını gösteriyor.
-        }
+        await performLogout({ dispatch });
       },
     },
   ]);

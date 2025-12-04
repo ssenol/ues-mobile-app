@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from "react-redux";
 import ThemedIcon from "../components/ThemedIcon";
@@ -27,7 +28,7 @@ import {
   requestMicrophonePermission,
   setBiometricEnabled
 } from "../utils/helpers";
-import { handleLogout } from "../utils/logoutHelper";
+import { performLogout } from "../utils/logoutHelper";
 import {useFocusEffect} from "@react-navigation/native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -38,12 +39,14 @@ export default function ProfileScreen({ navigation }) {
   const { colors, shadows } = useTheme();
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
-  
+
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
   const [microphoneEnabled, setMicrophoneEnabledState] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricType, setBiometricType] = useState("");
   const [clearLoading, setClearLoading] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Ekran fokus olduğunda StatusBar'ı ayarla
   useFocusEffect(
@@ -73,11 +76,27 @@ export default function ProfileScreen({ navigation }) {
     };
   }, []);
 
-  const handleLogoutPress = async () => {
-    await handleLogout({
-      dispatch,
-      navigation,
-    });
+  const handleLogoutPress = () => {
+    setLogoutModalVisible(true);
+  };
+
+  const handleLogoutCancel = () => {
+    setLogoutModalVisible(false);
+  };
+
+  const handleLogoutConfirm = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+    setLogoutModalVisible(false);
+
+    try {
+      await performLogout({ dispatch });
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const handleBiometricToggle = async (value) => {
@@ -197,8 +216,8 @@ export default function ProfileScreen({ navigation }) {
     if (!dateString) return 'Recently';
     const date = new Date(dateString);
     const day = date.getDate();
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 
-                    'July', 'August', 'September', 'October', 'November', 'December'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
     const month = months[date.getMonth()];
     const year = date.getFullYear();
     return `${day} ${month} ${year}`;
@@ -256,15 +275,15 @@ export default function ProfileScreen({ navigation }) {
       alignItems: 'center',
       marginBottom: 16,
     },
-      avatarContainer: {
-        width: 98,
-        height: 98,
-        borderRadius: 50,
-        // backgroundColor: '#F3F4FF',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 16,
-      },
+    avatarContainer: {
+      width: 98,
+      height: 98,
+      borderRadius: 50,
+      // backgroundColor: '#F3F4FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
     // editIconContainer: {
     //   position: 'absolute',
     //   right: 0,
@@ -351,12 +370,6 @@ export default function ProfileScreen({ navigation }) {
       flex: 1,
     },
     settingIconContainer: {
-      // width: 40,
-      // height: 40,
-      //borderRadius: 8,
-      // backgroundColor: '#F3F4FF',
-      // alignItems: 'center',
-      // justifyContent: 'center',
       marginRight: 12,
     },
     settingText: {
@@ -373,6 +386,68 @@ export default function ProfileScreen({ navigation }) {
       fontSize: 14,
       lineHeight: 24,
       color: '#909BFF',
+    },
+    logoutModal: {
+      margin: 0,
+      justifyContent: 'flex-end',
+      alignItems: 'stretch',
+    },
+    logoutModalContent: {
+      backgroundColor: '#fff',
+      borderRadius: 12,
+      padding: 24,
+      alignItems: 'center',
+      marginHorizontal: 16,
+      marginBottom: 36,
+      // borderTopLeftRadius: 24,
+      // borderTopRightRadius: 24,
+      // paddingBottom: 32,
+    },
+    logoutIconContainer: {
+      backgroundColor: '#F3F4FF',
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 12,
+      marginBottom: 16,
+    },
+    logoutTitle: {
+      fontSize: 18,
+      lineHeight: 24,
+      color: '#3A3A3A',
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    logoutDescription: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: '#949494',
+      textAlign: 'center',
+      marginBottom: 32,
+    },
+    logoutConfirmButton: {
+      backgroundColor: '#3E4EF0',
+      borderRadius: 32,
+      paddingVertical: 12,
+      paddingHorizontal: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      marginBottom: 24,
+    },
+    logoutConfirmText: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: '#fff',
+    },
+    logoutCancelButton: {
+      // alignItems: 'center',
+      // justifyContent: 'center',
+    },
+    logoutCancelText: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: '#3E4EF0',
     },
   });
 
@@ -558,6 +633,50 @@ export default function ProfileScreen({ navigation }) {
           </ThemedText>
         </TouchableOpacity>
       </Animated.ScrollView>
+
+      <Modal
+        isVisible={logoutModalVisible}
+        onBackdropPress={handleLogoutCancel}
+        onBackButtonPress={handleLogoutCancel}
+        backdropColor="#3E4EF0"
+        backdropOpacity={0.75}
+        useNativeDriverForBackdrop
+        useNativeDriver
+        hideModalContentWhileAnimating
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        style={styles.logoutModal}
+      >
+        <View style={styles.logoutModalContent}>
+          <View style={styles.logoutIconContainer}>
+            <ThemedIcon iconName="logout" size={56} tintColor="#3E4EF0" />
+          </View>
+          <ThemedText weight="bold" style={styles.logoutTitle}>
+            You're about to log out
+          </ThemedText>
+          <ThemedText style={styles.logoutDescription}>
+            Your current session will end {'\n'}if you continue.
+          </ThemedText>
+
+          <TouchableOpacity
+            style={styles.logoutConfirmButton}
+            activeOpacity={0.85}
+            onPress={handleLogoutConfirm}
+          >
+            <ThemedText weight="bold" style={styles.logoutConfirmText}>
+              Yes, I want
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.logoutCancelButton}
+            activeOpacity={0.7}
+            onPress={handleLogoutCancel}
+          >
+            <ThemedText style={styles.logoutCancelText}>No, Thanks</ThemedText>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }

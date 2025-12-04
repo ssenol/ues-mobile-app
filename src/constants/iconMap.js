@@ -9,6 +9,7 @@ export const icons = {
   tabNotification: (props) => <SvgIcon name="tabNotification" {...props} />,
   tabProfile: (props) => <SvgIcon name="tabProfile" {...props} />,
   tabCompleted: (props) => <SvgIcon name="tabCompleted" {...props} />,
+  logout: (props) => <SvgIcon name="logout" {...props} />,
   user: (props) => <SvgIcon name="user" {...props} />,
   password: (props) => <SvgIcon name="password" {...props} />,
   faceId: (props) => <SvgIcon name="faceId" {...props} />,
@@ -48,7 +49,7 @@ export const icons = {
   recorddone: (props) => <SvgIcon name="recorddone" {...props} />,
   close: (props) => <SvgIcon name="close" {...props} />,
   hourglass: (props) => <SvgIcon name="hourglass" {...props} />,
-
+  noassignment: (props) => <SvgIcon name="noassignment" {...props} />,
 };
 
 export const getIconSource = (name) => icons[name] ?? null;
