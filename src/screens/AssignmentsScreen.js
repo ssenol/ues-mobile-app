@@ -47,7 +47,8 @@ export default function AssignmentsScreen({ navigation, route }) {
   const transformTaskToAssignment = (task) => {
     const isSpeechOnTopic = task.speechTaskType === 'speech_on_topic';
     const isReadAloud = task.speechTaskType === 'read_aloud';
-    
+    const isSpeechOnScenario = task.speechTaskType === 'speech_on_scenario';
+
     let description = '';
     let metadata = [];
     
@@ -84,14 +85,30 @@ export default function AssignmentsScreen({ navigation, route }) {
     // startDate'i al (sıralama için)
     const startDate = task.startDate || task.speechAssignedDate || task.dueDate || '';
 
+    const getTaskType = () => {
+      if (isSpeechOnTopic) return 'speechOnTopic';
+      if (isReadAloud) return 'readAloud';
+      if (isSpeechOnScenario) return 'speechOnScenario';
+    };
+
+    const getTaskTitle = () => {
+      if (isSpeechOnTopic) return 'Speech On Topic';
+      if (isReadAloud) return 'Read Aloud';
+      if (isSpeechOnScenario) return 'Speech On Scenario';
+    };
+
+    const getImage = () => {
+      if (isSpeechOnTopic) return require('../../assets/images/speech-task.png');
+      if (isReadAloud) return require('../../assets/images/read-aloud.png');
+      if (isSpeechOnScenario) return require('../../assets/images/speech-task.png');
+    };
+
     return {
       id: task.assignedTaskId,
-      type: isSpeechOnTopic ? 'speechOnTopic' : 'readAloud',
-      title: isSpeechOnTopic ? 'Speech On Topic' : 'Read Aloud',
+      type: getTaskType(),
+      title: getTaskTitle(),
       description: description,
-      image: isSpeechOnTopic 
-        ? require('../../assets/images/speech-task.png')
-        : require('../../assets/images/read-aloud.png'),
+      image: getImage(),
       metadata: metadata,
       date: formatDate(startDate),
       startDate: startDate, // Sıralama için raw date
@@ -133,7 +150,7 @@ export default function AssignmentsScreen({ navigation, route }) {
         institutionId,
         institutionSubSchoolId,
         className,
-        activityType: ['speech_on_topic', 'read_aloud'],
+        activityType: ['speech_on_topic', 'read_aloud', 'speech_on_scenario'],
         perPageCount: 100,
         paginationIndex: 1,
       };
@@ -243,11 +260,13 @@ export default function AssignmentsScreen({ navigation, route }) {
   // Filter options with counts
   const speechOnTopicCount = allQuizzes.filter(q => q.type === 'speechOnTopic').length;
   const readAloudCount = allQuizzes.filter(q => q.type === 'readAloud').length;
-  
+  const speechOnScenario = allQuizzes.filter(q => q.type === 'speechOnScenario').length;
+
   const filters = [
     { name: 'All', count: null },
     { name: 'Speech On Topic', count: speechOnTopicCount },
     { name: 'Read Aloud', count: readAloudCount },
+    { name: 'Speech On Scenario', count: speechOnScenario },
   ];
 
   // Filter assignments based on selected filter
@@ -256,6 +275,7 @@ export default function AssignmentsScreen({ navigation, route }) {
     : allQuizzes.filter(assignment => {
       if (selectedFilter === 'Speech On Topic') return assignment.type === 'speechOnTopic';
       if (selectedFilter === 'Read Aloud') return assignment.type === 'readAloud';
+      if (selectedFilter === 'Speech On Scenario') return assignment.type === 'speechOnScenario';
       return false;
     });
 

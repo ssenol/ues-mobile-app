@@ -83,7 +83,8 @@ export default function HomeScreen({ navigation }) {
   const transformTaskToAssignment = (task) => {
     const isSpeechOnTopic = task.speechTaskType === 'speech_on_topic';
     const isReadAloud = task.speechTaskType === 'read_aloud';
-    
+    const isSpeechOnScenario = task.speechTaskType === 'speech_on_scenario';
+
     let description = '';
     let metadata = [];
     
@@ -120,14 +121,30 @@ export default function HomeScreen({ navigation }) {
     // startDate'i al (sıralama için)
     const startDate = task.startDate || task.speechAssignedDate || task.dueDate || '';
 
+    const getTaskType = () => {
+      if (isSpeechOnTopic) return 'speechOnTopic';
+      if (isReadAloud) return 'readAloud';
+      if (isSpeechOnScenario) return 'speechOnScenario';
+    };
+
+    const getTaskTitle = () => {
+      if (isSpeechOnTopic) return 'Speech On Topic';
+      if (isReadAloud) return 'Read Aloud';
+      if (isSpeechOnScenario) return 'Speech On Scenario';
+    };
+
+    const getImage = () => {
+      if (isSpeechOnTopic) return require('../../assets/images/speech-task.png');
+      if (isReadAloud) return require('../../assets/images/read-aloud.png');
+      if (isSpeechOnScenario) return require('../../assets/images/speech-task.png');
+    };
+
     return {
       id: task.assignedTaskId || task.speechTaskId,
-      type: isSpeechOnTopic ? 'speechOnTopic' : 'readAloud',
-      title: isSpeechOnTopic ? 'Speech On Topic' : 'Read Aloud',
+      type: getTaskType(),
+      title: getTaskTitle(),
       description: description,
-      image: isSpeechOnTopic 
-        ? require('../../assets/images/speech-task.png')
-        : require('../../assets/images/read-aloud.png'),
+      image: getImage(),
       metadata: metadata,
       date: formatDate(startDate),
       startDate: startDate, // Sıralama için raw date
@@ -170,7 +187,7 @@ export default function HomeScreen({ navigation }) {
         institutionId,
         institutionSubSchoolId,
         className,
-        activityType: ['speech_on_topic', 'read_aloud'],
+        activityType: ['speech_on_topic', 'read_aloud', 'speech_on_scenario'],
         perPageCount: 100,
         paginationIndex: 1,
       };
@@ -248,13 +265,13 @@ export default function HomeScreen({ navigation }) {
       icon: 'readAloud',
       onPress: () => navigation.navigate('Assignments', { filter: 'Read Aloud' }),
     },
-    // {
-    //   id: 'scenario',
-    //   title: 'Speech on Scenario',
-    //   description: 'Speak According to The Given Scenario.',
-    //   icon: 'speechOnScenario',
-    //   onPress: () => navigation.navigate('Assignments', { filter: 'Read Aloud' }),
-    // },
+    {
+      id: 'scenario',
+      title: 'Speech on Scenario',
+      description: 'Speak According to The Given Scenario.',
+      icon: 'speechOnScenario',
+      onPress: () => navigation.navigate('Assignments', { filter: 'Read Aloud' }),
+    },
   ];
 
   const styles = StyleSheet.create({
