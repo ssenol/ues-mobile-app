@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, ImageBackground, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, ImageBackground, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import AssignmentCard from '../components/AssignmentCard';
@@ -29,6 +29,7 @@ export default function AssignmentsScreen({ navigation, route }) {
   const [isFilterSticky, setIsFilterSticky] = useState(false);
   const [allQuizzes, setAllQuizzes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const filterTabsRef = useRef(null);
   const headerRef = useRef(null);
   const scrollViewRef = useRef(null);
@@ -43,11 +44,13 @@ export default function AssignmentsScreen({ navigation, route }) {
   const stickyFilterScrollRef = useRef(null);
 
   // API'den assignment'ları çek
-  const fetchAssignments = React.useCallback(async () => {
+  const fetchAssignments = React.useCallback(async (isFromRefresh = false) => {
     if (!user) return;
     
     try {
-      setLoading(true);
+      if (!isFromRefresh) {
+        setLoading(true);
+      }
 
       const { params, missingFields } = buildAssignedSpeechTaskParams(user);
 
@@ -79,9 +82,24 @@ export default function AssignmentsScreen({ navigation, route }) {
       console.error('Error status:', error.response?.status);
       setAllQuizzes([]);
     } finally {
-      setLoading(false);
+      if (!isFromRefresh) {
+        setLoading(false);
+      }
     }
   }, [user]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    if (scrollViewRef.current) {
+      const scrollView = scrollViewRef.current.getNode ? scrollViewRef.current.getNode() : scrollViewRef.current;
+      scrollView.scrollTo({ y: 0, animated: false });
+    }
+    try {
+      await fetchAssignments(true);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchAssignments]);
 
   // Ekrana focus olduğunda filtreyi kontrol et, sticky'yi sıfırla ve statusbar'ı ayarla
   useFocusEffect(
@@ -332,6 +350,14 @@ export default function AssignmentsScreen({ navigation, route }) {
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         {/* Summary Cards */}
         <View style={styles.summaryCards}>

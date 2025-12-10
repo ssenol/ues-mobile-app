@@ -6,6 +6,7 @@ import {
   Dimensions,
   Image,
   ImageBackground,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -91,16 +92,19 @@ export default function HomeScreen({ navigation }) {
   const [lastAssignments, setLastAssignments] = useState([]);
   const [allQuizzes, setAllQuizzes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
   const [totalAssignments, setTotalAssignments] = useState(0);
   const [completedAssignments, setCompletedAssignments] = useState(0);
 
   // API'den assignment'ları çek
-  const fetchQuizzes = useCallback(async () => {
+  const fetchQuizzes = useCallback(async (isFromRefresh = false) => {
     if (!user) return;
     
     try {
-      setLoading(true);
+      if (!isFromRefresh) {
+        setLoading(true);
+      }
       
       const { params, missingFields } = buildAssignedSpeechTaskParams(user);
 
@@ -157,9 +161,23 @@ export default function HomeScreen({ navigation }) {
       setTotalAssignments(0);
       setCompletedAssignments(0);
     } finally {
-      setLoading(false);
+      if (!isFromRefresh) {
+        setLoading(false);
+      }
     }
   }, [user]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    scrollToTop();
+    resetActivityScroll();
+    setProgressKey(prev => prev + 1);
+    try {
+      await fetchQuizzes(true);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchQuizzes, scrollToTop, resetActivityScroll]);
 
   // Sayfa focus olduğunda progress animasyonunu tetikle ve assignment'ları çek
   useFocusEffect(
@@ -218,10 +236,12 @@ export default function HomeScreen({ navigation }) {
       flex: 1,
       zIndex: 2,
       marginTop: STATUSBAR_HEIGHT,
+      backgroundColor: colors.primary,
     },
     scrollContent: {
       paddingBottom: 100,
       flexGrow: 1,
+      backgroundColor: '#fff',
     },
 
     // Mavi background
@@ -411,6 +431,15 @@ export default function HomeScreen({ navigation }) {
         bounces={true}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#fff"
+            colors={["#fff"]}
+            progressBackgroundColor={colors.primary}
+          />
+        }
       >
           {/* --- Mavi arka plan --- */}
           <View style={styles.blueBackground}>
