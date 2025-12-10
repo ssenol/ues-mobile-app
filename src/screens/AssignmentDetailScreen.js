@@ -1023,6 +1023,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
+    marginTop: 16
   },
   headerBackButton: {
     width: 24,

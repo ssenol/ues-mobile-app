@@ -1,5 +1,4 @@
-import { API_ENDPOINTS } from "../config/api";
-import api from "./api";
+import api, { API_ENDPOINTS } from "../config/api";
 
 class AuthService {
   async login(username, password) {
@@ -11,8 +10,7 @@ class AuthService {
 
       if (response.data?.status === "success" && response.data?.data) {
         // refresh_token, user object'i içerisinde yer alıyor. Ayrıca tanımlamaya gerek yok.
-        const token = response.data.data.token;
-        const user = response.data.data.user;
+        const { token, user, refreshToken } = response.data.data;
         
         if (!token) {
           console.error("Giriş yanıtında token bulunamadı:", JSON.stringify(response.data, null, 2));
@@ -20,8 +18,9 @@ class AuthService {
         }
         
         return {
-          token: token,
-          user: user,
+          token,
+          user,
+          refreshToken,
         };
       } else {
         throw new Error("Geçersiz giriş yanıt formatı");

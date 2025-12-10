@@ -83,6 +83,7 @@ export default function LoginScreen({ navigation }) {
       const credentials = {
         token: response.token,
         user: response.user,
+        refreshToken: response.refreshToken,
         tokenAcquiredAt: Date.now(),
       };
       dispatch(setCredentials(credentials));
@@ -142,6 +143,7 @@ export default function LoginScreen({ navigation }) {
       const credentials = {
         token: response.token,
         user: response.user,
+        refreshToken: response.refreshToken,
         tokenAcquiredAt: Date.now(),
       };
       setTimeout(() => {

@@ -15,13 +15,9 @@ const authSlice = createSlice({
     setCredentials: (state, action) => {
       state.accessToken = action.payload.token;
       state.currentUser = action.payload.user;
-      state.refreshToken = action.payload.user?.refresh_token;
+      state.refreshToken = action.payload.refreshToken;
       state.isAuthenticated = !!action.payload.token;
       state.tokenAcquiredAt = action.payload.tokenAcquiredAt || Date.now();
-    },
-    updateToken: (state, action) => {
-      state.accessToken = action.payload.token;
-      state.tokenAcquiredAt = Date.now();
     },
     logout: (state) => {
       state.accessToken = null;
@@ -33,7 +29,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, updateToken } = authSlice.actions;
+export const { setCredentials, logout } = authSlice.actions;
 
 // Selectors
 export const selectCurrentUser = (state) => state.auth.currentUser;
