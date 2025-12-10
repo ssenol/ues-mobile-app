@@ -10,6 +10,11 @@ import { ThemedText } from '../components/ThemedText';
 import { useTheme } from '../theme/ThemeContext';
 import { fetchAssignedSpeechTasks } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
+import {
+  buildAssignedSpeechTaskParams,
+  parseAssignedTasksResponse,
+  transformTaskToAssignment,
+} from '../utils/assignmentTransform';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -37,132 +42,33 @@ export default function AssignmentsScreen({ navigation, route }) {
   const normalFilterScrollRef = useRef(null);
   const stickyFilterScrollRef = useRef(null);
 
-  // HTML'den metni temizle
-  const stripHtml = (html) => {
-    if (!html) return '';
-    return html.replace(/<[^>]*>/g, '').trim();
-  };
-
-  // API response'unu AssignmentCard formatına dönüştür
-  const transformTaskToAssignment = (task) => {
-    const isSpeechOnTopic = task.speechTaskType === 'speech_on_topic';
-    const isReadAloud = task.speechTaskType === 'read_aloud';
-    const isSpeechOnScenario = task.speechTaskType === 'speech_on_scenario';
-
-    let description = '';
-    let metadata = [];
-    
-    if (isSpeechOnTopic && task.task?.data?.topic) {
-      description = task.task.data.topic;
-      // Metadata için task.data'dan bilgileri al
-      if (task.task.data.minSentencesCount) {
-        metadata.push({ icon: 'sentences', label: `${task.task.data.minSentencesCount} Sentences` });
-      }
-      if (task.task.data.minWordCount) {
-        metadata.push({ icon: 'words', label: `${task.task.data.minWordCount} Words` });
-      }
-    } else if (isReadAloud && task.task?.data?.readingText) {
-      description = stripHtml(task.task.data.readingText);
-      // Read Aloud için metadata
-      if (task.task.setting?.cefrLevel) {
-        metadata.push({ icon: 'cefr', label: task.task.setting.cefrLevel });
-      }
-      if (task.task.data?.aiReadingMetaData?.subject) {
-        metadata.push({ icon: 'topic', label: task.task.data.aiReadingMetaData.subject });
-      }
-    }
-
-    // Tarih formatla
-    const formatDate = (dateString) => {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}.${month}.${year}`;
-    };
-
-    // startDate'i al (sıralama için)
-    const startDate = task.startDate || task.speechAssignedDate || task.dueDate || '';
-
-    const getTaskType = () => {
-      if (isSpeechOnTopic) return 'speechOnTopic';
-      if (isReadAloud) return 'readAloud';
-      if (isSpeechOnScenario) return 'speechOnScenario';
-    };
-
-    const getTaskTitle = () => {
-      if (isSpeechOnTopic) return 'Speech On Topic';
-      if (isReadAloud) return 'Read Aloud';
-      if (isSpeechOnScenario) return 'Speech On Scenario';
-    };
-
-    const getImage = () => {
-      if (isSpeechOnTopic) return require('../../assets/images/speech-task.png');
-      if (isReadAloud) return require('../../assets/images/read-aloud.png');
-      if (isSpeechOnScenario) return require('../../assets/images/speech-task.png');
-    };
-
-    return {
-      id: task.assignedTaskId,
-      type: getTaskType(),
-      title: getTaskTitle(),
-      description: description,
-      image: getImage(),
-      metadata: metadata,
-      date: formatDate(startDate),
-      startDate: startDate, // Sıralama için raw date
-      isSolved: task.prevSolvedTask?.totalSolvedTaskCount > 0,
-      assignedTaskId: task.assignedTaskId,
-      speechTaskId: task.speechTaskId,
-      originalTask: task, // Orijinal task objesini sakla
-    };
-  };
-
   // API'den assignment'ları çek
   const fetchAssignments = React.useCallback(async () => {
     if (!user) return;
     
     try {
       setLoading(true);
-      
-      // Parametreleri güvenli şekilde al
-      const userId = user?.userId;
-      const institutionId = user?.schoolId;
-      const institutionSubSchoolId = user?.campusId;
-      const className = user?.classInfo?.[0];
 
-      // Gerekli parametrelerin varlığını kontrol et
-      if (!userId || !institutionId || !institutionSubSchoolId) {
+      const { params, missingFields } = buildAssignedSpeechTaskParams(user);
+
+      if (!params) {
         console.error('AssignmentsScreen: Missing required user parameters', {
-          userId,
-          institutionId,
-          institutionSubSchoolId,
-          className,
+          missingFields,
+          userId: user?.userId,
+          institutionId: user?.schoolId,
+          institutionSubSchoolId: user?.campusId,
+          className: user?.classInfo?.[0],
         });
         setAllQuizzes([]);
         setLoading(false);
         return;
       }
-      
-      const params = {
-        userId,
-        institutionId,
-        institutionSubSchoolId,
-        className,
-        activityType: ['speech_on_topic', 'read_aloud', 'speech_on_scenario'],
-        perPageCount: 100,
-        paginationIndex: 1,
-      };
 
       const response = await fetchAssignedSpeechTasks(params);
-      
-      // API response yapısını kontrol et (success veya status_code)
-      const isSuccess = response?.success === true || response?.status_code === 200;
-      const tasks = response?.data?.assigned_tasks || response?.assigned_tasks || [];
-      
-      if (isSuccess && Array.isArray(tasks) && tasks.length > 0) {
-        const transformedAssignments = tasks.map(transformTaskToAssignment);
+      const { success, tasks } = parseAssignedTasksResponse(response);
+
+      if (success && Array.isArray(tasks) && tasks.length > 0) {
+        const transformedAssignments = tasks.map(transformTaskToAssignment).filter(Boolean);
         setAllQuizzes(transformedAssignments);
       } else {
         setAllQuizzes([]);
