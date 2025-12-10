@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {StatusBar, setStatusBarStyle} from 'expo-status-bar';
-import React, {useCallback, useState} from "react";
+import React, {useCallback, useRef, useState} from "react";
 import {
   Alert,
   Animated,
@@ -39,6 +39,7 @@ export default function ProfileScreen({ navigation }) {
   const { colors, shadows } = useTheme();
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
+  const scrollViewRef = useRef(null);
 
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
   const [microphoneEnabled, setMicrophoneEnabledState] = useState(false);
@@ -49,11 +50,19 @@ export default function ProfileScreen({ navigation }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Ekran fokus olduğunda StatusBar'ı ayarla
+  const scrollToTop = useCallback(() => {
+    if (!scrollViewRef.current) return;
+
+    const scrollView = scrollViewRef.current.getNode ? scrollViewRef.current.getNode() : scrollViewRef.current;
+    scrollView.scrollTo({ y: 0, animated: false });
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle('light');
+      scrollToTop();
       return () => {};
-    }, [])
+    }, [scrollToTop])
   );
 
   React.useEffect(() => {
@@ -472,6 +481,7 @@ export default function ProfileScreen({ navigation }) {
       </View>
 
       <Animated.ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

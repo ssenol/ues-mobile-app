@@ -16,7 +16,7 @@ import { ThemedText } from './ThemedText';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export default function NotificationModal({ visible = false, onClose = () => {}, mode = 'modal' }) {
+export default function NotificationModal({ visible = false, onClose = () => {}, mode = 'modal', resetScrollSignal = 0 }) {
   const { colors, shadows } = useTheme();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(0)).current;
@@ -339,8 +339,16 @@ export default function NotificationModal({ visible = false, onClose = () => {},
     }
   };
 
+  React.useEffect(() => {
+    if (mode !== 'screen') return;
+    if (!scrollViewRef.current) return;
+
+    scrollViewRef.current.scrollTo({ y: 0, animated: false });
+  }, [mode, resetScrollSignal]);
+
   const renderNotificationList = () => (
     <ScrollView
+      ref={scrollViewRef}
       style={styles.scrollableContent}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}

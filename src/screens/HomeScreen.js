@@ -38,17 +38,34 @@ export default function HomeScreen({ navigation }) {
   const BANNER_ASPECT_RATIO = 343 / 128; // senin banner görsel oranı (örneğin 346x149px)
   const BANNER_HEIGHT = BANNER_WIDTH / BANNER_ASPECT_RATIO;
 
+  const scrollViewRef = useRef(null);
+  const activityScrollRef = useRef(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [isSticky, setIsSticky] = useState(false);
   const lastAssignmentsHeaderRef = useRef(null);
   const [lastAssignmentsHeaderY, setLastAssignmentsHeaderY] = useState(0);
 
-  // Sayfa focus olduğunda StatusBar'ı sıfırla
+  const scrollToTop = useCallback(() => {
+    if (!scrollViewRef.current) return;
+
+    const scrollView = scrollViewRef.current.getNode ? scrollViewRef.current.getNode() : scrollViewRef.current;
+    scrollView.scrollTo({ y: 0, animated: false });
+  }, []);
+
+  const resetActivityScroll = useCallback(() => {
+    if (!activityScrollRef.current) return;
+
+    activityScrollRef.current.scrollTo({ x: 0, animated: false });
+  }, []);
+
+  // Sayfa focus olduğunda StatusBar'ı sıfırla ve başa dön
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle('light');
+      scrollToTop();
+      resetActivityScroll();
       return () => {};
-    }, [])
+    }, [scrollToTop, resetActivityScroll])
   );
 
   const handleScroll = Animated.event(
@@ -147,9 +164,11 @@ export default function HomeScreen({ navigation }) {
   // Sayfa focus olduğunda progress animasyonunu tetikle ve assignment'ları çek
   useFocusEffect(
     useCallback(() => {
+      scrollToTop();
+      resetActivityScroll();
       setProgressKey(prev => prev + 1);
       fetchQuizzes();
-    }, [fetchQuizzes])
+    }, [fetchQuizzes, scrollToTop, resetActivityScroll])
   );
 
   // Kart verilerini tanımlayalım
@@ -384,6 +403,7 @@ export default function HomeScreen({ navigation }) {
 
       {/* --- Scrollable içerik --- */}
       <Animated.ScrollView
+        ref={scrollViewRef}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -458,6 +478,7 @@ export default function HomeScreen({ navigation }) {
           {/* --- Activity Cards --- */}
           <View style={styles.activityCardsContainer}>
             <ScrollView
+              ref={activityScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.activityCardsScrollView}

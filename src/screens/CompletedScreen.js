@@ -17,6 +17,7 @@ export default function CompletedScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
   const user = useSelector((state) => selectCurrentUser(state));
+  const scrollViewRef = useRef(null);
   const [completedTasks, setCompletedTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -185,12 +186,19 @@ export default function CompletedScreen({ navigation }) {
     };
   }, [completedTasks]);
 
+  const scrollToTop = useCallback(() => {
+    if (!scrollViewRef.current) return;
+
+    scrollViewRef.current.scrollTo({ y: 0, animated: false });
+  }, []);
+
   // Load on focus
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
 
       setStatusBarStyle('dark');
+      scrollToTop();
       
       const loadData = async () => {
         setNextCursor(null);
@@ -232,6 +240,7 @@ export default function CompletedScreen({ navigation }) {
       </View>
 
       <ScrollView 
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
