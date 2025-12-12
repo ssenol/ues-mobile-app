@@ -36,11 +36,11 @@ export default function CompletedScreen({ navigation }) {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = getMonthName(date.getMonth());
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = getMonthName(date.getUTCMonth());
+    const year = date.getUTCFullYear();
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
     return `${day} ${month} ${year} - ${hours}:${minutes}`;
   };
 
@@ -313,10 +313,10 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     backgroundColor: '#F3F4FF',
-    marginBottom: 80
   },
   scrollContent: {
     padding: 16,
+    paddingBottom: 80
   },
   loadingOverlay: {
     position: 'absolute',
