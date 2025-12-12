@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
@@ -11,12 +11,6 @@ export default function CompletedAssignmentCard({ assignment, onPress }) {
   if (assignment.status === 'pending') {
     return (
       <View style={[styles.pendingCard, shadows.light]}>
-        {/* Hourglass Icon */}
-        {/*<Image */}
-        {/*  source={require('../../assets/images/hourglass.png')}*/}
-        {/*  style={styles.pendingIcon}*/}
-        {/*  resizeMode="contain"*/}
-        {/*/>*/}
         <ThemedIcon
           iconName="hourglass"
           style={styles.pendingIcon}
@@ -91,18 +85,26 @@ export default function CompletedAssignmentCard({ assignment, onPress }) {
       return '#D97184';
     } else if (type === 'Read Aloud') {
       return '#A274DF';
+    } else if (type === 'Speech on Scenario') {
+      return '#d57ddf';
     }
     return '#000000';
   };
 
   const typeColor = getTypeColor(assignment.type);
 
+  // HTML'den metni temizle
+  const stripHtml = (html) => {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, '').trim();
+  };
+
   return (
     <View style={styles.card}>
       {/* Header: Title and Score */}
       <View style={styles.header}>
         <ThemedText weight="bold" style={styles.title}>
-          {assignment.title}
+          {stripHtml(assignment.title)}
         </ThemedText>
         <View style={[styles.scoreBadge, { backgroundColor: scoreStyle.backgroundColor }]}>
           <View style={[styles.scoreIconContainer, { backgroundColor: scoreStyle.textColor }]}>
@@ -196,16 +198,9 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 32,
     marginBottom: 24,
-    // shadowColor: "#3E4EF0",
-    // shadowOffset: { width: 0, height: 4 },
-    // shadowOpacity: 0.12,
-    // shadowRadius: 10,
-    // elevation: 12,
     alignItems: 'center',
   },
   pendingIcon: {
-    // width: 96,
-    // height: 96,
     marginBottom: 24,
   },
   pendingTitle: {

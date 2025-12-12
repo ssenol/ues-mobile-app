@@ -239,7 +239,7 @@ export default function HomeScreen({ navigation }) {
       backgroundColor: colors.primary,
     },
     scrollContent: {
-      paddingBottom: 100,
+      paddingBottom: 80,
       flexGrow: 1,
       backgroundColor: '#fff',
     },

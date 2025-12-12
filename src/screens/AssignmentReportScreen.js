@@ -91,6 +91,7 @@ export default function AssignmentReportScreen({ navigation }) {
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerTranslateYValue = useRef(new Animated.Value(0)).current;
   const lastTranslateYRef = useRef(0); // Son translateY değerini sakla (gereksiz setValue çağrılarını önlemek için)
+
   // Fetch report data
   const fetchReportData = useCallback(async () => {
     if (!taskId) {
@@ -653,6 +654,12 @@ export default function AssignmentReportScreen({ navigation }) {
   const scoreBackgroundColor = getScoreBackgroundColor(mainScore);
   const scoreIcon = getScoreIcon(mainScore);
 
+  // HTML'den metni temizle
+  const stripHtml = (html) => {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, '').trim();
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" translucent backgroundColor="transparent" />
@@ -705,7 +712,7 @@ export default function AssignmentReportScreen({ navigation }) {
           />
         </TouchableOpacity>
         <ThemedText weight="bold" style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-          {reportData.taskName || 'Assignment Report'}
+          {stripHtml(reportData.taskName) || 'Assignment Report'}
         </ThemedText>
         <View style={styles.headerRight} />
       </View>
