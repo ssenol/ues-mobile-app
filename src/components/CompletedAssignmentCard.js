@@ -86,7 +86,7 @@ export default function CompletedAssignmentCard({ assignment, onPress }) {
     } else if (type === 'Read Aloud') {
       return '#A274DF';
     } else if (type === 'Speech on Scenario') {
-      return '#d57ddf';
+      return '#E169C1';
     }
     return '#000000';
   };

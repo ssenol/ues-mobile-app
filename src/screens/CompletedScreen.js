@@ -8,7 +8,6 @@ import CompletedAssignmentCard from '../components/CompletedAssignmentCard';
 import { ThemedText } from '../components/ThemedText';
 import { getCompletedExercises } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
-// import { useTheme } from '../theme/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -25,12 +24,6 @@ export default function CompletedScreen({ navigation }) {
   const [hasMore, setHasMore] = useState(true);
   const autoRefreshTimerRef = useRef(null);
   const handleRefreshRef = useRef(null);
-
-  // HTML'den metni temizle
-  const stripHtml = (html) => {
-    if (!html) return '';
-    return html.replace(/<[^>]*>/g, '').trim();
-  };
 
   // Ay ismini al
   const getMonthName = (monthIndex) => {
@@ -95,6 +88,8 @@ export default function CompletedScreen({ navigation }) {
         // Transform exercises to display format
         const transformedTasks = exercises.map((exercise, index) => {
           const isSpeechOnTopic = exercise.subTaskType === 'speech_on_topic';
+          const isReadAloud = exercise.subTaskType === 'read_aloud';
+          const isSpeechOnScenario = exercise.subTaskType === 'speech_on_scenario';
           const completionDate = exercise.attempts[0].completionDate;
           
           // attempts[0].mainScore'dan score al
@@ -106,12 +101,21 @@ export default function CompletedScreen({ navigation }) {
           // TEST: İlk sonucun status'ünü 'pending' yap
           // const testStatus = index === 0 ? 'pending' : status;
 
+          const getTaskType = () => {
+            if (isSpeechOnTopic) return 'Speech On Topic';
+            if (isReadAloud) return 'Read Aloud';
+            if (isSpeechOnScenario) return 'Speech on Scenario';
+            return 'Task Type';
+          };
+
+          const taskType = getTaskType();
+
           return {
             id: exercise.assignedTaskId,
-            title: exercise.taskName || (isSpeechOnTopic ? 'Speech On Topic' : 'Read Aloud'),
+            title: exercise.taskName || taskType,
             completionDate: formatDate(completionDate),
             rawCompletionDate: completionDate, // For sorting
-            type: isSpeechOnTopic ? 'Speech On Topic' : 'Read Aloud',
+            type: taskType,
             score: Math.round(score),
             solvedTaskId: solvedTaskId, // Detay için kullanılacak
             status: status, // Status bilgisini ekle
