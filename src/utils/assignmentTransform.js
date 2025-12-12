@@ -12,7 +12,6 @@ const TASK_PRESENTATIONS = {
   speech_on_scenario: {
     type: 'speechOnScenario',
     title: 'Speech On Scenario',
-    image: require('../../assets/images/speech-task.png'),
   },
 };
 
@@ -61,7 +60,7 @@ const buildMetadata = (task) => {
   const taskData = task?.task?.data;
   const taskSetting = task?.task?.setting;
 
-  if (speechTaskType === 'speech_on_topic' && taskData?.topic) {
+  if (speechTaskType === 'speech_on_topic') {
     if (taskData?.minSentencesCount) {
       metadata.push({ icon: 'sentences', label: `${taskData.minSentencesCount} Sentences` });
     }
@@ -70,12 +69,15 @@ const buildMetadata = (task) => {
     }
   }
 
-  if (speechTaskType === 'read_aloud' && taskData?.readingText) {
+  if (speechTaskType === 'read_aloud') {
     if (taskSetting?.cefrLevel) {
       metadata.push({ icon: 'cefr', label: taskSetting.cefrLevel });
     }
-    if (taskData?.aiReadingMetaData?.subject) {
-      metadata.push({ icon: 'topic', label: taskData.aiReadingMetaData.subject });
+  }
+
+  if (speechTaskType === 'speech_on_scenario') {
+    if (taskSetting?.cefrLevel) {
+      metadata.push({ icon: 'cefr', label: taskSetting.cefrLevel });
     }
   }
 
@@ -85,6 +87,7 @@ const buildMetadata = (task) => {
 const buildDescription = (task) => {
   const { speechTaskType } = task || {};
   const taskData = task?.task?.data;
+  const taskSetting = task?.task?.setting;
 
   if (speechTaskType === 'speech_on_topic' && taskData?.topic) {
     return taskData.topic;
@@ -94,8 +97,8 @@ const buildDescription = (task) => {
     return stripHtml(taskData.readingText);
   }
 
-  if (speechTaskType === 'speech_on_scenario' && taskData?.scenarioTitle) {
-    return taskData.scenarioTitle;
+  if (speechTaskType === 'speech_on_scenario' && taskSetting?.selectedConcept) {
+    return taskSetting.selectedConcept.concept.scenario;
   }
 
   return '';
@@ -117,7 +120,10 @@ export const transformTaskToAssignment = (task) => {
     type: presentation.type,
     title: presentation.title,
     description: buildDescription(task),
-    image: presentation.image || DEFAULT_ASSIGNMENT_IMAGE,
+    image:
+      task.speechTaskType === 'speech_on_scenario' && task?.task?.data?.coverImage
+        ? { uri: task.task.data.coverImage }
+        : presentation.image || DEFAULT_ASSIGNMENT_IMAGE,
     metadata: buildMetadata(task),
     date: formatDate(startDate),
     startDate,

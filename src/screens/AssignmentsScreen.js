@@ -42,6 +42,33 @@ export default function AssignmentsScreen({ navigation, route }) {
   const scrollY = useRef(new Animated.Value(0)).current;
   const normalFilterScrollRef = useRef(null);
   const stickyFilterScrollRef = useRef(null);
+  const filterTabLayouts = useRef({});
+
+  const scrollToFilter = (filterName) => {
+    const layout = filterTabLayouts.current[filterName];
+    if (layout) {
+      const scrollRef = isFilterSticky ? stickyFilterScrollRef.current : normalFilterScrollRef.current;
+      if (scrollRef) {
+        scrollRef.scrollTo({ x: layout.x - 16, animated: true });
+      }
+    }
+  };
+
+  const handleFilterPress = (filterName) => {
+    setSelectedFilter(filterName);
+    setTimeout(() => scrollToFilter(filterName), 50);
+
+    // Scroll to the top of the list when a filter is pressed and sticky is active
+    if (isFilterSticky && scrollViewRef.current && quizListY > 0) {
+      const stickyHeaderHeight = filterTabsHeight + 24 + 1;
+      const scrollToPosition = quizListY - stickyHeaderHeight;
+      const scrollView = scrollViewRef.current.getNode ? scrollViewRef.current.getNode() : scrollViewRef.current;
+      scrollView.scrollTo({
+        y: Math.max(0, scrollToPosition),
+        animated: true,
+      });
+    }
+  };
 
   // API'den assignment'ları çek
   const fetchAssignments = React.useCallback(async (isFromRefresh = false) => {
@@ -111,9 +138,11 @@ export default function AssignmentsScreen({ navigation, route }) {
       const filter = route?.params?.filter;
       if (filter && filter !== null) {
         setSelectedFilter(filter);
+        setTimeout(() => scrollToFilter(filter), 150);
       } else {
-        // Tabbar'dan geldiğinde filtreyi 'All' yap
         setSelectedFilter('All');
+        // "All" seçildiğinde filtre çubuğunu en başa kaydır
+        setTimeout(() => scrollToFilter('All'), 50);
       }
       // Sayfa yüklendiğinde sticky'yi sıfırla (sadece kullanıcı scroll yaptığında aktif olacak)
       setIsFilterSticky(false);
@@ -184,36 +213,38 @@ export default function AssignmentsScreen({ navigation, route }) {
   // Filter options with counts
   const speechOnTopicCount = allQuizzes.filter(q => q.type === 'speechOnTopic').length;
   const readAloudCount = allQuizzes.filter(q => q.type === 'readAloud').length;
-  const speechOnScenario = allQuizzes.filter(q => q.type === 'speechOnScenario').length;
+  const speechOnScenarioCount = allQuizzes.filter(q => q.type === 'speechOnScenario').length;
 
   const filters = [
     { name: 'All', count: null },
     { name: 'Speech On Topic', count: speechOnTopicCount },
     { name: 'Read Aloud', count: readAloudCount },
-    { name: 'Speech On Scenario', count: speechOnScenario },
+    { name: 'Speech On Scenario', count: speechOnScenarioCount },
   ];
 
-  // Filter assignments based on selected filter
-  const filteredAssignmentsRaw = selectedFilter === 'All' 
-    ? allQuizzes 
-    : allQuizzes.filter(assignment => {
-      if (selectedFilter === 'Speech On Topic') return assignment.type === 'speechOnTopic';
-      if (selectedFilter === 'Read Aloud') return assignment.type === 'readAloud';
-      if (selectedFilter === 'Speech On Scenario') return assignment.type === 'speechOnScenario';
-      return false;
-    });
+  // Filter and sort assignments using useMemo for performance and correctness
+  const filteredAssignments = React.useMemo(() => {
+    const filtered = selectedFilter === 'All'
+      ? allQuizzes
+      : allQuizzes.filter(assignment => {
+          const filterMap = {
+            'Speech On Topic': 'speechOnTopic',
+            'Read Aloud': 'readAloud',
+            'Speech On Scenario': 'speechOnScenario',
+          };
+          return assignment.type === filterMap[selectedFilter];
+        });
 
-  // Sıralama: Önce çözülmeyenler, sonra çözülenler (her grup içinde startDate'e göre artan sırada)
-  const filteredAssignments = filteredAssignmentsRaw.sort((a, b) => {
-    // Önce çözülme durumuna göre sırala (çözülmeyenler önce)
-    if (a.isSolved !== b.isSolved) {
-      return a.isSolved ? 1 : -1; // false (çözülmeyen) önce gelir
-    }
-    // Aynı çözülme durumundaysa startDate'e göre artan sırada sırala
-    const dateA = new Date(a.startDate || 0).getTime();
-    const dateB = new Date(b.startDate || 0).getTime();
-    return dateA - dateB; // Artan sıra (en eski önce)
-  });
+    // Sort the filtered assignments
+    return filtered.sort((a, b) => {
+      if (a.isSolved !== b.isSolved) {
+        return a.isSolved ? 1 : -1;
+      }
+      const dateA = new Date(a.startDate || 0).getTime();
+      const dateB = new Date(b.startDate || 0).getTime();
+      return dateA - dateB;
+    });
+  }, [allQuizzes, selectedFilter]);
 
   // Helper function to get filter display text
   const getFilterDisplayText = (filter) => {
@@ -249,28 +280,43 @@ export default function AssignmentsScreen({ navigation, route }) {
     }
   };
 
-  // Filtre değiştiğinde ilk assignment'a scroll yap (sadece sticky aktifse)
-  useEffect(() => {
-    // Sadece sticky aktifse ve kullanıcı scroll yapmışsa ilk assignment'a kaydır
-    if (isFilterSticky && scrollViewRef.current && quizListY > 0 && filteredAssignments && filteredAssignments.length > 0) {
-      // Mantık:
-      // 1. quizListY: Assignment listesinin ScrollView içindeki Y pozisyonu
-      // 2. Sticky header görünür olduğunda, filter tabs'ın yerine sticky header geliyor
-      // 3. Sticky header yüksekliği: filterTabsHeight + paddingVertical (12*2 = 24) + borderBottom (1)
-      // 4. İlk assignment'ın sticky header'ın hemen altında tamamen görünmesi için:
-      //    - Scroll pozisyonu quizListY - stickyHeaderHeight olmalı
-      //    - Böylece assignment listesi sticky header'ın hemen altında görünür
-      const stickyHeaderHeight = filterTabsHeight + 24 + 1; // filterTabsHeight + paddingVertical (12*2) + borderBottom
-      const scrollToPosition = quizListY - stickyHeaderHeight;
-      
-      // Animated.ScrollView için getNode() kullan
-      const scrollView = scrollViewRef.current.getNode ? scrollViewRef.current.getNode() : scrollViewRef.current;
-      scrollView.scrollTo({
-        y: Math.max(0, scrollToPosition), // Negatif değerleri önle
-        animated: true,
-      });
-    }
-  }, [selectedFilter, isFilterSticky, quizListY, filterTabsHeight, filteredAssignments?.length]);
+
+  const renderFilterTabs = (scrollRef, isSticky = false) => (
+    <ScrollView
+      ref={scrollRef}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.filterTabsScrollContent}
+      style={styles.filterTabsScrollView}
+      onScroll={(event) => {
+        if (!isSticky) {
+          setFilterScrollX(event.nativeEvent.contentOffset.x);
+        }
+      }}
+      scrollEventThrottle={16}
+    >
+      {filters.map((filter) => (
+        <TouchableOpacity
+          key={filter.name}
+          style={[
+            styles.filterTab,
+            selectedFilter === filter.name && styles.filterTabActive
+          ]}
+          onPress={() => handleFilterPress(filter.name)}
+          activeOpacity={0.7}
+          onLayout={(event) => {
+            filterTabLayouts.current[filter.name] = event.nativeEvent.layout;
+          }}
+        >
+          <ThemedText
+            weight="bold"
+            style={selectedFilter === filter.name ? styles.filterTabTextActive : styles.filterTabText}>
+            {getFilterDisplayText(filter)}
+          </ThemedText>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
 
   const BANNER_WIDTH = SCREEN_WIDTH - 32;
   const BANNER_ASPECT_RATIO = 343 / 133;
@@ -294,13 +340,6 @@ export default function AssignmentsScreen({ navigation, route }) {
         <View style={styles.headerLeft} />
         <ThemedText weight="bold" style={styles.headerTitle}>Assignments</ThemedText>
         <View style={styles.headerRight} />
-        {/* <TouchableOpacity activeOpacity={0.7} style={styles.headerRight}>
-          <ThemedIcon
-            iconName="search"
-            size={24}
-            tintColor="#3A3A3A"
-          />
-        </TouchableOpacity> */}
       </View>
 
       {/* Sticky Filter Tabs */}
@@ -311,35 +350,7 @@ export default function AssignmentsScreen({ navigation, route }) {
             top: headerHeight || STATUSBAR_HEIGHT + 60,
           }
         ]}>
-          <ScrollView
-            ref={stickyFilterScrollRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterTabsScrollContent}
-            style={styles.filterTabsScrollView}
-            onScroll={(event) => {
-              setFilterScrollX(event.nativeEvent.contentOffset.x);
-            }}
-            scrollEventThrottle={16}
-          >
-            {filters.map((filter) => (
-              <TouchableOpacity
-                key={filter.name}
-                style={[
-                  styles.filterTab,
-                  selectedFilter === filter.name && styles.filterTabActive
-                ]}
-                onPress={() => setSelectedFilter(filter.name)}
-                activeOpacity={0.7}
-              >
-                <ThemedText
-                  weight="bold"
-                  style={selectedFilter === filter.name ? styles.filterTabTextActive : styles.filterTabText}>
-                  {getFilterDisplayText(filter)}
-                </ThemedText>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          {renderFilterTabs(stickyFilterScrollRef, true)}
         </View>
       )}
 
@@ -400,78 +411,12 @@ export default function AssignmentsScreen({ navigation, route }) {
               setFilterTabsHeight(height);
             }}
           >
-            <ScrollView
-              ref={normalFilterScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterTabsScrollContent}
-              style={styles.filterTabsScrollView}
-              onScroll={(event) => {
-                setFilterScrollX(event.nativeEvent.contentOffset.x);
-              }}
-              scrollEventThrottle={16}
-            >
-              {filters.map((filter) => (
-                <TouchableOpacity
-                  key={filter.name}
-                  style={[
-                    styles.filterTab,
-                    selectedFilter === filter.name && styles.filterTabActive
-                  ]}
-                  onPress={() => setSelectedFilter(filter.name)}
-                  activeOpacity={0.7}
-                >
-                  <ThemedText
-                    weight="bold"
-                    style={selectedFilter === filter.name ? styles.filterTabTextActive : styles.filterTabText}>
-                    {getFilterDisplayText(filter)}
-                  </ThemedText>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            {renderFilterTabs(normalFilterScrollRef)}
           </View>
         )}
         {/* Placeholder to maintain scroll position when sticky */}
         {isFilterSticky && (
-          <View 
-            ref={filterTabsRef}
-            style={styles.filterTabs}
-            onLayout={(event) => {
-              const { y, height } = event.nativeEvent.layout;
-              setFilterTabsY(y);
-              setFilterTabsHeight(height);
-            }}
-          >
-            <ScrollView
-              ref={normalFilterScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterTabsScrollContent}
-              style={styles.filterTabsScrollView}
-              onScroll={(event) => {
-                setFilterScrollX(event.nativeEvent.contentOffset.x);
-              }}
-              scrollEventThrottle={16}
-            >
-              {filters.map((filter) => (
-                <TouchableOpacity
-                  key={filter.name}
-                  style={[
-                    styles.filterTab,
-                    selectedFilter === filter.name && styles.filterTabActive
-                  ]}
-                  onPress={() => setSelectedFilter(filter.name)}
-                  activeOpacity={0.7}
-                >
-                  <ThemedText
-                    weight="bold"
-                    style={selectedFilter === filter.name ? styles.filterTabTextActive : styles.filterTabText}>
-                    {getFilterDisplayText(filter)}
-                  </ThemedText>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+          <View style={{ height: filterTabsHeight, marginVertical: 16 }} />
         )}
 
         {/* Assignment List */}

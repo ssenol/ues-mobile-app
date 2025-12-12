@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
 import {
   Animated,
   Dimensions,
@@ -45,6 +45,7 @@ export default function HomeScreen({ navigation }) {
   const [isSticky, setIsSticky] = useState(false);
   const lastAssignmentsHeaderRef = useRef(null);
   const [lastAssignmentsHeaderY, setLastAssignmentsHeaderY] = useState(0);
+  const animationPlayed = useRef(false);
 
   const scrollToTop = useCallback(() => {
     if (!scrollViewRef.current) return;
@@ -60,14 +61,6 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   // Sayfa focus olduğunda StatusBar'ı sıfırla ve başa dön
-  useFocusEffect(
-    useCallback(() => {
-      setStatusBarStyle('light');
-      scrollToTop();
-      resetActivityScroll();
-      return () => {};
-    }, [scrollToTop, resetActivityScroll])
-  );
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -182,12 +175,29 @@ export default function HomeScreen({ navigation }) {
   // Sayfa focus olduğunda progress animasyonunu tetikle ve assignment'ları çek
   useFocusEffect(
     useCallback(() => {
+      setStatusBarStyle('light');
       scrollToTop();
       resetActivityScroll();
       setProgressKey(prev => prev + 1);
       fetchQuizzes();
+      animationPlayed.current = false; // Reset animation flag on focus
     }, [fetchQuizzes, scrollToTop, resetActivityScroll])
   );
+
+  // Animate activity cards after loading is complete
+  useEffect(() => {
+    if (!loading && !animationPlayed.current) {
+      if (activityScrollRef.current) {
+        setTimeout(() => {
+          activityScrollRef.current.scrollTo({ x: 40, animated: true });
+          setTimeout(() => {
+            activityScrollRef.current.scrollTo({ x: 0, animated: true });
+          }, 150);
+        }, 300);
+        animationPlayed.current = true; // Mark animation as played
+      }
+    }
+  }, [loading]);
 
   // Kart verilerini tanımlayalım
   const activityCards = [
@@ -210,7 +220,7 @@ export default function HomeScreen({ navigation }) {
       title: 'Speech on Scenario',
       description: 'Speak According to The Given Scenario.',
       icon: 'speechOnScenario',
-      onPress: () => navigation.navigate('Assignments', { filter: 'Read Aloud' }),
+      onPress: () => navigation.navigate('Assignments', { filter: 'Speech On Scenario' }),
     },
   ];
 
