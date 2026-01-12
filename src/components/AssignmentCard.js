@@ -18,17 +18,7 @@ export default function AssignmentCard({ assignment, onPress }) {
         />
         <View style={styles.assignmentCardContent}>
           <View style={styles.assignmentCardTitleRow}>
-            <ThemedText weight="bold" style={styles.assignmentCardTitle}>{assignment.title}</ThemedText>
-            {assignment.isSolved && (
-              <View style={styles.solvedBadge}>
-                <ThemedIcon
-                  iconName="solved"
-                  size={16}
-                  tintColor="#ABB3FF"
-                />
-                <ThemedText style={styles.solvedText}>Completed</ThemedText>
-              </View>
-            )}
+            <ThemedText weight="bold" style={styles.assignmentCardTitle} numberOfLines={2}>{assignment.title}</ThemedText>
           </View>
           <ThemedText style={styles.assignmentCardDescription} numberOfLines={3}>
             {assignment.description}
@@ -37,19 +27,32 @@ export default function AssignmentCard({ assignment, onPress }) {
       </View>
       <View style={styles.assignmentCardDivider} />
       <View style={styles.assignmentCardBottomRow}>
-        <View style={styles.assignmentCardMetadata}>
-          {assignment.metadata.map((item, index) => (
-            <View key={index} style={styles.assignmentCardMetadataItem}>
-              <ThemedIcon
-                iconName={item.icon}
-                size={16}
-                tintColor="#929DFF"
-              />
-              <ThemedText style={styles.assignmentCardMetadataText}>{item.label}</ThemedText>
-            </View>
-          ))}
-        </View>
-        <ThemedText style={styles.assignmentCardDate}>{assignment.date}</ThemedText>
+        {assignment.isSolved ? (
+          <View style={styles.showReport}>
+            <ThemedIcon
+              iconName="report"
+              size={16}
+              tintColor="#929DFF"
+            />
+            <ThemedText weight="bold" style={styles.showReportText}>Show Report</ThemedText>
+          </View>
+        ) : (
+          <>
+          <View style={styles.assignmentCardMetadata}>
+            {assignment.metadata.map((item, index) => (
+              <View key={index} style={styles.assignmentCardMetadataItem}>
+                <ThemedIcon
+                  iconName={item.icon}
+                  size={16}
+                  tintColor="#929DFF"
+                />
+                <ThemedText style={styles.assignmentCardMetadataText}>{item.label}</ThemedText>
+              </View>
+            ))}
+          </View>
+          <ThemedText style={styles.assignmentCardDate}>{assignment.date}</ThemedText>
+          </>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -70,7 +73,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 8,
-    marginRight: 12,
+    marginRight: 16,
   },
   assignmentCardContent: {
     flex: 1,
@@ -88,15 +91,14 @@ const styles = StyleSheet.create({
     color: '#3A3A3A',
     flex: 1,
   },
-  solvedBadge: {
+  showReport: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 8,
   },
-  solvedText: {
+  showReportText: {
     fontSize: 14,
-    color: '#ABB3FF',
-    marginLeft: 4,
+    color: '#929DFF',
+    marginLeft: 6,
   },
   assignmentCardDescription: {
     fontSize: 14,
@@ -110,8 +112,8 @@ const styles = StyleSheet.create({
   },
   assignmentCardBottomRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   assignmentCardMetadata: {
     flexDirection: 'row',

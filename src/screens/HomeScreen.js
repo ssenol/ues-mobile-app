@@ -20,14 +20,10 @@ import LoadingOverlay from "../components/LoadingOverlay";
 import NotificationModal from "../components/NotificationModal";
 import ThemedIcon from "../components/ThemedIcon";
 import { ThemedText } from "../components/ThemedText";
-import { fetchAssignedSpeechTasks } from "../services/speak";
+import { fetchAssignedSpeechTasksWithCache } from "../services/speak";
 import { selectCurrentUser } from "../store/slices/authSlice";
 import { useTheme } from "../theme/ThemeContext";
-import {
-  buildAssignedSpeechTaskParams,
-  parseAssignedTasksResponse,
-  transformTaskToAssignment,
-} from "../utils/assignmentTransform";
+import { buildAssignedSpeechTaskParams } from "../utils/assignmentTransform";
 
 export default function HomeScreen({ navigation }) {
   const user = useSelector((state) => selectCurrentUser(state));
@@ -90,15 +86,11 @@ export default function HomeScreen({ navigation }) {
   const [totalAssignments, setTotalAssignments] = useState(0);
   const [completedAssignments, setCompletedAssignments] = useState(0);
 
-  // API'den assignment'ları çek
+  // API'den assignment'ları çek (cache mekanizmalı)
   const fetchQuizzes = useCallback(async (isFromRefresh = false) => {
     if (!user) return;
     
     try {
-      if (!isFromRefresh) {
-        setLoading(true);
-      }
-      
       const { params, missingFields } = buildAssignedSpeechTaskParams(user);
 
       if (!params) {
@@ -111,31 +103,43 @@ export default function HomeScreen({ navigation }) {
         });
         setAllQuizzes([]);
         setLastAssignments([]);
-        setLoading(false);
         return;
       }
 
-      const response = await fetchAssignedSpeechTasks(params);
+      // Refresh değilse ve cache yoksa loading göster
+      // Cache varsa loading gösterme - anında yüklenecek
+      if (!isFromRefresh) {
+        // Cache kontrolü için store'dan bakıyoruz
+        const state = require('../store').store.getState();
+        const isCacheValid = require('../store/slices/assignmentSlice').selectIsCacheValid(state);
+        
+        // Cache geçersizse (API çağrısı yapılacaksa) loading göster
+        if (!isCacheValid) {
+          setLoading(true);
+        }
+      }
+
+      // Cache mekanizmalı fetch - isFromRefresh true ise cache'i bypass et
       const {
-        success,
-        tasks,
-        totals: { totalAssigned, completedAssignments: completedCount },
-      } = parseAssignedTasksResponse(response);
+        assignments: transformedAssignments,
+        totalAssignments: totalAssigned,
+        completedAssignments: completedCount,
+        fromCache,
+      } = await fetchAssignedSpeechTasksWithCache(params, isFromRefresh);
 
       setTotalAssignments(totalAssigned);
       setCompletedAssignments(completedCount);
 
-      if (success && Array.isArray(tasks) && tasks.length > 0) {
-        const transformedAssignments = tasks.map(transformTaskToAssignment).filter(Boolean);
+      if (Array.isArray(transformedAssignments) && transformedAssignments.length > 0) {
         // Tüm assignment'ları sakla (GoalProgress için)
         setAllQuizzes(transformedAssignments);
         
-        // Çözülmeyenleri filtrele ve startDate'e göre artan sırada sırala
+        // Çözülmeyenleri filtrele ve dueDate'e göre artan sırada sırala
         const unsolvedAssignments = transformedAssignments
           .filter(assignment => !assignment.isSolved)
           .sort((a, b) => {
-            const dateA = new Date(a.startDate || 0).getTime();
-            const dateB = new Date(b.startDate || 0).getTime();
+            const dateA = new Date(a.dueDate || 0).getTime();
+            const dateB = new Date(b.dueDate || 0).getTime();
             return dateA - dateB; // Artan sıra (en eski önce)
           });
         
@@ -184,9 +188,9 @@ export default function HomeScreen({ navigation }) {
     }, [fetchQuizzes, scrollToTop, resetActivityScroll])
   );
 
-  // Animate activity cards after loading is complete
+  // Animate activity cards after data is loaded (from cache or API)
   useEffect(() => {
-    if (!loading && !animationPlayed.current) {
+    if (lastAssignments.length > 0 && !animationPlayed.current) {
       if (activityScrollRef.current) {
         setTimeout(() => {
           activityScrollRef.current.scrollTo({ x: 40, animated: true });
@@ -197,7 +201,7 @@ export default function HomeScreen({ navigation }) {
         animationPlayed.current = true; // Mark animation as played
       }
     }
-  }, [loading]);
+  }, [lastAssignments]);
 
   // Kart verilerini tanımlayalım
   const activityCards = [
@@ -590,14 +594,16 @@ export default function HomeScreen({ navigation }) {
                     }
                     
                     // Navigate to assignment detail
-                    if (assignment.type === 'speechOnTopic' || assignment.type === 'readAloud') {
+                    if (assignment.type === 'speechOnScenario') {
+                      navigation.navigate('SpeechOnScenarioStep1', { 
+                        task: assignment.originalTask 
+                      });
+                    } else if (assignment.type === 'speechOnTopic' || assignment.type === 'readAloud') {
                       navigation.navigate('ReadAloud', { 
                         task: assignment.originalTask, // Orijinal task objesini gönder
                         assignedTaskId: assignment.assignedTaskId,
                         speechTaskId: assignment.speechTaskId 
                       });
-                    } else {
-                      navigation.navigate('WritingTasks');
                     }
                   }}
                 />

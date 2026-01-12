@@ -22,6 +22,9 @@ export const API_ENDPOINTS = {
     getCompletedExercises: `${BASE_URL}/student/get-student-completed-exercises`,
     getSolvedExerciseDetail: `${BASE_URL}/student/get-solved-exercise-detail`,
   },
+  speechScenario: {
+    chatResponse: `${BASE_URL}/question/speech-on-scenario-chat-response`,
+  },
 };
 
 // Request interceptor

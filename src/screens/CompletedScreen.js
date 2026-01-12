@@ -1,15 +1,18 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Dimensions, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import {Dimensions, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, Platform} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import CompletedAssignmentCard from '../components/CompletedAssignmentCard';
 import { ThemedText } from '../components/ThemedText';
 import { getCompletedExercises } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
+import ThemedIcon from "../components/ThemedIcon";
+import InfoModal from '../components/InfoModal';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function CompletedScreen({ navigation }) {
   // const { colors } = useTheme();
@@ -24,6 +27,19 @@ export default function CompletedScreen({ navigation }) {
   const [hasMore, setHasMore] = useState(true);
   const autoRefreshTimerRef = useRef(null);
   const handleRefreshRef = useRef(null);
+  
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [selectedSubTaskTypes, setSelectedSubtTaskTypes] = useState(['speech_on_topic', 'read_aloud', 'speech_on_scenario']);
+  const [completionDate, setCompletionDate] = useState(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(null);
+  const [completedCount, setCompletedCount] = useState(0);
+
+  const assignmentSubTypeOptions = [
+    { value: 'speech_on_topic', label: 'Speech On Topic' },
+    { value: 'read_aloud', label: 'Read Aloud' },
+    { value: 'speech_on_scenario', label: 'Speech Scenario' },
+  ];
 
   // Ay ismini al
   const getMonthName = (monthIndex) => {
@@ -33,9 +49,20 @@ export default function CompletedScreen({ navigation }) {
   };
 
   // Tarih formatla
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
+  const formatDate = (dateString, format = 'display') => {
+    if (!dateString) return format === 'api' ? null : '';
+    
     const date = new Date(dateString);
+    
+    if (format === 'api') {
+      // API format: YYYY-MM-DD
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    
+    // Display format: DD Month YYYY - HH:MM
     const day = String(date.getUTCDate()).padStart(2, '0');
     const month = getMonthName(date.getUTCMonth());
     const year = date.getUTCFullYear();
@@ -56,7 +83,7 @@ export default function CompletedScreen({ navigation }) {
       }
       
       // Get user ID
-      const userId = user?.id || user?._id || user?.userId;
+      const userId = user?.userId;
       if (!userId) {
         console.error('CompletedScreen: Missing user ID');
         setCompletedTasks([]);
@@ -65,23 +92,26 @@ export default function CompletedScreen({ navigation }) {
       }
 
       const params = {
-        completionDate: null,
+        completionDate: formatDate(completionDate, 'api'),
         lastAssignedTaskId: reset ? null : (cursor || nextCursor),
         perPageCount: 100,
         role: 'student',
         selectedTaskNames: [],
         selectedTaskTypes: ['speech'],
+        selectedSubTaskTypes: selectedSubTaskTypes.length > 0 ? selectedSubTaskTypes : ['speech_on_topic', 'read_aloud', 'speech_on_scenario'],
         userId: userId,
       };
 
       // console.log('CompletedScreen - Request Payload:', JSON.stringify(params, null, 2));
       const response = await getCompletedExercises(params);
       // console.log('CompletedScreen - Response:', JSON.stringify(response, null, 2));
-      
+
       if (response?.success || response?.status_code === 200) {
         const exercises = response?.data?.exercises || response?.data || [];
         const newNextCursor = response?.data?.nextCursor || null;
-        
+        const totalCount = response.results;
+
+        setCompletedCount(totalCount || 0);
         setNextCursor(newNextCursor);
         setHasMore(!!newNextCursor);
         
@@ -105,7 +135,7 @@ export default function CompletedScreen({ navigation }) {
             if (isSpeechOnTopic) return 'Speech On Topic';
             if (isReadAloud) return 'Read Aloud';
             if (isSpeechOnScenario) return 'Speech on Scenario';
-            return 'Task Type';
+            return 'Assignment Type';
           };
 
           const taskType = getTaskType();
@@ -144,7 +174,7 @@ export default function CompletedScreen({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user, nextCursor]);
+  }, [user, nextCursor, completionDate, selectedSubTaskTypes]);
 
   // Pull-to-refresh handler
   const handleRefresh = useCallback(async () => {
@@ -156,6 +186,7 @@ export default function CompletedScreen({ navigation }) {
     setNextCursor(null);
     setHasMore(true);
     await fetchCompletedExercises(true, null, true);
+
     // Timer useEffect içinde otomatik başlayacak
   }, [fetchCompletedExercises]);
 
@@ -222,6 +253,7 @@ export default function CompletedScreen({ navigation }) {
     }, [user, fetchCompletedExercises])
   );
 
+  // rapor detaya gider
   const handleReportPress = (assignment) => {
     if (!assignment.solvedTaskId) {
       console.error('CompletedScreen: Missing solvedTaskId');
@@ -232,6 +264,66 @@ export default function CompletedScreen({ navigation }) {
     });
   };
 
+  // filtre seçeneklerinin modal'ını açar
+  const filterModal = () => {
+    setFilterModalVisible(true);
+  };
+
+  const toggleSubTaskType = (taskType) => {
+    setSelectedSubtTaskTypes(prev => {
+      if (prev.includes(taskType)) {
+        return prev.filter(t => t !== taskType);
+      } else {
+        return [...prev, taskType];
+      }
+    });
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      if (event.type === 'set' && selectedDate) {
+        setCompletionDate(selectedDate.toISOString());
+      }
+    } else if (Platform.OS === 'ios') {
+      if (selectedDate) {
+        setTempDate(selectedDate);
+      }
+    }
+  };
+
+  const confirmDateSelection = () => {
+    if (tempDate) {
+      setCompletionDate(tempDate.toISOString());
+    }
+    setShowDatePicker(false);
+  };
+
+  const openDatePicker = () => {
+    setTempDate(completionDate ? new Date(completionDate) : new Date());
+    setShowDatePicker(true);
+  };
+
+  const clearDate = () => {
+    setCompletionDate(null);
+  };
+
+  const applyFilters = async () => {
+    setFilterModalVisible(false);
+    setNextCursor(null);
+    setHasMore(true);
+    await fetchCompletedExercises(true, null);
+  };
+
+  const resetFilters = async () => {
+    setSelectedSubtTaskTypes(['speech_on_topic', 'read_aloud', 'speech_on_scenario']);
+    setCompletionDate(null);
+    setFilterModalVisible(false);
+    setNextCursor(null);
+    setHasMore(true);
+    await fetchCompletedExercises(true, null);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" translucent backgroundColor="transparent" />
@@ -239,8 +331,21 @@ export default function CompletedScreen({ navigation }) {
       {/* Header */}
       <View style={[styles.header, { paddingTop: STATUSBAR_HEIGHT }]}>
         <View style={styles.headerLeft} />
-        <ThemedText weight="bold" style={styles.headerTitle}>Completed</ThemedText>
-        <View style={styles.headerRight} />
+        <ThemedText weight="semibold" style={styles.headerTitle}>
+          Completed {completedCount > 0 ? `(${completedCount})` : ''}
+        </ThemedText>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={() => filterModal()}
+            activeOpacity={0.7}
+          >
+            <ThemedIcon
+              iconName="filter"
+              size={16}
+              tintColor="#3A3A3A"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView 
@@ -277,6 +382,91 @@ export default function CompletedScreen({ navigation }) {
           <ThemedText style={styles.loadingTextOverlay}>Loading completed assignments...</ThemedText>
         </View>
       )}
+
+      <InfoModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        title="Filter Options"
+        height={SCREEN_HEIGHT * 0.85}
+        primaryButton={{
+          text: 'Apply Filter',
+          onPress: applyFilters,
+        }}
+        secondaryButton={{
+          text: 'Reset Filter',
+          onPress: resetFilters,
+        }}
+      >
+        <ScrollView style={styles.filterContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.filterSection}>
+            <ThemedText weight="bold" style={styles.filterSectionTitle}>Assignment Type</ThemedText>
+            
+            {assignmentSubTypeOptions.map((option) => (
+              <TouchableOpacity 
+                key={option.value}
+                style={styles.checkboxRow}
+                onPress={() => toggleSubTaskType(option.value)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.checkbox}>
+                  {selectedSubTaskTypes.includes(option.value) && (
+                    <View style={styles.checkboxInner} />
+                  )}
+                </View>
+                <ThemedText style={styles.checkboxLabel}>{option.label}</ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.filterSection}>
+            <ThemedText weight="bold" style={styles.filterSectionTitle}>Completion Date</ThemedText>
+            
+            <View style={styles.datePickerRow}>
+              <TouchableOpacity 
+                style={styles.datePickerButton}
+                onPress={openDatePicker}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={styles.datePickerButtonText}>
+                  {completionDate ? new Date(completionDate).toLocaleDateString() : 'Select Date'}
+                </ThemedText>
+                <ThemedIcon iconName="calendar" size={20} tintColor="#3E4EF0" />
+              </TouchableOpacity>
+              
+              {showDatePicker && Platform.OS === 'ios' ? (
+                <TouchableOpacity 
+                  style={styles.confirmDateIconButton}
+                  onPress={confirmDateSelection}
+                  activeOpacity={0.7}
+                >
+                  <ThemedIcon iconName="checkmark" size={20} tintColor="#FFFFFF" />
+                </TouchableOpacity>
+              ) : completionDate ? (
+                <TouchableOpacity 
+                  style={styles.clearDateButton}
+                  onPress={clearDate}
+                  activeOpacity={0.7}
+                >
+                  <ThemedIcon iconName="close" size={18} tintColor="#666" />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {showDatePicker && (
+              <View style={styles.datePickerContainer}>
+                <DateTimePicker
+                  value={tempDate || new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  style={styles.iosDatePicker}
+                />
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </InfoModal>
     </View>
   );
 }
@@ -299,14 +489,15 @@ const styles = StyleSheet.create({
     width: 24,
   },
   headerTitle: {
-    fontSize: 18,
-    lineHeight: 24,
+    marginTop: 16,
+    fontSize: 16,
+    lineHeight: 22,
     color: '#3A3A3A',
     flex: 1,
     textAlign: 'center',
-    marginTop: 16,
   },
   headerRight: {
+    marginTop: 16,
     width: 24,
     alignItems: 'flex-end',
   },
@@ -331,5 +522,96 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 16,
+  },
+  filterContent: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  filterSection: {
+    marginBottom: 24,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#3A3A3A',
+    marginBottom: 12,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: '#3E4EF0',
+    borderRadius: 6,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxInner: {
+    width: 14,
+    height: 14,
+    backgroundColor: '#3E4EF0',
+    borderRadius: 3,
+  },
+  checkboxLabel: {
+    fontSize: 15,
+    lineHeight: 20,
+    color: '#3A3A3A',
+  },
+  datePickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  datePickerButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F3F4FF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  clearDateButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F3F4FF',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmDateIconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#3E4EF0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  datePickerButtonText: {
+    fontSize: 15,
+    lineHeight: 20,
+    color: '#3A3A3A',
+  },
+  datePickerContainer: {
+    marginTop: 16,
+    backgroundColor: '#F9F9FF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  iosDatePicker: {
+    height: 200,
   },
 });

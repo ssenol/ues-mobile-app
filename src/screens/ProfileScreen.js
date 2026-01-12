@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 import {StatusBar, setStatusBarStyle} from 'expo-status-bar';
 import React, {useCallback, useRef, useState} from "react";
 import {
@@ -14,13 +15,14 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from "react-redux";
+import ConfirmModal from "../components/ConfirmModal";
 import ThemedIcon from "../components/ThemedIcon";
 import { ThemedText } from "../components/ThemedText";
 import BiometricAuthService from "../services/biometricAuth";
 import { selectCurrentUser } from "../store/slices/authSlice";
+import { clearAssignmentState } from "../store/slices/assignmentSlice";
 import { useTheme } from "../theme/ThemeContext";
 import {
   getBiometricEnabled,
@@ -45,9 +47,14 @@ export default function ProfileScreen({ navigation }) {
   const [microphoneEnabled, setMicrophoneEnabledState] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricType, setBiometricType] = useState("");
-  const [clearLoading, setClearLoading] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [biometricModalVisible, setBiometricModalVisible] = useState(false);
+  const [microphoneModalVisible, setMicrophoneModalVisible] = useState(false);
+  const [microphoneOffModalVisible, setMicrophoneOffModalVisible] = useState(false);
+  const [resetModalVisible, setResetModalVisible] = useState(false);
+  const [resetErrorModalVisible, setResetErrorModalVisible] = useState(false);
 
   // Ekran fokus olduğunda StatusBar'ı ayarla
   const scrollToTop = useCallback(() => {
@@ -108,35 +115,45 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const handleResetAppSettings = () => {
+    setResetModalVisible(true);
+  };
+
+  const handleResetConfirm = async () => {
+    if (isResetting) return;
+    
+    setResetModalVisible(false);
+    setIsResetting(true);
+    try {
+      // AsyncStorage'ı temizle (tüm persist verileri)
+      await AsyncStorage.clear();
+      
+      // SecureStore'daki hassas verileri temizle
+      const possibleKeys = ['accessToken', 'refreshToken', 'userCredentials', 'biometricToken'];
+      for (const key of possibleKeys) {
+        try {
+          await SecureStore.deleteItemAsync(key);
+        } catch (e) {
+          // Anahtar yoksa hata vermez, devam et
+        }
+      }
+      
+      // Redux store'u temizle (assignment cache dahil)
+      dispatch(clearAssignmentState());
+      
+      // Logout işlemini gerçekleştir
+      await performLogout({ dispatch });
+    } catch (error) {
+      console.error('Reset app settings error:', error);
+      setResetErrorModalVisible(true);
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const handleBiometricToggle = async (value) => {
     if (!biometricEnabled && value) {
-      Alert.alert(
-        biometricType,
-        `Do you want to log in with ${biometricType}?`,
-        [
-          { text: "No", style: "cancel" },
-          {
-            text: "Yes",
-            style: "default",
-            onPress: async () => {
-              await setBiometricEnabled(true);
-              setBiometricEnabledState(true);
-              const credsStr = await AsyncStorage.getItem(
-                "last_login_credentials"
-              );
-              if (credsStr) {
-                const creds = JSON.parse(credsStr);
-                if (creds.username && creds.password) {
-                  await BiometricAuthService.saveCredentials(
-                    creds.username,
-                    creds.password
-                  );
-                }
-              }
-            },
-          },
-        ]
-      );
+      setBiometricModalVisible(true);
     } else {
       await setBiometricEnabled(value);
       setBiometricEnabledState(value);
@@ -155,59 +172,62 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
+  const handleBiometricConfirm = async () => {
+    setBiometricModalVisible(false);
+    await setBiometricEnabled(true);
+    setBiometricEnabledState(true);
+    const credsStr = await AsyncStorage.getItem(
+      "last_login_credentials"
+    );
+    if (credsStr) {
+      const creds = JSON.parse(credsStr);
+      if (creds.username && creds.password) {
+        await BiometricAuthService.saveCredentials(
+          creds.username,
+          creds.password
+        );
+      }
+    }
+  };
+
+  const handleBiometricCancel = () => {
+    setBiometricModalVisible(false);
+    setBiometricEnabledState(false);
+  };
+
   const handleMicrophoneToggle = async (value) => {
     if (!microphoneEnabled && value) {
-      Alert.alert("Microphone Permission", "Do you want to allow a microphone?", [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          style: "default",
-          onPress: async () => {
-            const granted = await requestMicrophonePermission();
-            setMicrophoneEnabledState(granted);
-            if (!granted) {
-              Alert.alert(
-                "Permission Required",
-                "The microphone permission must be granted in the application settings. Would you like to go to the settings now?",
-                [
-                  {
-                    text: "Open Settings",
-                    onPress: () => {
-                      if (Platform.OS === "ios") {
-                        Linking.openURL("app-settings:");
-                      } else {
-                        Linking.openSettings();
-                      }
-                    },
-                    style: "default",
-                  },
-                  { text: "Cancel", style: "cancel" },
-                ]
-              );
-            }
-          },
-        },
-      ]);
+      setMicrophoneModalVisible(true);
     } else if (microphoneEnabled && !value) {
-      Alert.alert(
-        "Microphone Permission cannot be turned off",
-        "The microphone permission can only be removed in the device settings. Would you like to go to the settings now?",
-        [
-          {
-            text: "Open Settings",
-            onPress: () => {
-              if (Platform.OS === "ios") {
-                Linking.openURL("app-settings:");
-              } else {
-                Linking.openSettings();
-              }
-            },
-            style: "default",
-          },
-          { text: "Cancel", style: "cancel" },
-        ]
-      );
+      setMicrophoneOffModalVisible(true);
       setMicrophoneEnabledState(await getMicrophoneEnabled());
+    }
+  };
+
+  const handleMicrophoneConfirm = async () => {
+    const granted = await requestMicrophonePermission();
+    setMicrophoneModalVisible(false);
+    setMicrophoneEnabledState(granted);
+    if (!granted) {
+      if (Platform.OS === "ios") {
+        Linking.openURL("app-settings:");
+      } else {
+        Linking.openSettings();
+      }
+    }
+  };
+
+  const handleMicrophoneCancel = () => {
+    setMicrophoneModalVisible(false);
+    setMicrophoneEnabledState(false);
+  };
+
+  const handleMicrophoneOffConfirm = () => {
+    setMicrophoneOffModalVisible(false);
+    if (Platform.OS === "ios") {
+      Linking.openURL("app-settings:");
+    } else {
+      Linking.openSettings();
     }
   };
 
@@ -293,19 +313,19 @@ export default function ProfileScreen({ navigation }) {
       justifyContent: 'center',
       marginBottom: 16,
     },
-    // editIconContainer: {
-    //   position: 'absolute',
-    //   right: 0,
-    //   bottom: 0,
-    //   backgroundColor: '#3E4EF0',
-    //   width: 28,
-    //   height: 28,
-    //   borderRadius: 14,
-    //   alignItems: 'center',
-    //   justifyContent: 'center',
-    //   borderWidth: 2,
-    //   borderColor: '#fff',
-    // },
+    editIconContainer: {
+      position: 'absolute',
+      right: 0,
+      bottom: 0,
+      backgroundColor: '#3E4EF0',
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: '#fff',
+    },
     userName: {
       fontSize: 24,
       lineHeight: 32,
@@ -396,67 +416,15 @@ export default function ProfileScreen({ navigation }) {
       lineHeight: 24,
       color: '#909BFF',
     },
-    logoutModal: {
-      margin: 0,
-      justifyContent: 'flex-end',
-      alignItems: 'stretch',
-    },
-    logoutModalContent: {
-      backgroundColor: '#fff',
-      borderRadius: 12,
-      padding: 24,
-      alignItems: 'center',
-      marginHorizontal: 16,
-      marginBottom: 36,
-      // borderTopLeftRadius: 24,
-      // borderTopRightRadius: 24,
-      // paddingBottom: 32,
-    },
-    logoutIconContainer: {
-      backgroundColor: '#F3F4FF',
-      borderRadius: 12,
+    resetButton: {
+      marginTop: 100,
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 12,
-      marginBottom: 16,
     },
-    logoutTitle: {
-      fontSize: 18,
-      lineHeight: 24,
-      color: '#3A3A3A',
-      textAlign: 'center',
-      marginBottom: 8,
-    },
-    logoutDescription: {
+    resetText: {
       fontSize: 14,
-      lineHeight: 20,
-      color: '#949494',
-      textAlign: 'center',
-      marginBottom: 32,
-    },
-    logoutConfirmButton: {
-      backgroundColor: '#3E4EF0',
-      borderRadius: 32,
-      paddingVertical: 12,
-      paddingHorizontal: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-      marginBottom: 24,
-    },
-    logoutConfirmText: {
-      fontSize: 16,
       lineHeight: 24,
-      color: '#fff',
-    },
-    logoutCancelButton: {
-      // alignItems: 'center',
-      // justifyContent: 'center',
-    },
-    logoutCancelText: {
-      fontSize: 16,
-      lineHeight: 24,
-      color: '#3E4EF0',
+      color: '#FF3B30',
     },
   });
 
@@ -492,7 +460,6 @@ export default function ProfileScreen({ navigation }) {
             <ThemedIcon
               iconName="avatar"
               size={98}
-              // tintColor="#3E4EF0"
             />
           </View>
           <ThemedText weight="bold" style={styles.userName}>
@@ -636,57 +603,91 @@ export default function ProfileScreen({ navigation }) {
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogoutPress}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
         >
           <ThemedText weight="semiBold" style={styles.logoutText}>
             Logout
           </ThemedText>
         </TouchableOpacity>
+
+        {/* Reset App Settings Button - Debug */}
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={handleResetAppSettings}
+          activeOpacity={0.85}
+          disabled={isResetting}
+        >
+          <ThemedText weight="semiBold" style={styles.resetText}>
+            {isResetting ? 'Resetting...' : 'Reset App Settings'}
+          </ThemedText>
+        </TouchableOpacity>
       </Animated.ScrollView>
 
-      <Modal
-        isVisible={logoutModalVisible}
-        onBackdropPress={handleLogoutCancel}
-        onBackButtonPress={handleLogoutCancel}
-        backdropColor="#3E4EF0"
-        backdropOpacity={0.75}
-        useNativeDriverForBackdrop
-        useNativeDriver
-        hideModalContentWhileAnimating
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-        style={styles.logoutModal}
-      >
-        <View style={styles.logoutModalContent}>
-          <View style={styles.logoutIconContainer}>
-            <ThemedIcon iconName="logout" size={56} tintColor="#3E4EF0" />
-          </View>
-          <ThemedText weight="bold" style={styles.logoutTitle}>
-            You're about to log out
-          </ThemedText>
-          <ThemedText style={styles.logoutDescription}>
-            Your current session will end {'\n'}if you continue.
-          </ThemedText>
+      <ConfirmModal
+        visible={logoutModalVisible}
+        onClose={handleLogoutCancel}
+        onConfirm={handleLogoutConfirm}
+        iconName="logout"
+        title="You're about to log out"
+        description={`Your current session will end \nif you continue.`}
+        confirmText="Yes, I want"
+        cancelText="No, Thanks"
+      />
 
-          <TouchableOpacity
-            style={styles.logoutConfirmButton}
-            activeOpacity={0.85}
-            onPress={handleLogoutConfirm}
-          >
-            <ThemedText weight="bold" style={styles.logoutConfirmText}>
-              Yes, I want
-            </ThemedText>
-          </TouchableOpacity>
+      <ConfirmModal
+        visible={biometricModalVisible}
+        onClose={handleBiometricCancel}
+        onConfirm={handleBiometricConfirm}
+        iconName={biometricType.includes('Face') ? 'faceId' : 'touchId'}
+        title={biometricType}
+        description={`Do you want to log in with ${biometricType}?`}
+        confirmText="Yes"
+        cancelText="No"
+      />
 
-          <TouchableOpacity
-            style={styles.logoutCancelButton}
-            activeOpacity={0.7}
-            onPress={handleLogoutCancel}
-          >
-            <ThemedText style={styles.logoutCancelText}>No, Thanks</ThemedText>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+      <ConfirmModal
+        visible={microphoneModalVisible}
+        onClose={handleMicrophoneCancel}
+        onConfirm={handleMicrophoneConfirm}
+        iconName="bigmic"
+        title="Microphone Permission"
+        description="Do you want to allow a microphone?"
+        confirmText="Yes"
+        cancelText="No"
+      />
+
+      <ConfirmModal
+        visible={microphoneOffModalVisible}
+        onClose={() => setMicrophoneOffModalVisible(false)}
+        onConfirm={handleMicrophoneOffConfirm}
+        iconName="bigmic"
+        title="Microphone Permission cannot be turned off"
+        description="The microphone permission can only be removed in the device settings. Would you like to go to the settings now?"
+        confirmText="Open Settings"
+        cancelText="Cancel"
+      />
+
+      <ConfirmModal
+        visible={resetModalVisible}
+        onClose={() => setResetModalVisible(false)}
+        onConfirm={handleResetConfirm}
+        iconName="logout"
+        title="Reset App Settings"
+        description="Are you sure you want to reset all app settings? This will log you out and clear all saved data."
+        confirmText="OK"
+        cancelText="Cancel"
+        confirmButtonColor="#FF3B30"
+      />
+
+      <ConfirmModal
+        visible={resetErrorModalVisible}
+        onClose={() => setResetErrorModalVisible(false)}
+        iconName="logout"
+        title="Error"
+        description="Failed to reset app settings."
+        confirmText="OK"
+        singleButton={true}
+      />
     </View>
   );
 }

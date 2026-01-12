@@ -19,6 +19,7 @@ export const icons = {
   avatar: (props) => <SvgIcon name="avatar" {...props} />,
   back: (props) => <SvgIcon name="back" {...props} />,
   info: (props) => <SvgIcon name="info" {...props} />,
+  info2: (props) => <SvgIcon name="info2" {...props} />,
   goalGreen: (props) => <SvgIcon name="goalGreen" {...props} />,
   goalOrange: (props) => <SvgIcon name="goalOrange" {...props} />,
   goalRed: (props) => <SvgIcon name="goalRed" {...props} />,
@@ -51,6 +52,10 @@ export const icons = {
   close: (props) => <SvgIcon name="close" {...props} />,
   hourglass: (props) => <SvgIcon name="hourglass" {...props} />,
   noassignment: (props) => <SvgIcon name="noassignment" {...props} />,
+  send: (props) => <SvgIcon name="send" {...props} />,
+  voice: (props) => <SvgIcon name="voice" {...props} />,
+  upArrow: (props) => <SvgIcon name="upArrow" {...props} />,
+  filter: (props) => <SvgIcon name="filter" {...props} />,
 };
 
 export const getIconSource = (name) => icons[name] ?? null;

@@ -1,4 +1,14 @@
 import api, { API_ENDPOINTS } from '../config/api';
+import store from '../store';
+import {
+  selectCachedAssignments,
+  selectIsCacheValid,
+  selectTotalAssignments,
+  selectCompletedAssignments,
+  setCachedAssignments,
+  CACHE_DURATION_MS,
+} from '../store/slices/assignmentSlice';
+import { parseAssignedTasksResponse, transformTaskToAssignment } from '../utils/assignmentTransform';
 
 export const fetchSpeechTasks = async (params) => {
   const response = await api.post(
@@ -54,6 +64,63 @@ export const fetchAssignedSpeechTasks = async (params) => {
     { headers: { 'Content-Type': 'application/json' } }
   );
   return response.data;
+};
+
+/**
+ * Cache mekanizmalı assignment çekme fonksiyonu
+ * @param {Object} params - API parametreleri
+ * @param {boolean} forceRefresh - true ise cache'i bypass eder ve API'den yeni data çeker
+ * @param {number} cacheDuration - Cache süresi (ms), varsayılan 6 saat
+ * @returns {Object} - { assignments, totalAssignments, completedAssignments, fromCache }
+ */
+export const fetchAssignedSpeechTasksWithCache = async (
+  params,
+  forceRefresh = false,
+  cacheDuration = CACHE_DURATION_MS
+) => {
+  const state = store.getState();
+  
+  // Cache geçerli mi kontrol et (forceRefresh false ise)
+  if (!forceRefresh && selectIsCacheValid(state, cacheDuration)) {
+    // Cache'den döndür
+    const cachedAssignments = selectCachedAssignments(state);
+    const totalAssignments = selectTotalAssignments(state);
+    const completedAssignments = selectCompletedAssignments(state);
+    
+    return {
+      assignments: cachedAssignments,
+      totalAssignments,
+      completedAssignments,
+      fromCache: true,
+    };
+  }
+  
+  // Cache geçersiz veya forceRefresh true - API'den çek
+  const response = await fetchAssignedSpeechTasks(params);
+  const {
+    success,
+    tasks,
+    totals: { totalAssigned, completedAssignments: completedCount },
+  } = parseAssignedTasksResponse(response);
+  
+  let transformedAssignments = [];
+  if (success && Array.isArray(tasks) && tasks.length > 0) {
+    transformedAssignments = tasks.map(transformTaskToAssignment).filter(Boolean);
+  }
+  
+  // Store'a kaydet
+  store.dispatch(setCachedAssignments({
+    assignments: transformedAssignments,
+    totalAssignments: totalAssigned,
+    completedAssignments: completedCount,
+  }));
+  
+  return {
+    assignments: transformedAssignments,
+    totalAssignments: totalAssigned,
+    completedAssignments: completedCount,
+    fromCache: false,
+  };
 };
 
 // Generate Exercise Token
@@ -124,6 +191,7 @@ export default {
   saveSpeechResult,
   evaluateSpeechMobileTask,
   fetchAssignedSpeechTasks,
+  fetchAssignedSpeechTasksWithCache,
   generateExerciseToken,
   submitSpeechTask,
   getCompletedExercises,

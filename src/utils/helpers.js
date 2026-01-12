@@ -38,6 +38,31 @@ export function cleanHtmlAndBreaks(str) {
     .trim();
 }
 
+export function getOptimizedImageUrl(originalUrl, options = {}) {
+  if (!originalUrl || typeof originalUrl !== 'string') {
+    return originalUrl;
+  }
+
+  const baseStorageUrl = 'https://storage.googleapis.com/uesquizmaker-api.appspot.com';
+  
+  if (!originalUrl.startsWith(baseStorageUrl)) {
+    return originalUrl;
+  }
+
+  const imagePath = originalUrl.replace(baseStorageUrl, '');
+  
+  const {
+    width = 200,
+    quality = 85,
+    format = 'png',
+  } = options;
+
+  const imageServiceBaseUrl = 'https://quizmaker-api.onrender.com/api/v0.0.1/image/serve';
+  const apiKey = 'I443S4F1R453J4ST6DF3JA4RIC4RE2LKSTS56';
+  
+  return `${imageServiceBaseUrl}${imagePath}?w=${width}&q=${quality}&f=${format}&key=${apiKey}`;
+}
+
 // Tüm uygulama verilerini tamamen temizler. Hiçbir anahtar saklanmaz.
 export async function clearAllAppData() {
   try {

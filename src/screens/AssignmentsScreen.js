@@ -8,13 +8,9 @@ import AssignmentCard from '../components/AssignmentCard';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { ThemedText } from '../components/ThemedText';
 import { useTheme } from '../theme/ThemeContext';
-import { fetchAssignedSpeechTasks } from '../services/speak';
+import { fetchAssignedSpeechTasksWithCache } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
-import {
-  buildAssignedSpeechTaskParams,
-  parseAssignedTasksResponse,
-  transformTaskToAssignment,
-} from '../utils/assignmentTransform';
+import { buildAssignedSpeechTaskParams } from '../utils/assignmentTransform';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -70,15 +66,11 @@ export default function AssignmentsScreen({ navigation, route }) {
     }
   };
 
-  // API'den assignment'ları çek
+  // API'den assignment'ları çek (cache mekanizmalı)
   const fetchAssignments = React.useCallback(async (isFromRefresh = false) => {
     if (!user) return;
     
     try {
-      if (!isFromRefresh) {
-        setLoading(true);
-      }
-
       const { params, missingFields } = buildAssignedSpeechTaskParams(user);
 
       if (!params) {
@@ -90,15 +82,29 @@ export default function AssignmentsScreen({ navigation, route }) {
           className: user?.classInfo?.[0],
         });
         setAllQuizzes([]);
-        setLoading(false);
         return;
       }
 
-      const response = await fetchAssignedSpeechTasks(params);
-      const { success, tasks } = parseAssignedTasksResponse(response);
+      // Refresh değilse ve cache yoksa loading göster
+      // Cache varsa loading gösterme - anında yüklenecek
+      if (!isFromRefresh) {
+        // Cache kontrolü için store'dan bakıyoruz
+        const state = require('../store').store.getState();
+        const isCacheValid = require('../store/slices/assignmentSlice').selectIsCacheValid(state);
+        
+        // Cache geçersizse (API çağrısı yapılacaksa) loading göster
+        if (!isCacheValid) {
+          setLoading(true);
+        }
+      }
 
-      if (success && Array.isArray(tasks) && tasks.length > 0) {
-        const transformedAssignments = tasks.map(transformTaskToAssignment).filter(Boolean);
+      // Cache mekanizmalı fetch - isFromRefresh true ise cache'i bypass et
+      const {
+        assignments: transformedAssignments,
+        fromCache,
+      } = await fetchAssignedSpeechTasksWithCache(params, isFromRefresh);
+
+      if (Array.isArray(transformedAssignments) && transformedAssignments.length > 0) {
         setAllQuizzes(transformedAssignments);
       } else {
         setAllQuizzes([]);
@@ -240,8 +246,8 @@ export default function AssignmentsScreen({ navigation, route }) {
       if (a.isSolved !== b.isSolved) {
         return a.isSolved ? 1 : -1;
       }
-      const dateA = new Date(a.startDate || 0).getTime();
-      const dateB = new Date(b.startDate || 0).getTime();
+      const dateA = new Date(a.dueDate || 0).getTime();
+      const dateB = new Date(b.dueDate || 0).getTime();
       return dateA - dateB;
     });
   }, [allQuizzes, selectedFilter]);
@@ -269,14 +275,16 @@ export default function AssignmentsScreen({ navigation, route }) {
     }
     
     // Completed değilse normal akış
-    if (assignment.type === 'readAloud' || assignment.type === 'speechOnTopic') {
+    if (assignment.type === 'speechOnScenario') {
+      navigation.navigate('SpeechOnScenarioStep1', { 
+        task: assignment.originalTask 
+      });
+    } else if (assignment.type === 'readAloud' || assignment.type === 'speechOnTopic') {
       navigation.navigate('ReadAloud', { 
         task: assignment.originalTask, // Orijinal task objesini gönder
         assignedTaskId: assignment.assignedTaskId,
         speechTaskId: assignment.speechTaskId 
       });
-    } else {
-      navigation.navigate('WritingTasks');
     }
   };
 
@@ -332,13 +340,11 @@ export default function AssignmentsScreen({ navigation, route }) {
         style={[styles.header, { paddingTop: STATUSBAR_HEIGHT }]}
         onLayout={(event) => {
           const { height, y } = event.nativeEvent.layout;
-          // Header'ın toplam yüksekliği: paddingTop + içerik + paddingBottom
-          const totalHeight = height;
-          setHeaderHeight(totalHeight);
+          setHeaderHeight(height);
         }}
       >
         <View style={styles.headerLeft} />
-        <ThemedText weight="bold" style={styles.headerTitle}>Assignments</ThemedText>
+        <ThemedText weight="semibold" style={styles.headerTitle}>Assignments</ThemedText>
         <View style={styles.headerRight} />
       </View>
 
@@ -469,8 +475,8 @@ const styles = StyleSheet.create({
     width: 24,
   },
   headerTitle: {
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 22,
     color: '#3A3A3A',
     flex: 1,
     textAlign: 'center',

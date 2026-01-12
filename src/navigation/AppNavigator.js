@@ -22,6 +22,8 @@ import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import SpeechOnScenarioStep1Screen from "../screens/SpeechOnScenarioStep1Screen";
+import SpeechOnScenarioStep2Screen from "../screens/SpeechOnScenarioStep2Screen";
 
 import {
   selectIsAuthenticated,
@@ -209,6 +211,23 @@ export default function AppNavigator() {
               <Stack.Screen 
                 name="AssignmentReport" 
                 component={AssignmentReportScreen}
+                options={{ 
+                  headerShown: false,
+                  presentation: 'card',
+                }}
+              />
+              {/* Speech On Scenario Screen */}
+              <Stack.Screen 
+                name="SpeechOnScenarioStep1" 
+                component={SpeechOnScenarioStep1Screen}
+                options={{ 
+                  headerShown: false,
+                  presentation: 'card',
+                }}
+              />
+              <Stack.Screen 
+                name="SpeechOnScenarioStep2" 
+                component={SpeechOnScenarioStep2Screen}
                 options={{ 
                   headerShown: false,
                   presentation: 'card',

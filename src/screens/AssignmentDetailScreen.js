@@ -7,6 +7,7 @@ import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import AudioPlayer from '../components/AudioPlayer';
+import ConfirmModal from '../components/ConfirmModal';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedIcon from '../components/ThemedIcon';
 import { ThemedText } from '../components/ThemedText';
@@ -603,7 +604,7 @@ export default function AssignmentDetailScreen() {
     } else if (taskType === 'read_aloud') {
       return 'Read Aloud';
     }
-    return 'Speech On Topic';
+    return 'Speech';
   };
 
   const getInfoBannerText = () => {
@@ -947,62 +948,16 @@ export default function AssignmentDetailScreen() {
       </Modal>
 
       {/* Microphone Permission Modal */}
-      <Modal
-        isVisible={permissionModalVisible}
-        onBackdropPress={handleDeclinePermission}
-        style={styles.modal}
-        backdropColor="#3E4EF0"
-        backdropOpacity={0.7}
-        useNativeDriverForBackdrop
-        useNativeDriver
-        hideModalContentWhileAnimating
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-      >
-        <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          {/* Microphone Icon */}
-          <View style={styles.modalIconContainer}>
-            <ThemedIcon
-              iconName="bigmic"
-              size={80}
-              tintColor="#3E4EF0"
-            />
-          </View>
-
-          {/* Title */}
-          <ThemedText weight="bold" style={styles.modalTitle}>
-            Microphone Permission Required!
-          </ThemedText>
-
-          {/* Description */}
-          <ThemedText style={styles.modalDescription}>
-            You must grant microphone permission to use the speak features.
-          </ThemedText>
-
-          {/* Buttons */}
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={styles.allowButton}
-              onPress={handleAllowPermission}
-              activeOpacity={0.8}
-            >
-              <ThemedText weight="bold" style={styles.allowButtonText}>
-                Allow
-              </ThemedText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.declineButton}
-              onPress={handleDeclinePermission}
-              activeOpacity={0.8}
-            >
-              <ThemedText weight="bold" style={styles.declineButtonText}>
-                Decline
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <ConfirmModal
+        visible={permissionModalVisible}
+        onClose={handleDeclinePermission}
+        onConfirm={handleAllowPermission}
+        iconName="bigmic"
+        title="Microphone Permission Required!"
+        description="You must grant microphone permission to use the speak features."
+        confirmText="Allow"
+        cancelText="Decline"
+      />
 
       {/* Loading Overlay */}
       <LoadingOverlay visible={isSubmitting} message="Submitting speech task..." />
@@ -1019,8 +974,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
     marginTop: 16
@@ -1316,67 +1270,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#fff',
-  },
-  modal: {
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    margin: 0,
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    width: '85%',
-    marginBottom: 48,
-  },
-  modalIconContainer: {
-    marginBottom: 24,
-    backgroundColor: '#F3F4FF',
-    padding: 12,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    lineHeight: 26,
-    color: '#3A3A3A',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  modalDescription: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#3A3A3A',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  modalButtons: {
-    width: '100%',
-  },
-  allowButton: {
-    backgroundColor: '#3E4EF0',
-    borderRadius: 50,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  allowButtonText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#fff',
-  },
-  declineButton: {
-    marginTop: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  declineButtonText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#3E4EF0',
   },
 });
 

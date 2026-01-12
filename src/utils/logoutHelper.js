@@ -1,6 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { Alert } from "react-native";
 import { logout as logoutAction } from "../store/slices/authSlice";
+import { clearAssignmentState } from "../store/slices/assignmentSlice";
 
 /**
  * Ortak logout fonksiyonu. Navigasyon parametresi opsiyoneldir.
@@ -14,6 +15,9 @@ export async function performLogout({ dispatch }) {
   } catch (error) {
     console.log("Logout haptics error:", error);
   } finally {
+    // Assignment cache'ini temizle
+    dispatch(clearAssignmentState());
+    // Auth state'ini temizle
     dispatch(logoutAction());
   }
 }

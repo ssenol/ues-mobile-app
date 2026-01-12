@@ -3,6 +3,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { persistReducer, persistStore } from 'redux-persist';
 import authReducer from './slices/authSlice';
 import speakReducer from './slices/speakSlice';
+import assignmentReducer from './slices/assignmentSlice';
 
 const authPersistConfig = {
   key: 'auth',
@@ -16,9 +17,16 @@ const speakPersistConfig = {
   whitelist: ['speakResults', 'currentAssignment']
 };
 
+const assignmentPersistConfig = {
+  key: 'assignment',
+  storage: AsyncStorage,
+  whitelist: ['cachedAssignments', 'cacheTimestamp', 'totalAssignments', 'completedAssignments']
+};
+
 const rootReducer = {
   auth: persistReducer(authPersistConfig, authReducer),
-  speak: persistReducer(speakPersistConfig, speakReducer)
+  speak: persistReducer(speakPersistConfig, speakReducer),
+  assignment: persistReducer(assignmentPersistConfig, assignmentReducer)
 };
 
 export const store = configureStore({
@@ -32,3 +40,5 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
+
+export default store;

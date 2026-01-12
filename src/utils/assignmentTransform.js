@@ -1,3 +1,5 @@
+import { getOptimizedImageUrl } from './helpers';
+
 const TASK_PRESENTATIONS = {
   speech_on_topic: {
     type: 'speechOnTopic',
@@ -21,11 +23,9 @@ const DEFAULT_ASSIGNMENT_IMAGE = TASK_PRESENTATIONS.speech_on_topic.image;
 
 const START_DATE_FALLBACK_KEYS = ['startDate', 'speechAssignedDate', 'dueDate'];
 
-const STRIP_HTML_REGEX = /<[^>]*>/g;
-
 const stripHtml = (html) => {
   if (!html) return '';
-  return String(html).replace(STRIP_HTML_REGEX, '').replace(/\s+/g, ' ').trim();
+  return String(html).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 };
 
 const toNumberOrZero = (value) => {
@@ -109,7 +109,7 @@ export const transformTaskToAssignment = (task) => {
 
   const presentation = TASK_PRESENTATIONS[task.speechTaskType] || {
     type: 'assignment',
-    title: task?.task?.title || 'Assignment',
+    // title: task?.task?.title || 'Assignment',
     image: DEFAULT_ASSIGNMENT_IMAGE,
   };
 
@@ -118,12 +118,11 @@ export const transformTaskToAssignment = (task) => {
   return {
     id: task.assignedTaskId || task.speechTaskId || task.id || `${task.speechTaskType || 'task'}-${task.taskId || 'unknown'}`,
     type: presentation.type,
-    title: presentation.title,
+    title: stripHtml(task.speechName), //presentation.title,
     description: buildDescription(task),
-    image:
-      task.speechTaskType === 'speech_on_scenario' && task?.task?.data?.coverImage
-        ? { uri: task.task.data.coverImage }
-        : presentation.image || DEFAULT_ASSIGNMENT_IMAGE,
+    image: task?.task?.data?.coverImage
+        ? { uri: getOptimizedImageUrl(task.task.data.coverImage) }
+        : presentation.image,
     metadata: buildMetadata(task),
     date: formatDate(startDate),
     startDate,

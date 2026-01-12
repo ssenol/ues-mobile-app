@@ -10,15 +10,24 @@
       "ios": {
         "resourceClass": "m-medium",
         "simulator": false
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "preview": {
-      "distribution": "store",
-      "autoIncrement": true
+      "distribution": "internal",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "distribution": "store",
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {

@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
 import ActionButton from "../components/ActionButton";
+import ConfirmModal from "../components/ConfirmModal";
 import CustomInput from "../components/CustomInput";
 import { ThemedText } from "../components/ThemedText";
 import authService from "../services/auth";
@@ -34,6 +35,10 @@ export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState("ues-meq-student1"); //
   const [password, setPassword] = useState("123456"); //
   const [loading, setLoading] = useState(false);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [biometricPromptModalVisible, setBiometricPromptModalVisible] = useState(false);
+  const [biometricPromptType, setBiometricPromptType] = useState("");
+  const [pendingCredentials, setPendingCredentials] = useState(null);
   // Biyometrik giriş butonunun gösterilip gösterilmeyeceğini belirler.
   const [showBiometricButton, setShowBiometricButton] = useState(false);
   // Biyometrik butonunda yazacak olan doğrulama tipinin adını tutar.
@@ -128,6 +133,29 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const handleBiometricPromptConfirm = async () => {
+    setBiometricPromptModalVisible(false);
+    if (pendingCredentials) {
+      await AsyncStorage.setItem(BIOMETRIC_PROMPT_SHOWN_KEY, "true");
+      await BiometricAuthService.setBiometricEnabled(true);
+      await BiometricAuthService.saveCredentials(pendingCredentials.username, pendingCredentials.password);
+      setShowBiometricButton(true);
+      dispatch(setCredentials(pendingCredentials.credentials));
+      setPendingCredentials(null);
+    }
+  };
+
+  const handleBiometricPromptCancel = async () => {
+    setBiometricPromptModalVisible(false);
+    if (pendingCredentials) {
+      await AsyncStorage.setItem(BIOMETRIC_PROMPT_SHOWN_KEY, "true");
+      await BiometricAuthService.setBiometricEnabled(false);
+      setShowBiometricButton(false);
+      dispatch(setCredentials(pendingCredentials.credentials));
+      setPendingCredentials(null);
+    }
+  };
+
   const handleLogin = async () => {
     if (!username || !password) {
       Alert.alert("Error", "Please enter username and password.");
@@ -170,50 +198,26 @@ export default function LoginScreen({ navigation }) {
       if (!promptShown) {
         const type = await BiometricAuthService.getBiometricType();
         if (type) {
-          Alert.alert(
-            `Login with ${type}`,
-            `Would you like to log in with ${type}?`,
-            [
-              {
-                text: "No",
-                onPress: async () => {
-                  await AsyncStorage.setItem(BIOMETRIC_PROMPT_SHOWN_KEY, "true");
-                  await BiometricAuthService.setBiometricEnabled(false);
-                  setShowBiometricButton(false);
-                  dispatch(setCredentials(credentials));
-                  // navigation ile yönlendirme kaldırıldı, AppNavigator otomatik yönlendirecek
-                },
-                style: "cancel",
-              },
-              {
-                text: "Yes",
-                onPress: async () => {
-                  await AsyncStorage.setItem(BIOMETRIC_PROMPT_SHOWN_KEY, "true");
-                  await BiometricAuthService.setBiometricEnabled(true);
-                  // Kullanıcı adı ve şifreyi kaydet
-                  await BiometricAuthService.saveCredentials(username, password);
-                  setShowBiometricButton(true);
-                  // Alert.alert(
-                  //   "Success",
-                  //   `You can now use ${type} for authentication during logins.`
-                  // );
-                  dispatch(setCredentials(credentials));
-                  // navigation ile yönlendirme kaldırıldı, AppNavigator otomatik yönlendirecek
-                },
-              },
-            ]
-          );
-          return; // Alert sonrası dispatch yapılmasın, yukarıda yapılacak
+          setBiometricPromptType(type);
+          setPendingCredentials({ credentials, username, password });
+          setBiometricPromptModalVisible(true);
+          return; // Modal sonrası dispatch yapılmasın, modal handler'da yapılacak
         }
       }
       dispatch(setCredentials(credentials));
       // navigation ile yönlendirme kaldırıldı, AppNavigator otomatik yönlendirecek
     } catch (error) {
       setLoading(false);
-      Alert.alert(
-        "Error",
-        "Login failed. Please check your details."
-      );
+      const statusCode = error?.response?.status;
+      if (statusCode === 401) {
+        setErrorModalVisible(true);
+      } else {
+        setErrorModalVisible(true);
+        // Alert.alert(
+        //   "Error",
+        //   "Login failed. Please check your details."
+        // );
+      }
     } finally {
       setLoading(false);
     }
@@ -387,6 +391,27 @@ export default function LoginScreen({ navigation }) {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      <ConfirmModal
+        visible={errorModalVisible}
+        onClose={() => setErrorModalVisible(false)}
+        iconName="logout"
+        title="Error"
+        description="Login failed. Please check your details."
+        confirmText="OK"
+        singleButton={true}
+      />
+
+      <ConfirmModal
+        visible={biometricPromptModalVisible}
+        onClose={handleBiometricPromptCancel}
+        onConfirm={handleBiometricPromptConfirm}
+        iconName={biometricPromptType.includes('Face') ? 'faceId' : 'touchId'}
+        title={`Login with ${biometricPromptType}`}
+        description={`Would you like to log in with ${biometricPromptType}?`}
+        confirmText="Yes"
+        cancelText="No"
+      />
     </SafeAreaView>
   );
 }

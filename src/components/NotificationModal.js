@@ -1,79 +1,22 @@
 import React, { useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  Modal,
-  PanResponder,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
+import InfoModal from './InfoModal';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function NotificationModal({ visible = false, onClose = () => {}, mode = 'modal', resetScrollSignal = 0 }) {
   const { colors, shadows } = useTheme();
   const insets = useSafeAreaInsets();
-  const translateY = useRef(new Animated.Value(0)).current;
-  const overlayOpacity = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef(null);
-  const isClosing = useRef(false);
   const isScreenMode = mode === 'screen';
   const [isSectionSticky, setIsSectionSticky] = useState(false);
   const sectionHeaderY = useRef(0);
-
-  // PanResponder for swipe down to close
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        // Grant the responder
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        if (gestureState.dy > 0 && !isClosing.current) {
-          translateY.setValue(gestureState.dy);
-        }
-      },
-      onPanResponderRelease: (evt, gestureState) => {
-        if (isClosing.current) return;
-        
-        if (gestureState.dy > 100 || gestureState.vy > 0.5) {
-          // If swiped down more than 100px or fast swipe, close modal
-          isClosing.current = true;
-          
-          // Overlay fade out animasyonu
-          Animated.timing(overlayOpacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }).start();
-          
-          onClose();
-          
-          // Reset animation after a short delay
-          setTimeout(() => {
-            translateY.setValue(0);
-            overlayOpacity.setValue(1);
-            isClosing.current = false;
-          }, 300);
-        } else {
-          // Otherwise, bounce back
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            tension: 50,
-            friction: 8,
-          }).start();
-        }
-      },
-    })
-  ).current;
 
   // Dummy notification data
   const notifications = {
@@ -157,48 +100,6 @@ export default function NotificationModal({ visible = false, onClose = () => {},
   };
 
   const styles = StyleSheet.create({
-    modalOverlay: {
-      flex: 1,
-      justifyContent: 'flex-end',
-    },
-    modalOverlayTouchable: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(62, 78, 240, 0.75)',
-    },
-    modalContent: {
-      backgroundColor: '#fff',
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      height: SCREEN_HEIGHT * 0.85,
-      paddingTop: 12,
-      flexDirection: 'column',
-    },
-    handleBar: {
-      width: 40,
-      height: 4,
-      backgroundColor: '#E5E5E5',
-      borderRadius: 2,
-      alignSelf: 'center',
-      marginBottom: 20,
-    },
-    headerContainer: {
-      paddingHorizontal: 16,
-      paddingBottom: 16,
-      backgroundColor: '#fff',
-      borderBottomWidth: 1,
-      borderBottomColor: '#F3F4FF',
-    },
-    headerTitle: {
-      fontSize: 18,
-      lineHeight: 24,
-      color: '#3A3A3A',
-      textAlign: 'center',
-      marginTop: 16,
-    },
     scrollableContent: {
       flex: 1,
       backgroundColor: '#fff',
@@ -445,66 +346,13 @@ export default function NotificationModal({ visible = false, onClose = () => {},
   }
 
   return (
-    <Modal
+    <InfoModal
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      onClose={onClose}
+      title="Notifications"
     >
-      <View style={styles.modalOverlay}>
-        <Animated.View 
-          style={[
-            styles.modalOverlayTouchable,
-            { opacity: overlayOpacity }
-          ]}
-        >
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={() => {
-              if (isClosing.current) return;
-              isClosing.current = true;
-              
-              // Overlay fade out animasyonu
-              Animated.timing(overlayOpacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }).start();
-              
-              onClose();
-              
-              setTimeout(() => {
-                translateY.setValue(0);
-                overlayOpacity.setValue(1);
-                isClosing.current = false;
-              }, 300);
-            }}
-          />
-        </Animated.View>
-        <Animated.View 
-          style={[
-            styles.modalContent,
-            {
-              transform: [{ translateY }],
-            },
-          ]}
-        >
-            {/* Handle bar */}
-            <View style={styles.handleBar} {...panResponder.panHandlers} />
-
-            {/* Header - Sabit */}
-            <View style={styles.headerContainer} {...panResponder.panHandlers}>
-              <ThemedText weight="bold" style={styles.headerTitle}>
-                Notifications
-              </ThemedText>
-            </View>
-
-            {/* Scrollable content */}
-            {renderNotificationList()}
-        </Animated.View>
-      </View>
-    </Modal>
+      {renderNotificationList()}
+    </InfoModal>
   );
 }
 

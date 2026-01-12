@@ -158,9 +158,9 @@ export default function CompletedAssignmentCard({ assignment, onPress }) {
 
       {/* Report Section */}
       <View>
-        <ThemedText style={styles.reportHint}>
+        {/*<ThemedText style={styles.reportHint}>
           View your detailed assignment performance below
-        </ThemedText>
+        </ThemedText>*/}
         <TouchableOpacity
           style={styles.reportLink}
           onPress={onPress}

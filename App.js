@@ -1,4 +1,4 @@
-import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, useFonts } from '@expo-google-fonts/nunito';
+import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black, useFonts } from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -17,6 +17,8 @@ export default function App() {
     Nunito_400Regular,
     Nunito_600SemiBold,
     Nunito_700Bold,
+    Nunito_800ExtraBold,
+    Nunito_900Black
   });
   const [isReady, setIsReady] = useState(false);
 

@@ -1,5 +1,5 @@
 import NetInfo from '@react-native-community/netinfo';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
