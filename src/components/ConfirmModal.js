@@ -12,6 +12,7 @@ export default function ConfirmModal({
   visible = false, 
   onClose = () => {},
   onConfirm = null,
+  onCancel = null,
   iconName = "logout",
   title = "Confirm",
   description = "Are you sure?",
@@ -19,6 +20,7 @@ export default function ConfirmModal({
   cancelText = "No, Thanks",
   confirmButtonColor = "#3E4EF0",
   singleButton = false,
+  actions = null,
 }) {
   const styles = StyleSheet.create({
     modal: {
@@ -112,6 +114,28 @@ export default function ConfirmModal({
               {confirmText}
             </ThemedText>
           </TouchableOpacity>
+        ) : actions && Array.isArray(actions) ? (
+          <>
+            {actions.map((action, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.confirmButton, { backgroundColor: action.color || confirmButtonColor }]}
+                activeOpacity={0.85}
+                onPress={action.onPress}
+              >
+                <ThemedText weight="bold" style={styles.confirmText}>
+                  {action.text}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onCancel || onClose}
+            >
+              <ThemedText weight="bold" style={styles.cancelText}>{cancelText}</ThemedText>
+            </TouchableOpacity>
+          </>
         ) : (
           <>
             <TouchableOpacity
@@ -126,7 +150,7 @@ export default function ConfirmModal({
 
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={onClose}
+              onPress={onCancel || onClose}
             >
               <ThemedText weight="bold" style={styles.cancelText}>{cancelText}</ThemedText>
             </TouchableOpacity>

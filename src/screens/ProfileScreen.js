@@ -1,9 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker';
 import {StatusBar, setStatusBarStyle} from 'expo-status-bar';
 import React, {useCallback, useRef, useState} from "react";
 import {
-  Alert,
   Animated,
   AppState,
   Dimensions,
@@ -55,6 +55,12 @@ export default function ProfileScreen({ navigation }) {
   const [microphoneOffModalVisible, setMicrophoneOffModalVisible] = useState(false);
   const [resetModalVisible, setResetModalVisible] = useState(false);
   const [resetErrorModalVisible, setResetErrorModalVisible] = useState(false);
+  const [avatarUri, setAvatarUri] = useState(null);
+  const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
+  const [cameraPermissionModalVisible, setCameraPermissionModalVisible] = useState(false);
+  const [galleryPermissionModalVisible, setGalleryPermissionModalVisible] = useState(false);
+  const [cameraErrorModalVisible, setCameraErrorModalVisible] = useState(false);
+  const [galleryErrorModalVisible, setGalleryErrorModalVisible] = useState(false);
 
   // Ekran fokus olduğunda StatusBar'ı ayarla
   const scrollToTop = useCallback(() => {
@@ -117,6 +123,76 @@ export default function ProfileScreen({ navigation }) {
 
   const handleResetAppSettings = () => {
     setResetModalVisible(true);
+  };
+
+  const handleAvatarPress = () => {
+    setAvatarPickerVisible(true);
+  };
+
+  const handleTakePhoto = async () => {
+    setAvatarPickerVisible(false);
+    
+    // Modal kapanma animasyonunun tamamlanması için bekle
+    setTimeout(async () => {
+      try {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          setCameraPermissionModalVisible(true);
+          return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+          allowsMultipleSelection: false,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+          setAvatarUri(result.assets[0].uri);
+          // TODO: API servisi gelince burada upload edilecek
+          console.log('Avatar URI:', result.assets[0].uri);
+        }
+      } catch (error) {
+        // console.error('Camera error:', error);
+        // Kamera hatası - simulator veya cihaz sorunu
+        setCameraErrorModalVisible(true);
+      }
+    }, 500);
+  };
+
+  const handlePickImage = async () => {
+    setAvatarPickerVisible(false);
+    
+    // Modal kapanma animasyonunun tamamlanması için bekle
+    setTimeout(async () => {
+      try {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          setGalleryPermissionModalVisible(true);
+          return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+          allowsMultipleSelection: false,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+          setAvatarUri(result.assets[0].uri);
+          // TODO: API servisi gelince burada upload edilecek
+          console.log('Avatar URI:', result.assets[0].uri);
+        }
+      } catch (error) {
+        console.error('Image picker error:', error);
+        // Galeri hatası
+        setGalleryErrorModalVisible(true);
+      }
+    }, 500);
   };
 
   const handleResetConfirm = async () => {
@@ -284,7 +360,7 @@ export default function ProfileScreen({ navigation }) {
       zIndex: 2,
     },
     headerTitle: {
-      fontSize: 18,
+      fontSize: 16,
       color: '#fff',
       textAlign: 'center',
     },
@@ -307,11 +383,17 @@ export default function ProfileScreen({ navigation }) {
     avatarContainer: {
       width: 98,
       height: 98,
-      borderRadius: 50,
-      // backgroundColor: '#F3F4FF',
+      borderRadius: 49,
+      backgroundColor: '#F3F4FF',
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 16,
+      position: 'relative',
+    },
+    avatarImage: {
+      width: 98,
+      height: 98,
+      borderRadius: 49,
     },
     editIconContainer: {
       position: 'absolute',
@@ -443,7 +525,7 @@ export default function ProfileScreen({ navigation }) {
 
       {/* Header - Mavi zemin üzerinde */}
       <View style={styles.header}>
-        <ThemedText weight="bold" style={styles.headerTitle}>
+        <ThemedText weight="semibold" style={styles.headerTitle}>
           Profile
         </ThemedText>
       </View>
@@ -456,12 +538,30 @@ export default function ProfileScreen({ navigation }) {
       >
         {/* Profile Card */}
         <View style={[styles.profileCard, shadows.light]}>
-          <View style={styles.avatarContainer}>
-            <ThemedIcon
-              iconName="avatar"
-              size={98}
-            />
-          </View>
+          <TouchableOpacity 
+            style={styles.avatarContainer}
+            onPress={handleAvatarPress}
+            activeOpacity={0.7}
+          >
+            {avatarUri ? (
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <ThemedIcon
+                iconName="avatar"
+                size={98}
+              />
+            )}
+            <View style={styles.editIconContainer}>
+              <ThemedIcon
+                iconName="editPencil"
+                size={12}
+                tintColor="#fff"
+              />
+            </View>
+          </TouchableOpacity>
           <ThemedText weight="bold" style={styles.userName}>
             {fullName}
           </ThemedText>
@@ -687,6 +787,88 @@ export default function ProfileScreen({ navigation }) {
         description="Failed to reset app settings."
         confirmText="OK"
         singleButton={true}
+      />
+
+      {/* Avatar Picker Modal */}
+      <ConfirmModal
+        visible={avatarPickerVisible}
+        onClose={() => setAvatarPickerVisible(false)}
+        iconName="avatarChange"
+        title="Change Avatar"
+        description="Choose how you want to update your profile picture"
+        actions={[
+          {
+            text: 'Take Photo',
+            onPress: handleTakePhoto,
+            color: '#3E4EF0'
+          },
+          {
+            text: 'Choose from Gallery',
+            onPress: handlePickImage,
+            color: '#3E4EF0'
+          }
+        ]}
+        cancelText="Cancel"
+      />
+
+      {/* Camera Permission Modal */}
+      <ConfirmModal
+        visible={cameraPermissionModalVisible}
+        onClose={() => setCameraPermissionModalVisible(false)}
+        onConfirm={() => {
+          setCameraPermissionModalVisible(false);
+          Linking.openSettings();
+        }}
+        iconName="camera"
+        title="Camera Permission Required"
+        description="Camera permission is required to take photos. Please enable it in settings."
+        confirmText="Open Settings"
+        cancelText="Cancel"
+      />
+
+      {/* Gallery Permission Modal */}
+      <ConfirmModal
+        visible={galleryPermissionModalVisible}
+        onClose={() => setGalleryPermissionModalVisible(false)}
+        onConfirm={() => {
+          setGalleryPermissionModalVisible(false);
+          Linking.openSettings();
+        }}
+        iconName="gallery"
+        title="Gallery Permission Required"
+        description="Gallery permission is required to choose photos. Please enable it in settings."
+        confirmText="Open Settings"
+        cancelText="Cancel"
+      />
+
+      {/* Camera Error Modal */}
+      <ConfirmModal
+        visible={cameraErrorModalVisible}
+        onClose={() => setCameraErrorModalVisible(false)}
+        onConfirm={() => {
+          setCameraErrorModalVisible(false);
+          Linking.openSettings();
+        }}
+        iconName="camera"
+        title="Camera Not Available"
+        description="Camera is not available. This may be because you're using a simulator or camera access is disabled. Please check your device settings."
+        confirmText="Open Settings"
+        cancelText="Cancel"
+      />
+
+      {/* Gallery Error Modal */}
+      <ConfirmModal
+        visible={galleryErrorModalVisible}
+        onClose={() => setGalleryErrorModalVisible(false)}
+        onConfirm={() => {
+          setGalleryErrorModalVisible(false);
+          Linking.openSettings();
+        }}
+        iconName="camera"
+        title="Gallery Not Available"
+        description="Gallery access is not available. Please check your device settings and ensure gallery permission is enabled."
+        confirmText="Open Settings"
+        cancelText="Cancel"
       />
     </View>
   );

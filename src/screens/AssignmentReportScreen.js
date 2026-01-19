@@ -18,6 +18,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useSelector} from 'react-redux';
 import AudioPlayer from '../components/AudioPlayer';
 import CircularProgress from '../components/CircularProgress';
+import EmptyStateCard from '../components/EmptyStateCard';
 import ThemedIcon from '../components/ThemedIcon';
 import {ThemedText} from '../components/ThemedText';
 import {generateFileUrl, getSolvedExerciseDetail} from '../services/speak';
@@ -516,7 +517,10 @@ export default function AssignmentReportScreen({ navigation }) {
               );
             })
           ) : (
-            <ThemedText style={styles.emptyText}>No feedback available</ThemedText>
+            <EmptyStateCard
+              iconName="report"
+              title="Report"
+              subtitle="No feedback available"/>
           )}
         </View>
       )}
@@ -578,7 +582,10 @@ export default function AssignmentReportScreen({ navigation }) {
               );
             })
           ) : (
-            <ThemedText style={styles.emptyText}>No errors found</ThemedText>
+            <EmptyStateCard
+              iconName="bigcheck"
+              title="Great Job!"
+              subtitle="You made no mistakes in this task."/>
           )}
         </View>
       )}
@@ -711,7 +718,7 @@ export default function AssignmentReportScreen({ navigation }) {
             tintColor="#fff"
           />
         </TouchableOpacity>
-        <ThemedText weight="bold" style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+        <ThemedText weight="semibold" style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
           {stripHtml(reportData.taskName) || 'Assignment Report'}
         </ThemedText>
         <View style={styles.headerRight} />
@@ -859,7 +866,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#fff',
     flex: 1,
     textAlign: 'center',

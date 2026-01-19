@@ -19,8 +19,10 @@ export const API_ENDPOINTS = {
   student: {
     generateExerciseToken: `${BASE_URL}/student/generate-exercise-auth-token`,
     submitSpeechTask: `${BASE_URL}/student/submit-speech-task`,
+    saveSpeechOnScenarioProgress: `${BASE_URL}/student/save-speech-on-scenario-progress`,
     getCompletedExercises: `${BASE_URL}/student/get-student-completed-exercises`,
     getSolvedExerciseDetail: `${BASE_URL}/student/get-solved-exercise-detail`,
+    deleteSolvedTask: `${BASE_URL}/student/delete-solved-task`,
   },
   speechScenario: {
     chatResponse: `${BASE_URL}/question/speech-on-scenario-chat-response`,
@@ -34,6 +36,10 @@ api.interceptors.request.use(
     const { accessToken, tokenAcquiredAt, refreshToken } = state;
 
     if (config.url.includes('/auth/login') || config.url.includes('/auth/refresh')) {
+      return config;
+    }
+
+    if (config.skipAuthInterceptor) {
       return config;
     }
 

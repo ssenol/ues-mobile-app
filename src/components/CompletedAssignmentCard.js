@@ -4,7 +4,7 @@ import { useTheme } from '../theme/ThemeContext';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
 
-export default function CompletedAssignmentCard({ assignment, onPress }) {
+export default function CompletedAssignmentCard({ assignment, onPress, onDelete }) {
   const { colors, shadows } = useTheme();
 
   // Eğer status 'pending' ise farklı bir card göster
@@ -157,10 +157,7 @@ export default function CompletedAssignmentCard({ assignment, onPress }) {
       <View style={styles.divider} />
 
       {/* Report Section */}
-      <View>
-        {/*<ThemedText style={styles.reportHint}>
-          View your detailed assignment performance below
-        </ThemedText>*/}
+      <View style={styles.footerContainer}>
         <TouchableOpacity
           style={styles.reportLink}
           onPress={onPress}
@@ -174,6 +171,18 @@ export default function CompletedAssignmentCard({ assignment, onPress }) {
           <ThemedText weight="bold" style={styles.reportLinkText}>
             Report
           </ThemedText>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={onDelete}
+          activeOpacity={0.7}
+        >
+          <ThemedIcon
+            iconName="trash"
+            size={16}
+            tintColor="#FF3B30"
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -319,6 +328,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: 'center',
   },
+  footerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
   reportLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -329,6 +344,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#3E4EF0',
+  },
+  deleteButton: {
+    position: 'absolute',
+    right: 0,
+    padding: 4,
   },
 });
 

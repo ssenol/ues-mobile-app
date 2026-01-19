@@ -24,6 +24,7 @@ import { setStatusBarStyle } from 'expo-status-bar';
 import { ThemedText } from '../components/ThemedText';
 import ThemedIcon from '../components/ThemedIcon';
 import InfoModal from '../components/InfoModal';
+import ConfirmModal from '../components/ConfirmModal';
 import ScenarioTaskDetails from '../components/ScenarioTaskDetails';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -49,6 +50,8 @@ const SpeechOnScenarioStep2Screen = () => {
   const [exerciseToken, setExerciseToken] = useState(null);
   const [userMessageCount, setUserMessageCount] = useState(0);
   const [tokenError, setTokenError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
   
   const scrollViewRef = useRef(null);
   
@@ -125,7 +128,7 @@ const SpeechOnScenarioStep2Screen = () => {
     setIsLoading(true);
     setTokenError(false);
     try {
-      console.log('🔑 Token alınıyor...');
+      // console.log('🔑 Token alınıyor...');
       
       const exerciseTokenPayload = {
         assignedTaskId: task.assignedTaskId,
@@ -140,15 +143,15 @@ const SpeechOnScenarioStep2Screen = () => {
         environment: 'prod',
       };
       
-      console.log('📦 Exercise Token Payload:', JSON.stringify(exerciseTokenPayload, null, 2));
+      // console.log('📦 Exercise Token Payload:', JSON.stringify(exerciseTokenPayload, null, 2));
       
       const tokenResponse = await api.post(API_ENDPOINTS.student.generateExerciseToken, exerciseTokenPayload);
       
-      console.log('✅ Token Response:', tokenResponse.data);
+      // console.log('✅ Token Response:', tokenResponse.data);
       
       if (tokenResponse.data?.status === 'success' && tokenResponse.data?.data?.token) {
         const token = tokenResponse.data.data.token;
-        console.log('🎫 Token alındı:', token);
+        // console.log('🎫 Token alındı:', token);
         setExerciseToken(token);
         
         await sendInitialMessage(token);
@@ -170,11 +173,11 @@ const SpeechOnScenarioStep2Screen = () => {
 
   const sendInitialMessage = async (token) => {
     try {
-      console.log('💬 İlk mesaj gönderiliyor...');
+      // console.log('💬 İlk mesaj gönderiliyor...');
       
       const { concept, scenario } = task.task.setting.selectedConcept.concept;
       const { dialogLanguage, userNativeLanguage, conversationLevel } = task.task.setting;
-      const username = task.task.setting.username || 'Student';
+      // const username = task.task.setting.username || 'Student';
       
       const messageData = {
         messagesHistory: [],
@@ -191,8 +194,8 @@ const SpeechOnScenarioStep2Screen = () => {
         messageData: JSON.stringify(messageData)
       };
       
-      console.log('📤 İlk Mesaj Payload:', JSON.stringify(payload, null, 2));
-      console.log('🔐 Authorization Token:', token);
+      // console.log('📤 İlk Mesaj Payload:', JSON.stringify(payload, null, 2));
+      // console.log('🔐 Authorization Token:', token);
       
       const response = await axios.post(
         API_ENDPOINTS.speechScenario.chatResponse,
@@ -204,7 +207,7 @@ const SpeechOnScenarioStep2Screen = () => {
         }
       );
       
-      console.log('📥 İlk Mesaj Response:', response.data);
+      // console.log('📥 İlk Mesaj Response:', response.data);
       
       if (response.data?.status === 'success' && response.data?.data?.aiResponse) {
         const assistantMessage = {
@@ -215,7 +218,7 @@ const SpeechOnScenarioStep2Screen = () => {
           id: generateGuid()
         };
         
-        console.log('✅ İlk bot mesajı alındı:', assistantMessage.content);
+        // console.log('✅ İlk bot mesajı alındı:', assistantMessage.content);
         setMessagesHistory([assistantMessage]);
       } else {
         console.log('❌ İlk mesaj alınamadı:', response.data);
@@ -223,6 +226,60 @@ const SpeechOnScenarioStep2Screen = () => {
     } catch (error) {
       console.error('❌ İlk mesaj alınırken hata:', error);
       console.error('Hata detayı:', error.response?.data);
+    }
+  };
+
+  const handleNext = async () => {
+    if (isSubmitting || !exerciseToken) {
+      console.log('⚠️ Submit edilemiyor:', { isSubmitting, hasToken: !!exerciseToken });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      console.log('📤 Progress kaydediliyor...');
+      
+      // Messages history'yi API formatına çevir
+      const formattedMessages = messagesHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content || '',
+        translation: msg.translation || '',
+        voiceRecord: msg.voiceRecord || null,
+        correction: msg.correction || '',
+        id: msg.id
+      }));
+
+      const payload = {
+        messages: formattedMessages
+      };
+
+      // console.log('📦 Progress Payload:', JSON.stringify(payload, null, 2));
+      // console.log('🔐 Authorization Token:', exerciseToken);
+
+      const response = await axios.post(
+        API_ENDPOINTS.student.saveSpeechOnScenarioProgress,
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${exerciseToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // console.log('✅ Progress Response:', response.data);
+
+      if (response.data?.status === 'success') {
+        // console.log('✅ Progress başarıyla kaydedildi');
+        setSuccessModalVisible(true);
+      } else {
+        // console.log('⚠️ Progress kaydedilemedi:', response.data);
+      }
+    } catch (error) {
+      console.error('❌ Progress kaydedilirken hata:', error);
+      console.error('Hata detayı:', error.response?.data);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -346,7 +403,7 @@ const SpeechOnScenarioStep2Screen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton} activeOpacity={0.7}>
           <ThemedIcon iconName="back" size={24} tintColor="#3A3A3A" />
         </TouchableOpacity>
-        <ThemedText weight="bold" style={styles.headerTitle}>{stripHtml(taskName) || 'Speech On Scenario'}</ThemedText>
+        <ThemedText weight="semibold" style={styles.headerTitle}>{stripHtml(taskName) || 'Speech On Scenario'}</ThemedText>
         <View style={styles.headerRight} />
       </View>
 
@@ -425,14 +482,16 @@ const SpeechOnScenarioStep2Screen = () => {
         {userMessageCount >= MAX_MESSAGES ? (
           <View style={[styles.nextButtonContainer, { paddingBottom: inputPaddingBottom }]}>
             <TouchableOpacity 
-              style={styles.nextButton}
+              style={[styles.nextButton, isSubmitting && { opacity: 0.6 }]}
               activeOpacity={0.8}
-              onPress={() => {
-                // Next adımına geçiş - sonraki adımda implement edilecek
-                console.log('Next step');
-              }}
+              onPress={handleNext}
+              disabled={isSubmitting}
             >
-              <ThemedText weight="bold" style={styles.nextButtonText}>Next</ThemedText>
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <ThemedText weight="bold" style={styles.nextButtonText}>Next</ThemedText>
+              )}
             </TouchableOpacity>
           </View>
         ) : (
@@ -488,6 +547,28 @@ const SpeechOnScenarioStep2Screen = () => {
           </ScrollView>
         </InfoModal>
 
+        {/* Success Modal */}
+        <ConfirmModal
+          visible={successModalVisible}
+          onClose={() => {
+            setSuccessModalVisible(false);
+            navigation.navigate('MainTabs', { screen: 'Home' });
+          }}
+          iconName="bigcheck"
+          title="Task Completed!"
+          description="Your task has been successfully submitted. What would you like to do next?"
+          actions={[
+            {
+              text: 'View Report',
+              onPress: () => {
+                setSuccessModalVisible(false);
+                navigation.navigate('MainTabs', { screen: 'Completed' });
+              },
+              color: '#3E4EF0'
+            }
+          ]}
+          cancelText="Go to Home"
+        />
       </KeyboardAvoidingView>
     </View>
   );
@@ -572,14 +653,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   progressBar: {
-    width: '85%',
+    width: '80%',
     height: 12,
     backgroundColor: '#F0F0F0',
     borderRadius: 12,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#3E4EF0',
+    backgroundColor: '#34C759',
     borderRadius: 12,
     minWidth: '2%',
   },

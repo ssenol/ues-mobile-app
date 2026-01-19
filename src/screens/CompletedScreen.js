@@ -1,24 +1,28 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {Dimensions, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View, Platform} from 'react-native';
+import {Dimensions, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import CompletedAssignmentCard from '../components/CompletedAssignmentCard';
 import { ThemedText } from '../components/ThemedText';
-import { getCompletedExercises } from '../services/speak';
+import { getCompletedExercises, deleteSolvedTask } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
+import { clearCache } from '../store/slices/assignmentSlice';
 import ThemedIcon from "../components/ThemedIcon";
 import InfoModal from '../components/InfoModal';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import ConfirmModal from '../components/ConfirmModal';
+import InlineCalendar from '../components/InlineCalendar';
+import {useTheme} from "../theme/ThemeContext";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function CompletedScreen({ navigation }) {
-  // const { colors } = useTheme();
+  const { shadows } = useTheme();
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
   const user = useSelector((state) => selectCurrentUser(state));
+  const dispatch = useDispatch();
   const scrollViewRef = useRef(null);
   const [completedTasks, setCompletedTasks] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -27,13 +31,16 @@ export default function CompletedScreen({ navigation }) {
   const [hasMore, setHasMore] = useState(true);
   const autoRefreshTimerRef = useRef(null);
   const handleRefreshRef = useRef(null);
+  const fetchCompletedExercisesRef = useRef(null);
   
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [selectedSubTaskTypes, setSelectedSubtTaskTypes] = useState(['speech_on_topic', 'read_aloud', 'speech_on_scenario']);
+  const [selectedSubTaskTypes, setSelectedSubTaskTypes] = useState(['speech_on_topic', 'read_aloud', 'speech_on_scenario']); // Multi selection
   const [completionDate, setCompletionDate] = useState(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [tempDate, setTempDate] = useState(null);
+  const [showMore, setShowMore] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const assignmentSubTypeOptions = [
     { value: 'speech_on_topic', label: 'Speech On Topic' },
@@ -62,12 +69,12 @@ export default function CompletedScreen({ navigation }) {
       return `${year}-${month}-${day}`;
     }
     
-    // Display format: DD Month YYYY - HH:MM
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const month = getMonthName(date.getUTCMonth());
-    const year = date.getUTCFullYear();
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    // Display format: DD Month YYYY - HH:MM (local timezone)
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = getMonthName(date.getMonth());
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${day} ${month} ${year} - ${hours}:${minutes}`;
   };
 
@@ -195,6 +202,11 @@ export default function CompletedScreen({ navigation }) {
     handleRefreshRef.current = handleRefresh;
   }, [handleRefresh]);
 
+  // fetchCompletedExercises'i ref'e ata
+  useEffect(() => {
+    fetchCompletedExercisesRef.current = fetchCompletedExercises;
+  }, [fetchCompletedExercises]);
+
   // completedTasks değiştiğinde timer'ı kontrol et ve gerekirse yeniden başlat
   useEffect(() => {
     const hasPendingTasks = completedTasks.some(task => task.status === 'pending');
@@ -235,22 +247,27 @@ export default function CompletedScreen({ navigation }) {
       setStatusBarStyle('dark');
       scrollToTop();
       
-      const loadData = async () => {
-        setNextCursor(null);
-        setHasMore(true);
-        await fetchCompletedExercises(true, null);
-        // Timer useEffect içinde otomatik başlayacak
-      };
+      // Reset filters when screen comes into focus
+      setSelectedSubTaskTypes(['speech_on_topic', 'read_aloud', 'speech_on_scenario']);
+      setCompletionDate(null);
+      setNextCursor(null);
+      setHasMore(true);
       
-      loadData();
+      // Fetch data with a small delay to ensure state updates are applied
+      const timer = setTimeout(async () => {
+        if (fetchCompletedExercisesRef.current) {
+          await fetchCompletedExercisesRef.current(true, null);
+        }
+      }, 100);
       
       // Cleanup: Sayfa unfocus olunca timer'ı temizle
       return () => {
+        clearTimeout(timer);
         if (autoRefreshTimerRef.current) {
           clearTimeout(autoRefreshTimerRef.current);
         }
       };
-    }, [user, fetchCompletedExercises])
+    }, [user])
   );
 
   // rapor detaya gider
@@ -270,7 +287,7 @@ export default function CompletedScreen({ navigation }) {
   };
 
   const toggleSubTaskType = (taskType) => {
-    setSelectedSubtTaskTypes(prev => {
+    setSelectedSubTaskTypes(prev => {
       if (prev.includes(taskType)) {
         return prev.filter(t => t !== taskType);
       } else {
@@ -279,49 +296,60 @@ export default function CompletedScreen({ navigation }) {
     });
   };
 
-  const handleDateChange = (event, selectedDate) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-      if (event.type === 'set' && selectedDate) {
-        setCompletionDate(selectedDate.toISOString());
-      }
-    } else if (Platform.OS === 'ios') {
-      if (selectedDate) {
-        setTempDate(selectedDate);
-      }
-    }
-  };
-
-  const confirmDateSelection = () => {
-    if (tempDate) {
-      setCompletionDate(tempDate.toISOString());
-    }
-    setShowDatePicker(false);
-  };
-
-  const openDatePicker = () => {
-    setTempDate(completionDate ? new Date(completionDate) : new Date());
-    setShowDatePicker(true);
-  };
-
-  const clearDate = () => {
-    setCompletionDate(null);
-  };
-
   const applyFilters = async () => {
     setFilterModalVisible(false);
+    setShowMore(false);
     setNextCursor(null);
     setHasMore(true);
     await fetchCompletedExercises(true, null);
   };
 
   const resetFilters = async () => {
-    setSelectedSubtTaskTypes(['speech_on_topic', 'read_aloud', 'speech_on_scenario']);
+    setSelectedSubTaskTypes(['speech_on_topic', 'read_aloud', 'speech_on_scenario']);
     setCompletionDate(null);
-    setFilterModalVisible(false);
+    setShowMore(false);
     setNextCursor(null);
     setHasMore(true);
     await fetchCompletedExercises(true, null);
+  };
+
+  const handleDeletePress = (assignment) => {
+    setTaskToDelete(assignment);
+    setDeleteModalVisible(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!taskToDelete || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      const userId = user?.userId;
+      if (!userId) {
+        console.error('CompletedScreen: Missing user ID');
+        return;
+      }
+
+      const response = await deleteSolvedTask(taskToDelete.solvedTaskId, [userId]);
+      
+      if (response?.status === 'success' || response?.successed) {
+        // Clear assignment cache to ensure fresh data
+        dispatch(clearCache());
+        
+        setDeleteModalVisible(false);
+        setTaskToDelete(null);
+        
+        // Refresh the list
+        setNextCursor(null);
+        setHasMore(true);
+        await fetchCompletedExercises(true, null, true);
+      } else {
+        console.error('Failed to delete task:', response);
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -363,15 +391,16 @@ export default function CompletedScreen({ navigation }) {
         }
       >
         {completedTasks.length > 0 ? (
-          completedTasks.map((assignment) => (
+          completedTasks.map((assignment, index) => (
             <CompletedAssignmentCard
-              key={assignment.id}
+              key={assignment.solvedTaskId || assignment.id || `task-${index}`}
               assignment={assignment}
               onPress={() => handleReportPress(assignment)}
+              onDelete={() => handleDeletePress(assignment)}
             />
           ))
         ) : (
-          <View style={{ padding: 20, alignItems: 'center' }}>
+          <View key="empty-state" style={{ padding: 20, alignItems: 'center' }}>
             <ThemedText style={{ color: '#666' }}>No completed assignments yet</ThemedText>
           </View>
         )}
@@ -386,87 +415,93 @@ export default function CompletedScreen({ navigation }) {
       <InfoModal
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
-        title="Filter Options"
+        title="Filter"
         height={SCREEN_HEIGHT * 0.85}
-        primaryButton={{
-          text: 'Apply Filter',
-          onPress: applyFilters,
-        }}
-        secondaryButton={{
-          text: 'Reset Filter',
-          onPress: resetFilters,
-        }}
       >
         <ScrollView style={styles.filterContent} showsVerticalScrollIndicator={false}>
+          {/* Type Section */}
           <View style={styles.filterSection}>
-            <ThemedText weight="bold" style={styles.filterSectionTitle}>Assignment Type</ThemedText>
+            <ThemedText weight="semibold" style={styles.filterSectionTitle}>Type</ThemedText>
             
-            {assignmentSubTypeOptions.map((option) => (
+            {assignmentSubTypeOptions.slice(0, showMore ? assignmentSubTypeOptions.length : 3).map((option) => (
               <TouchableOpacity 
                 key={option.value}
                 style={styles.checkboxRow}
                 onPress={() => toggleSubTaskType(option.value)}
                 activeOpacity={0.7}
               >
+                <ThemedText style={styles.checkboxLabel}>{option.label}</ThemedText>
                 <View style={styles.checkbox}>
                   {selectedSubTaskTypes.includes(option.value) && (
                     <View style={styles.checkboxInner} />
                   )}
                 </View>
-                <ThemedText style={styles.checkboxLabel}>{option.label}</ThemedText>
               </TouchableOpacity>
             ))}
-          </View>
 
-          <View style={styles.filterSection}>
-            <ThemedText weight="bold" style={styles.filterSectionTitle}>Completion Date</ThemedText>
-            
-            <View style={styles.datePickerRow}>
+            {assignmentSubTypeOptions.length > 3 && (
               <TouchableOpacity 
-                style={styles.datePickerButton}
-                onPress={openDatePicker}
+                onPress={() => setShowMore(!showMore)}
                 activeOpacity={0.7}
+                style={styles.moreButton}
               >
-                <ThemedText style={styles.datePickerButtonText}>
-                  {completionDate ? new Date(completionDate).toLocaleDateString() : 'Select Date'}
+                <ThemedText weight="semibold" style={styles.moreButtonText}>
+                  {showMore ? 'Less' : 'More'}
                 </ThemedText>
-                <ThemedIcon iconName="calendar" size={20} tintColor="#3E4EF0" />
               </TouchableOpacity>
-              
-              {showDatePicker && Platform.OS === 'ios' ? (
-                <TouchableOpacity 
-                  style={styles.confirmDateIconButton}
-                  onPress={confirmDateSelection}
-                  activeOpacity={0.7}
-                >
-                  <ThemedIcon iconName="checkmark" size={20} tintColor="#FFFFFF" />
-                </TouchableOpacity>
-              ) : completionDate ? (
-                <TouchableOpacity 
-                  style={styles.clearDateButton}
-                  onPress={clearDate}
-                  activeOpacity={0.7}
-                >
-                  <ThemedIcon iconName="close" size={18} tintColor="#666" />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-
-            {showDatePicker && (
-              <View style={styles.datePickerContainer}>
-                <DateTimePicker
-                  value={tempDate || new Date()}
-                  mode="date"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={handleDateChange}
-                  maximumDate={new Date()}
-                  style={styles.iosDatePicker}
-                />
-              </View>
             )}
           </View>
+
+          {/* Completion Date Section */}
+          <View style={styles.filterSection}>
+            <ThemedText weight="semibold" style={styles.filterSectionTitle}>Completion Date</ThemedText>
+            
+            <InlineCalendar
+              selectedDate={completionDate}
+              onDateSelect={(date) => setCompletionDate(date.toISOString())}
+            />
+          </View>
         </ScrollView>
+
+        {/* Apply Filter Button */}
+        <View style={[styles.applyButtonContainer, shadows.dark]}>
+          <TouchableOpacity 
+            style={styles.applyButton}
+            onPress={applyFilters}
+            activeOpacity={0.8}
+          >
+            <ThemedText weight="bold" style={styles.applyButtonText}>
+              Apply Filter
+            </ThemedText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.resetButton}
+            onPress={resetFilters}
+            activeOpacity={0.8}
+          >
+            <ThemedText weight="semibold" style={styles.resetButtonText}>
+              Reset Filter
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
       </InfoModal>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        visible={deleteModalVisible}
+        onClose={() => {
+          setDeleteModalVisible(false);
+          setTaskToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        iconName="info3"
+        title="Delete Task Report?"
+        description="Are you sure you want to delete this task report? This action cannot be undone."
+        confirmText={isDeleting ? 'Deleting...' : 'Yes, Delete'}
+        cancelText="Cancel"
+        confirmButtonColor="#FF3B30"
+      />
     </View>
   );
 }
@@ -535,20 +570,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     color: '#3A3A3A',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4FF',
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#3A3A3A',
   },
   checkbox: {
     width: 24,
     height: 24,
     borderWidth: 2,
     borderColor: '#3E4EF0',
-    borderRadius: 6,
-    marginRight: 12,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -556,39 +598,51 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     backgroundColor: '#3E4EF0',
-    borderRadius: 3,
+    borderRadius: 7,
   },
-  checkboxLabel: {
+  moreButton: {
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  moreButtonText: {
     fontSize: 15,
     lineHeight: 20,
-    color: '#3A3A3A',
+    color: '#3E4EF0',
   },
-  datePickerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  datePickerButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
+  applyButtonContainer: {
     paddingHorizontal: 16,
-    backgroundColor: '#F3F4FF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
+    paddingVertical: 16,
+    paddingBottom: 24,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4FF',
   },
-  clearDateButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#F3F4FF',
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
+  applyButton: {
+    backgroundColor: '#3E4EF0',
+    borderRadius: 36,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  applyButtonText: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#fff',
+  },
+  resetButton: {
+    // backgroundColor: '#fff',
+    // borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    // borderWidth: 1,
+    // borderColor: '#E5E5E5',
+  },
+  resetButtonText: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#3E4EF0',
   },
   confirmDateIconButton: {
     width: 40,

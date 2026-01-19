@@ -110,6 +110,12 @@ export default function NotificationModal({ visible = false, onClose = () => {},
       paddingBottom: insets.bottom + 24,
       flexGrow: 1,
     },
+    headerTitle: {
+      fontSize: 16,
+      lineHeight: 22,
+      color: '#3A3A3A',
+      textAlign: 'center',
+    },
     bannerCard: {
       backgroundColor: '#E7E9FF',
       borderRadius: 8,
@@ -220,6 +226,7 @@ export default function NotificationModal({ visible = false, onClose = () => {},
     },
     screenHeaderContainer: {
       paddingHorizontal: 16,
+      paddingTop: 16,
       paddingBottom: 16,
       backgroundColor: '#fff',
       borderBottomWidth: 1,
@@ -334,13 +341,15 @@ export default function NotificationModal({ visible = false, onClose = () => {},
 
   if (isScreenMode) {
     return (
-      <View style={[styles.screenContainer, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.screenHeaderContainer}>
-          <ThemedText weight="bold" style={styles.headerTitle}>
+      <View style={styles.screenContainer}>
+        <View style={[styles.screenHeaderContainer, { paddingTop: insets.top + 16 }]}>
+          <ThemedText weight="semibold" style={styles.headerTitle}>
             Notifications
           </ThemedText>
         </View>
-        {renderNotificationList()}
+        <View style={{ flex: 1, paddingBottom: insets.bottom }}>
+          {renderNotificationList()}
+        </View>
       </View>
     );
   }

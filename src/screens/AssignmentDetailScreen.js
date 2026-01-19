@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Dimensions, LayoutAnimation, Linking, Platform, ScrollView, StyleSheet, TouchableOpacity, UIManager, View } from 'react-native';
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import AudioPlayer from '../components/AudioPlayer';
 import ConfirmModal from '../components/ConfirmModal';
 import LoadingOverlay from '../components/LoadingOverlay';
@@ -13,6 +13,7 @@ import ThemedIcon from '../components/ThemedIcon';
 import { ThemedText } from '../components/ThemedText';
 import { generateExerciseToken, submitSpeechTask } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
+import { clearCache } from '../store/slices/assignmentSlice';
 import { getMicrophoneEnabled, requestMicrophonePermission } from '../utils/helpers';
 
 // Android için LayoutAnimation'ı etkinleştir
@@ -26,6 +27,7 @@ export default function AssignmentDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const insets = useSafeAreaInsets();
+  const dispatch = useDispatch();
   const user = useSelector((state) => selectCurrentUser(state));
   const STATUSBAR_HEIGHT = insets.top;
   
@@ -46,6 +48,7 @@ export default function AssignmentDetailScreen() {
   const [activeWaveformIndex, setActiveWaveformIndex] = useState(0);
   const [waveformHeights, setWaveformHeights] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
   const countdownIntervalRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const waveformIntervalRef = useRef(null);
@@ -440,7 +443,7 @@ export default function AssignmentDetailScreen() {
 
       // Step 1: Generate Exercise Token
       const tokenResponse = await generateExerciseToken(exerciseTokenPayload);
-      
+
       if (!tokenResponse?.data?.token) {
         throw new Error('Failed to generate exercise token');
       }
@@ -453,6 +456,13 @@ export default function AssignmentDetailScreen() {
       if (submitResponse?.status === 'success' || submitResponse?.successed) {
         setFinishModalVisible(false);
         
+        // Task başarıyla tamamlandı - cache'i temizle ki fresh data çekilsin
+        dispatch(clearCache());
+
+        // Navigate directly to Completed screen
+        setTimeout(() => {
+          navigation.navigate('MainTabs', { screen: 'Completed' });
+        }, 300);
         // Alert.alert(
         //   'Success',
         //   'Your speech task has been submitted successfully. Processing in background.',
@@ -632,7 +642,7 @@ export default function AssignmentDetailScreen() {
               tintColor="#3A3A3A"
             />
           </TouchableOpacity>
-          <ThemedText weight="bold" style={styles.headerTitle}>Error</ThemedText>
+          <ThemedText weight="semibold" style={styles.headerTitle}>Error</ThemedText>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.loadingContainer}>
@@ -665,7 +675,7 @@ export default function AssignmentDetailScreen() {
         ) : (
           <View style={styles.headerBackButton} />
         )}
-        <ThemedText weight="bold" style={styles.headerTitle}>{getHeaderTitle()}</ThemedText>
+        <ThemedText weight="semibold" style={styles.headerTitle}>{getHeaderTitle()}</ThemedText>
         <View style={styles.headerRight} />
       </View>
 
@@ -957,6 +967,29 @@ export default function AssignmentDetailScreen() {
         description="You must grant microphone permission to use the speak features."
         confirmText="Allow"
         cancelText="Decline"
+      />
+
+      {/* Success Modal */}
+      <ConfirmModal
+        visible={successModalVisible}
+        onClose={() => {
+          setSuccessModalVisible(false);
+          navigation.navigate('MainTabs', { screen: 'Home' });
+        }}
+        iconName="bigcheck"
+        title="Task Completed!"
+        description="Your task has been successfully submitted. What would you like to do next?"
+        actions={[
+          {
+            text: 'View Report',
+            onPress: () => {
+              setSuccessModalVisible(false);
+              navigation.navigate('MainTabs', { screen: 'Completed' });
+            },
+            color: '#3E4EF0'
+          }
+        ]}
+        cancelText="Go to Home"
       />
 
       {/* Loading Overlay */}

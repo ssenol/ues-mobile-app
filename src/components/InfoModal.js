@@ -91,7 +91,7 @@ export default function InfoModal({
       borderBottomColor: '#F3F4FF',
     },
     headerTitle: {
-      fontSize: 18,
+      fontSize: 16,
       lineHeight: 24,
       color: '#3A3A3A',
       textAlign: 'center',
@@ -130,7 +130,6 @@ export default function InfoModal({
       fontSize: 16,
       lineHeight: 22,
       color: '#3E4EF0',
-      fontWeight: '600',
     },
   });
 
@@ -159,7 +158,7 @@ export default function InfoModal({
         
         {title && (
           <View style={styles.headerContainer} {...panResponder.panHandlers}>
-            <ThemedText weight="bold" style={styles.headerTitle}>
+            <ThemedText weight="semibold" style={styles.headerTitle}>
               {title}
             </ThemedText>
           </View>

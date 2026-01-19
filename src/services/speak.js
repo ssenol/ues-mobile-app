@@ -151,6 +151,7 @@ export const submitSpeechTask = async (audioUri, duration, exerciseToken) => {
         'Authorization': `Bearer ${exerciseToken}`, // This one is special, it uses a temporary exercise token
         'Content-Type': 'multipart/form-data',
       },
+      skipAuthInterceptor: true, // Prevent interceptor from overwriting the exercise token
     }
   );
   return response.data;
@@ -186,6 +187,16 @@ export const generateFileUrl = async (fileUrl) => {
   return response.data;
 };
 
+// Delete Solved Task
+export const deleteSolvedTask = async (taskId, studentIds) => {
+  const response = await api.post(
+    API_ENDPOINTS.student.deleteSolvedTask,
+    { taskId, studentIds },
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+  return response.data;
+};
+
 export default {
   fetchSpeechTasks,
   saveSpeechResult,
@@ -197,4 +208,5 @@ export default {
   getCompletedExercises,
   getSolvedExerciseDetail,
   generateFileUrl,
+  deleteSolvedTask,
 };
