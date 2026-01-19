@@ -31,9 +31,6 @@
     }
   },
   "submit": {
-    "preview": {
-      "ios": {}
-    },
     "production": {
       "ios": {}
     }
