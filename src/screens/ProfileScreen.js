@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
 import {StatusBar, setStatusBarStyle} from 'expo-status-bar';
+import Constants from 'expo-constants';
 import React, {useCallback, useRef, useState} from "react";
 import {
   Animated,
@@ -335,6 +336,8 @@ export default function ProfileScreen({ navigation }) {
   const schoolName = user?.school_name || user?.schoolName || 'School Name';
   const campusName = user?.campus_name || user?.campusName || 'Campus Name';
   const className = user?.class_name || (user?.classInfo && Array.isArray(user.classInfo) ? user.classInfo[0] : null) || 'Classroom';
+  const appVersion = Constants.expoConfig?.version || '1.0.0';
+  const buildNumber = Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode || '1';
 
   const styles = StyleSheet.create({
     container: {
@@ -507,6 +510,13 @@ export default function ProfileScreen({ navigation }) {
       fontSize: 14,
       lineHeight: 24,
       color: '#FF3B30',
+    },
+    versionText: {
+      fontSize: 12,
+      lineHeight: 20,
+      color: '#B7B7B7',
+      textAlign: 'center',
+      marginTop: 36,
     },
   });
 
@@ -710,6 +720,11 @@ export default function ProfileScreen({ navigation }) {
           </ThemedText>
         </TouchableOpacity>
 
+        {/* Version Info */}
+        <ThemedText style={styles.versionText}>
+          Version {appVersion} ({buildNumber})
+        </ThemedText>
+
         {/* Reset App Settings Button - Debug */}
         <TouchableOpacity
           style={styles.resetButton}
@@ -721,6 +736,7 @@ export default function ProfileScreen({ navigation }) {
             {isResetting ? 'Resetting...' : 'Reset App Settings'}
           </ThemedText>
         </TouchableOpacity>
+
       </Animated.ScrollView>
 
       <ConfirmModal
