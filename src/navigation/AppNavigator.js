@@ -16,6 +16,7 @@ import { useTheme } from "../theme/ThemeContext";
 
 import AssignmentDetailScreen from "../screens/AssignmentDetailScreen";
 import AssignmentReportScreen from "../screens/AssignmentReportScreen";
+import ScenarioReportScreen from "../screens/ScenarioReportScreen";
 import AssignmentsScreen from "../screens/AssignmentsScreen";
 import CompletedScreen from "../screens/CompletedScreen";
 import HomeScreen from "../screens/HomeScreen";
@@ -212,6 +213,15 @@ export default function AppNavigator() {
                 name="AssignmentReport" 
                 component={AssignmentReportScreen}
                 options={{ 
+                  headerShown: false,
+                  presentation: 'card',
+                }}
+              />
+              {/* Scenario Report Screen */}
+              <Stack.Screen
+                name="ScenarioReport"
+                component={ScenarioReportScreen}
+                options={{
                   headerShown: false,
                   presentation: 'card',
                 }}

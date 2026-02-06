@@ -342,10 +342,17 @@ export default function AssignmentReportScreen({ navigation }) {
       <View style={styles.userInfoCard}>
         <View style={styles.userInfoLeft}>
           <View style={styles.profileImageContainer}>
-            <ThemedIcon
-              iconName="avatar"
-              size={40}
-            />
+            {user?.avatarUrl ? (
+              <Image
+                source={{ uri: user.avatarUrl }}
+                style={{ width: 40, height: 40, borderRadius: 20 }}
+              />
+            ) : (
+              <ThemedIcon
+                iconName="avatar"
+                size={40}
+              />
+            )}
           </View>
           <View style={styles.userInfoText}>
             <ThemedText weight="bold" style={styles.userGreeting}>

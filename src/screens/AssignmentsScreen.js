@@ -265,11 +265,17 @@ export default function AssignmentsScreen({ navigation, route }) {
     if (assignment.isSolved) {
       // reportId results array'inin içinde
       const reportId = assignment.originalTask?.prevSolvedTask?.results?.[0]?.id;
-      
+
       if (reportId) {
-        navigation.navigate('AssignmentReport', {
-          reportId: reportId
-        });
+        if (assignment.type === 'speechOnScenario') {
+          navigation.navigate('ScenarioReport', {
+            reportId: reportId
+          });
+        } else {
+          navigation.navigate('AssignmentReport', {
+            reportId: reportId
+          });
+        }
         return;
       }
     }

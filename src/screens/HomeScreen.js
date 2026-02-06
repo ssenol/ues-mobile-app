@@ -471,11 +471,17 @@ export default function HomeScreen({ navigation }) {
               activeOpacity={0.7}
               style={styles.avatarButton}
             >
-              <ThemedIcon
-                iconName="avatar"
-                size={40}
-                // tintColor={colors.primary}
-              />
+              {user?.avatarUrl ? (
+                <Image
+                  source={{ uri: user.avatarUrl }}
+                  style={{ width: 40, height: 40, borderRadius: 20 }}
+                />
+              ) : (
+                <ThemedIcon
+                  iconName="avatar"
+                  size={40}
+                />
+              )}
             </TouchableOpacity>
 
             <View style={{ flex: 1 }}>
@@ -584,11 +590,17 @@ export default function HomeScreen({ navigation }) {
                     if (assignment.isSolved) {
                       // reportId results array'inin içinde
                       const reportId = assignment.originalTask?.prevSolvedTask?.results?.[0]?.id;
-                      
+
                       if (reportId) {
-                        navigation.navigate('AssignmentReport', {
-                          reportId: reportId
-                        });
+                        if (assignment.type === 'speechOnScenario') {
+                          navigation.navigate('ScenarioReport', {
+                            reportId: reportId
+                          });
+                        } else {
+                          navigation.navigate('AssignmentReport', {
+                            reportId: reportId
+                          });
+                        }
                         return;
                       }
                     }

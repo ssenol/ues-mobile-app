@@ -26,10 +26,15 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.tokenAcquiredAt = null;
     },
+    updateAvatarUrl: (state, action) => {
+      if (state.currentUser) {
+        state.currentUser.avatarUrl = action.payload;
+      }
+    },
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, logout, updateAvatarUrl } = authSlice.actions;
 
 // Selectors
 export const selectCurrentUser = (state) => state.auth.currentUser;

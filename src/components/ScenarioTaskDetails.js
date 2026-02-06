@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import Slider from '@react-native-community/slider';
+import { useSelector, useDispatch } from 'react-redux';
 import { ThemedText } from './ThemedText';
 import { getOptimizedImageUrl } from '../utils/helpers';
+import { selectTtsSpeed, setTtsSpeed, speedIndexToValue, speedValueToIndex } from '../store/slices/settingsSlice';
 
 // HTML'den metni temizle
 const stripHtml = (html) => {
@@ -11,7 +13,9 @@ const stripHtml = (html) => {
 };
 
 const ScenarioTaskDetails = ({ task }) => {
-  const [speed, setSpeed] = useState(1);
+  const dispatch = useDispatch();
+  const ttsSpeed = useSelector(selectTtsSpeed);
+  const speed = speedValueToIndex(ttsSpeed);
 
   if (!task) {
     return null;
@@ -46,7 +50,7 @@ const ScenarioTaskDetails = ({ task }) => {
           maximumValue={2}
           step={1}
           value={speed}
-          onValueChange={value => setSpeed(value)}
+          onValueChange={value => dispatch(setTtsSpeed(speedIndexToValue(value)))}
           minimumTrackTintColor="#3E4EF0"
           maximumTrackTintColor="#E7E9FF"
           thumbTintColor="#3E4EF0"

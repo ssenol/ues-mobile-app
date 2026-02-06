@@ -276,6 +276,14 @@ export default function CompletedScreen({ navigation }) {
       console.error('CompletedScreen: Missing solvedTaskId');
       return;
     }
+
+    if (assignment.type === 'Speech on Scenario') {
+      navigation.navigate('ScenarioReport', {
+        solvedTaskId: assignment.solvedTaskId,
+      });
+      return;
+    }
+
     navigation.navigate('AssignmentReport', {
       solvedTaskId: assignment.solvedTaskId,
     });

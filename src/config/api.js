@@ -27,6 +27,13 @@ export const API_ENDPOINTS = {
   speechScenario: {
     chatResponse: `${BASE_URL}/question/speech-on-scenario-chat-response`,
   },
+  question: {
+    textToSpeech: `${BASE_URL}/question/text-to-speech`,
+    processAudioToText: `${BASE_URL}/question/process-audio-to-text`,
+  },
+  user: {
+    setUserProfile: `${BASE_URL}/user/set-user-profile`,
+  },
 };
 
 // Request interceptor

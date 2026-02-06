@@ -1,9 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
 import {StatusBar, setStatusBarStyle} from 'expo-status-bar';
 import Constants from 'expo-constants';
-import React, {useCallback, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import {
   Animated,
   AppState,
@@ -11,6 +12,7 @@ import {
   Image,
   Linking,
   Platform,
+  RefreshControl,
   StyleSheet,
   Switch,
   TouchableOpacity,
@@ -22,7 +24,8 @@ import ConfirmModal from "../components/ConfirmModal";
 import ThemedIcon from "../components/ThemedIcon";
 import { ThemedText } from "../components/ThemedText";
 import BiometricAuthService from "../services/biometricAuth";
-import { selectCurrentUser } from "../store/slices/authSlice";
+import api, { API_ENDPOINTS } from "../config/api";
+import { selectCurrentUser, selectRefreshToken, setCredentials, updateAvatarUrl } from "../store/slices/authSlice";
 import { clearAssignmentState } from "../store/slices/assignmentSlice";
 import { useTheme } from "../theme/ThemeContext";
 import {
@@ -39,6 +42,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function ProfileScreen({ navigation }) {
   const dispatch = useDispatch();
   const user = useSelector((state) => selectCurrentUser(state));
+  const refreshToken = useSelector(selectRefreshToken);
   const { colors, shadows } = useTheme();
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
@@ -56,12 +60,19 @@ export default function ProfileScreen({ navigation }) {
   const [microphoneOffModalVisible, setMicrophoneOffModalVisible] = useState(false);
   const [resetModalVisible, setResetModalVisible] = useState(false);
   const [resetErrorModalVisible, setResetErrorModalVisible] = useState(false);
-  const [avatarUri, setAvatarUri] = useState(null);
+  const [avatarUri, setAvatarUri] = useState(user?.avatarUrl || null);
   const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUploadErrorVisible, setAvatarUploadErrorVisible] = useState(false);
   const [cameraPermissionModalVisible, setCameraPermissionModalVisible] = useState(false);
   const [galleryPermissionModalVisible, setGalleryPermissionModalVisible] = useState(false);
   const [cameraErrorModalVisible, setCameraErrorModalVisible] = useState(false);
   const [galleryErrorModalVisible, setGalleryErrorModalVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Stale closure sorununu önlemek için user ref
+  const userRef = useRef(user);
+  userRef.current = user;
 
   // Ekran fokus olduğunda StatusBar'ı ayarla
   const scrollToTop = useCallback(() => {
@@ -71,13 +82,50 @@ export default function ProfileScreen({ navigation }) {
     scrollView.scrollTo({ y: 0, animated: false });
   }, []);
 
+  // Kullanıcı verisini sunucudan yenile (avatar vb. değişiklikler için)
+  const refreshUserData = useCallback(async () => {
+    if (!refreshToken) return;
+    try {
+      const response = await axios.post(API_ENDPOINTS.auth.refresh, { refreshToken });
+      const { accessToken: newAccessToken, user: newUser } = response.data.data;
+
+      dispatch(setCredentials({
+        token: newAccessToken,
+        user: { ...userRef.current, ...newUser },
+        refreshToken,
+        tokenAcquiredAt: Date.now(),
+      }));
+
+      if (newUser?.avatarUrl !== undefined) {
+        setAvatarUri(newUser.avatarUrl);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  }, [refreshToken, dispatch]);
+
+  // Redux'taki avatarUrl değişirse local state'i senkronize et
+  useEffect(() => {
+    if (user?.avatarUrl) {
+      setAvatarUri(user.avatarUrl);
+    }
+  }, [user?.avatarUrl]);
+
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle('light');
       scrollToTop();
+      refreshUserData();
       return () => {};
-    }, [scrollToTop])
+    }, [scrollToTop, refreshUserData])
   );
+
+  // Pull to refresh
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await refreshUserData();
+    setIsRefreshing(false);
+  }, [refreshUserData]);
 
   React.useEffect(() => {
     (async () => {
@@ -126,6 +174,34 @@ export default function ProfileScreen({ navigation }) {
     setResetModalVisible(true);
   };
 
+  const uploadAvatar = async (imageUri) => {
+    try {
+      setAvatarUploading(true);
+      const formData = new FormData();
+      const filename = imageUri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      formData.append('file', { uri: imageUri, name: filename, type });
+      formData.append('userId', user?.id || user?._id || user?.userId);
+      formData.append('role', user?.role || 'student');
+      formData.append('username', user?.username || '');
+
+      const response = await api.post(API_ENDPOINTS.user.setUserProfile, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (response.data?.result) {
+        dispatch(updateAvatarUrl(response.data.result));
+        setAvatarUri(response.data.result);
+      }
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      setAvatarUploadErrorVisible(true);
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   const handleAvatarPress = () => {
     setAvatarPickerVisible(true);
   };
@@ -151,12 +227,11 @@ export default function ProfileScreen({ navigation }) {
         });
 
         if (!result.canceled && result.assets[0]) {
-          setAvatarUri(result.assets[0].uri);
-          // TODO: API servisi gelince burada upload edilecek
-          console.log('Avatar URI:', result.assets[0].uri);
+          const uri = result.assets[0].uri;
+          setAvatarUri(uri);
+          await uploadAvatar(uri);
         }
       } catch (error) {
-        // console.error('Camera error:', error);
         // Kamera hatası - simulator veya cihaz sorunu
         setCameraErrorModalVisible(true);
       }
@@ -184,9 +259,9 @@ export default function ProfileScreen({ navigation }) {
         });
 
         if (!result.canceled && result.assets[0]) {
-          setAvatarUri(result.assets[0].uri);
-          // TODO: API servisi gelince burada upload edilecek
-          console.log('Avatar URI:', result.assets[0].uri);
+          const uri = result.assets[0].uri;
+          setAvatarUri(uri);
+          await uploadAvatar(uri);
         }
       } catch (error) {
         console.error('Image picker error:', error);
@@ -545,6 +620,14 @@ export default function ProfileScreen({ navigation }) {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#fff"
+            colors={['#3E4EF0']}
+          />
+        }
       >
         {/* Profile Card */}
         <View style={[styles.profileCard, shadows.light]}>
@@ -885,6 +968,17 @@ export default function ProfileScreen({ navigation }) {
         description="Gallery access is not available. Please check your device settings and ensure gallery permission is enabled."
         confirmText="Open Settings"
         cancelText="Cancel"
+      />
+
+      {/* Avatar Upload Error Modal */}
+      <ConfirmModal
+        visible={avatarUploadErrorVisible}
+        onClose={() => setAvatarUploadErrorVisible(false)}
+        iconName="avatarChange"
+        title="Upload Failed"
+        description="Failed to upload your profile picture. Please try again."
+        confirmText="OK"
+        singleButton={true}
       />
     </View>
   );
