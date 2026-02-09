@@ -1,11 +1,14 @@
 import { useAudioPlayer } from 'expo-audio';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 export default function AudioPlayer({ audioUri, duration, onError }) {
   const player = useAudioPlayer(audioUri);
+  const isTablet = SCREEN_WIDTH >= 768;
   const [audioWaveformIndex, setAudioWaveformIndex] = useState(0);
   const [waveformHeights, setWaveformHeights] = useState([]);
   const audioWaveformIntervalRef = useRef(null);
@@ -16,10 +19,17 @@ export default function AudioPlayer({ audioUri, duration, onError }) {
   const [isLoading, setIsLoading] = useState(false);
   const startTimeRef = useRef(null);
 
+  // Tablet uyumlu waveform ayarları
+  const waveformConfig = {
+    barCount: isTablet ? 100 : 20, // Tablet'te daha fazla bar
+    barWidth: isTablet ? 2 : 2,   // Tablet'te daha geniş bar'lar
+    containerHeight: isTablet ? 48 : 32, // Tablet'te daha yüksek container
+  };
+
   // Generate random heights for waveform bars
   const generateRandomHeights = () => {
     const heights = [];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < waveformConfig.barCount; i++) {
       heights.push(Math.random() * 24 + 8); // 8-32px arası random yükseklik
     }
     return heights;
@@ -100,16 +110,17 @@ export default function AudioPlayer({ audioUri, duration, onError }) {
   // Audio waveform animation
   useEffect(() => {
     if (isPlaying) {
-      // Sabit hız kullan (150ms) - daha smooth animasyon
+      // Tablet'te daha smooth animasyon için farklı interval
+      const intervalTime = isTablet ? 100 : 150;
       audioWaveformIntervalRef.current = setInterval(() => {
         setAudioWaveformIndex((prev) => {
-          const next = (prev + 1) % 20;
+          const next = (prev + 1) % waveformConfig.barCount;
           if (next === 0) {
             setWaveformHeights(generateRandomHeights());
           }
           return next;
         });
-      }, 150); // Sabit 150ms
+      }, intervalTime);
     } else {
       if (audioWaveformIntervalRef.current) {
         clearInterval(audioWaveformIntervalRef.current);
@@ -227,13 +238,20 @@ export default function AudioPlayer({ audioUri, duration, onError }) {
       </TouchableOpacity>
 
       {/* Waveform */}
-      <View style={styles.audioWaveformContainer}>
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map((i) => (
+      <View style={[
+        styles.audioWaveformContainer,
+        { height: waveformConfig.containerHeight }
+      ]}>
+        {Array.from({ length: waveformConfig.barCount }, (_, i) => (
           <View
             key={i}
             style={[
               styles.audioWaveformBar,
-              { height: getWaveformHeight(i) },
+              { 
+                width: waveformConfig.barWidth,
+                height: getWaveformHeight(i),
+                borderRadius: waveformConfig.barWidth / 2
+              },
               isPlaying && i === audioWaveformIndex && styles.audioWaveformBarActive
             ]}
           />
@@ -280,13 +298,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 32,
     marginRight: 12,
   },
   audioWaveformBar: {
-    width: 2,
     backgroundColor: '#3E4EF0',
-    borderRadius: 1,
     opacity: 0.8,
   },
   audioWaveformBarActive: {

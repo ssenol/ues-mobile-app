@@ -13,6 +13,7 @@ import { selectCurrentUser } from '../store/slices/authSlice';
 import { buildAssignedSpeechTaskParams } from '../utils/assignmentTransform';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const isTablet = SCREEN_WIDTH >= 768;
 
 export default function AssignmentsScreen({ navigation, route }) {
   const { colors, shadows } = useTheme();
@@ -36,6 +37,11 @@ export default function AssignmentsScreen({ navigation, route }) {
   const [quizListY, setQuizListY] = useState(0);
   const [filterScrollX, setFilterScrollX] = useState(0); // Filtre scroll pozisyonu
   const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Dinamik scrollContent stili
+  const scrollContentStyle = {
+    paddingBottom: isTablet ? 150 : 100, // Tabbar için boşluk
+  };
   const normalFilterScrollRef = useRef(null);
   const stickyFilterScrollRef = useRef(null);
   const filterTabLayouts = useRef({});
@@ -333,7 +339,7 @@ export default function AssignmentsScreen({ navigation, route }) {
   );
 
   const BANNER_WIDTH = SCREEN_WIDTH - 32;
-  const BANNER_ASPECT_RATIO = 343 / 133;
+  const BANNER_ASPECT_RATIO = 778 / 277;
   const BANNER_HEIGHT = BANNER_WIDTH / BANNER_ASPECT_RATIO;
 
   return (
@@ -369,7 +375,7 @@ export default function AssignmentsScreen({ navigation, route }) {
       <Animated.ScrollView 
         ref={scrollViewRef}
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -495,9 +501,6 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    paddingBottom: 100, // Tabbar için boşluk
-  },
   summaryCards: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -537,22 +540,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
 },
   banner: {
-    borderRadius: 12,
+    /*borderRadius: 12,
     overflow: 'hidden',
-    justifyContent: 'center',
+    justifyContent: 'center',*/
   },
   bannerContent: {
-    paddingLeft: 170,
+    paddingLeft: isTablet ? 330 : 155,
     justifyContent: 'center',
     alignItems: 'flex-start',
+    flex: 1,
   },
   bannerTitle: {
-    fontSize: 24,
+    fontSize: isTablet ? 42 : 24,
+    lineHeight: isTablet ? 52 : 28,
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: isTablet ? 8 : 4,
   },
   bannerSubtitle: {
-    fontSize: 14,
+    fontSize: isTablet ? 24 : 14,
+    lineHeight: isTablet ? 32 : 22,
     color: '#fff',
   },
   filterTabs: {

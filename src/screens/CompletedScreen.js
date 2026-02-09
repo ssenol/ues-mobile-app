@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {Dimensions, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {Dimensions, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import CompletedAssignmentCard from '../components/CompletedAssignmentCard';
@@ -19,6 +19,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function CompletedScreen({ navigation }) {
   const { shadows } = useTheme();
+  const isTablet = SCREEN_WIDTH >= 768;
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
   const user = useSelector((state) => selectCurrentUser(state));
@@ -36,6 +37,12 @@ export default function CompletedScreen({ navigation }) {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedSubTaskTypes, setSelectedSubTaskTypes] = useState(['speech_on_topic', 'read_aloud', 'speech_on_scenario']); // Multi selection
   const [completionDate, setCompletionDate] = useState(null);
+
+  // Dinamik scrollContent stili
+  const scrollContentStyle = {
+    padding: 16,
+    paddingBottom: isTablet ? 150 : 100,
+  };
   const [showMore, setShowMore] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -387,7 +394,7 @@ export default function CompletedScreen({ navigation }) {
       <ScrollView 
         ref={scrollViewRef}
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -548,10 +555,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F3F4FF',
   },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 80
-  },
   loadingOverlay: {
     position: 'absolute',
     bottom: 24,
@@ -620,7 +623,8 @@ const styles = StyleSheet.create({
   applyButtonContainer: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    paddingBottom: 24,
+    paddingBottom: 16,
+    // paddingBottom: Platform.OS === "ios" ? 32 : 16,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#F3F4FF',

@@ -41,6 +41,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProfileScreen({ navigation }) {
   const dispatch = useDispatch();
+  const isTablet = SCREEN_WIDTH >= 768;
   const user = useSelector((state) => selectCurrentUser(state));
   const refreshToken = useSelector(selectRefreshToken);
   const { colors, shadows } = useTheme();
@@ -61,6 +62,13 @@ export default function ProfileScreen({ navigation }) {
   const [resetModalVisible, setResetModalVisible] = useState(false);
   const [resetErrorModalVisible, setResetErrorModalVisible] = useState(false);
   const [avatarUri, setAvatarUri] = useState(user?.avatarUrl || null);
+
+  // Dinamik scrollContent stili
+  const scrollContentStyle = {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: isTablet ? 180 : 130, // Tablet için daha fazla boşluk
+  };
   const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarUploadErrorVisible, setAvatarUploadErrorVisible] = useState(false);
@@ -445,12 +453,7 @@ export default function ProfileScreen({ navigation }) {
     scrollView: {
       flex: 1,
     },
-    scrollContent: {
-      paddingTop: 16,
-      paddingHorizontal: 16,
-      paddingBottom: 120,
-    },
-    profileCard: {
+  profileCard: {
       backgroundColor: '#fff',
       borderRadius: 12,
       paddingVertical: 24,
@@ -618,7 +621,7 @@ export default function ProfileScreen({ navigation }) {
       <Animated.ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -768,7 +771,8 @@ export default function ProfileScreen({ navigation }) {
             </View>
           )}
 
-          <View style={styles.divider}></View>
+          {/*Noti ayarı geçici olarak kapatıldı. Sonra açılacak*/}
+          {/*<View style={styles.divider}></View>
 
           <View style={[styles.settingRow, { marginBottom: 0 }]}>
             <View style={styles.settingLeft}>
@@ -789,7 +793,7 @@ export default function ProfileScreen({ navigation }) {
               trackColor={{ false: "#E5E5E5", true: "#3E4EF0" }}
               thumbColor="#fff"
             />
-          </View>
+          </View>*/}
         </View>
 
         {/* Logout Button */}

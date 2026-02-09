@@ -381,7 +381,7 @@ export default function LoginScreen({ navigation }) {
                   variant="outline"
                   iconLeft
                   loading={biometricLoading}
-                  iconName={biometricButtonType === "Face ID" ? "faceId" : "touchId"}
+                  iconName={biometricButtonType === "Face ID" || biometricButtonType === "Yüz Tanıma" ? "faceId" : "touchId"}
                   iconSize={24}
                 />
                 </>
@@ -406,7 +406,7 @@ export default function LoginScreen({ navigation }) {
         visible={biometricPromptModalVisible}
         onClose={handleBiometricPromptCancel}
         onConfirm={handleBiometricPromptConfirm}
-        iconName={biometricPromptType.includes('Face') ? 'faceId' : 'touchId'}
+        iconName={biometricPromptType.includes('Face') || biometricPromptType.includes('Yüz') ? 'faceId' : 'touchId'}
         title={`Login with ${biometricPromptType}`}
         description={`Would you like to log in with ${biometricPromptType}?`}
         confirmText="Yes"

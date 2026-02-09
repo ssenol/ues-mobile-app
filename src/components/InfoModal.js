@@ -86,7 +86,6 @@ export default function InfoModal({
     headerContainer: {
       paddingHorizontal: 16,
       paddingBottom: 16,
-      backgroundColor: '#fff',
       borderBottomWidth: 1,
       borderBottomColor: '#F3F4FF',
     },
@@ -99,7 +98,6 @@ export default function InfoModal({
     },
     contentContainer: {
       flex: 1,
-      backgroundColor: '#fff',
     },
     buttonContainer: {
       paddingHorizontal: 16,

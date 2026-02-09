@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Platform,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -34,7 +35,7 @@ export default function ConfirmModal({
       borderRadius: 12,
       padding: 24,
       marginHorizontal: 16,
-      marginBottom: 36,
+      marginBottom: Platform.OS === "ios" ? 32 : 16,
     },
     iconContainer: {
       backgroundColor: '#F3F4FF',

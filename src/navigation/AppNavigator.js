@@ -3,11 +3,12 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
+  Dimensions,
   StyleSheet,
   TouchableOpacity,
   View
 } from "react-native";
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from "react-redux";
 
 import NotificationModal from "../components/NotificationModal";
@@ -36,14 +37,20 @@ const Tab = createBottomTabNavigator();
 export default function AppNavigator() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const { colors, shadows } = useTheme();
+  const insets = useSafeAreaInsets();
+  
+  // Tablet ve mobil kontrolü
+  const { width: screenWidth } = Dimensions.get('window');
+  const isTablet = screenWidth >= 768;
+  const basePadding = isTablet ? 30 : 10;
 
   // Styles'ı colors hook'undan sonra tanımla
   const tabBarStyles = StyleSheet.create({
     tabBarContainer: {
       position: "absolute",
-      bottom: 30,
-      left: 30,
-      right: 30,
+      bottom: insets.bottom + basePadding,
+      left: isTablet ? 192 : 32,
+      right: isTablet ? 192 : 32,
       height: 56,
       backgroundColor: colors.primary,
       borderRadius: 28,

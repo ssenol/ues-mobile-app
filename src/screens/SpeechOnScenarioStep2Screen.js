@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -46,8 +46,22 @@ const SpeechOnScenarioStep2Screen = () => {
   const ttsSpeed = useSelector(selectTtsSpeed);
   const { task } = route.params || {};
 
-  const [taskDetailsModalVisible, setTaskDetailsModalVisible] = useState(false);
-  const [inputPaddingBottom, setInputPaddingBottom] = useState(insets.bottom > 0 ? insets.bottom : 16);
+  // Dinamik padding değerleri
+  const { width: screenWidth } = Dimensions.get('window');
+  const isTablet = screenWidth >= 768;
+  const basePadding = isTablet ? 10 : 10;
+  
+  // Dinamik taskOptionsBar stili
+  const taskOptionsBarStyle = {
+    backgroundColor: '#3E4EF0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: isTablet ? 24 : 8,
+  };
+  
   const [inputText, setInputText] = useState('');
   const [messagesHistory, setMessagesHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -57,12 +71,34 @@ const SpeechOnScenarioStep2Screen = () => {
   const [tokenError, setTokenError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [taskDetailsModalVisible, setTaskDetailsModalVisible] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [recordingUri, setRecordingUri] = useState(null);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
   const [lastRecordingUri, setLastRecordingUri] = useState(null);
   const [currentTTSAudio, setCurrentTTSAudio] = useState(null);
-  const [isTTSLoading, setIsTTSLoading] = useState(false);
+  const [loadingTTSMessages, setLoadingTTSMessages] = useState(new Map()); // Her mesaj için ayrı loading
+
+  // Platform ve klavye durumuna göre padding hesapla
+  const effectiveBottomPadding = useMemo(() => {
+    if (keyboardVisible) {
+      // Klavye açıkken
+      if (Platform.OS === 'ios') {
+        // KeyboardAvoidingView zaten padding ekliyor, azaltıyoruz
+        return insets.bottom - 20;
+      } else {
+        return insets.bottom + 10;
+      }
+    } else {
+      // Klavye kapalıyken
+      if (Platform.OS === 'ios') {
+        return insets.bottom - (basePadding - 10);
+      } else {
+        return insets.bottom + basePadding;
+      }
+    }
+  }, [keyboardVisible, Platform.OS, insets.bottom, basePadding]);
 
   const scrollViewRef = useRef(null);
 
@@ -128,28 +164,32 @@ const SpeechOnScenarioStep2Screen = () => {
     }, [])
   );
 
+  // Klavye event listener'ları (sadece iOS için)
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setInputPaddingBottom(16);
-      }
-    );
+    if (Platform.OS === 'ios') {
+      const keyboardWillShowListener = Keyboard.addListener('keyboardWillShow', () => {
+        setKeyboardVisible(true);
+      });
+      const keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', () => {
+        setKeyboardVisible(false);
+      });
+      
+      // Backup listener'lar
+      const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+        setKeyboardVisible(true);
+      });
+      const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+        setKeyboardVisible(false);
+      });
 
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setInputPaddingBottom(insets.bottom > 0 ? insets.bottom : 16);
-      }
-    );
-
-    return () => {
-      keyboardDidHideListener.remove();
-      keyboardDidShowListener.remove();
-    };
-  }, [insets.bottom]);
+      return () => {
+        keyboardWillShowListener.remove();
+        keyboardWillHideListener.remove();
+        keyboardDidShowListener.remove();
+        keyboardDidHideListener.remove();
+      };
+    }
+  }, []);
 
   useEffect(() => {
     if (scrollViewRef.current) {
@@ -320,7 +360,8 @@ const SpeechOnScenarioStep2Screen = () => {
       return;
     }
 
-    setIsTTSLoading(true);
+    // Sadece bu mesaj için loading'i true yap
+    setLoadingTTSMessages(prev => new Map(prev).set(messageContent, true));
 
     try {
       const payload = {
@@ -360,18 +401,34 @@ const SpeechOnScenarioStep2Screen = () => {
 
         try {
           setCurrentTTSAudio(fileUri);
-          setIsTTSLoading(false);
+          setLoadingTTSMessages(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(messageContent);
+            return newMap;
+          });
         } catch (audioError) {
           console.error('Audio hazırlama hatası:', audioError);
-          setIsTTSLoading(false);
+          setLoadingTTSMessages(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(messageContent);
+            return newMap;
+          });
         }
       } else {
-        setIsTTSLoading(false);
+        setLoadingTTSMessages(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(messageContent);
+          return newMap;
+        });
       }
     } catch (error) {
       console.error('Text-to-speech hatası:', error);
       console.error('Hata detayı:', error.response?.data);
-      setIsTTSLoading(false);
+      setLoadingTTSMessages(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(messageContent);
+        return newMap;
+      });
     }
   };
 
@@ -569,28 +626,18 @@ const SpeechOnScenarioStep2Screen = () => {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -insets.bottom}
       >
         {/* Task Options Bar */}
         <TouchableOpacity
-          style={styles.taskOptionsBar}
+          style={taskOptionsBarStyle}
           onPress={() => setTaskDetailsModalVisible(true)}
           activeOpacity={0.8}
         >
           <ThemedText weight="semiBold" style={styles.taskOptionsText}>Show Task Options</ThemedText>
           <ThemedIcon iconName="upArrow" size={24} tintColor="#fff" />
         </TouchableOpacity>
-
-        {/* Task Completion */}
-        <View style={styles.taskCompletionContainer}>
-          <ThemedText weight="black" style={styles.taskCompletionText}>
-            Task Completion {Math.round((userMessageCount / MAX_MESSAGES) * 100)}%
-          </ThemedText>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${(userMessageCount / MAX_MESSAGES) * 100}%` }]} />
-          </View>
-        </View>
 
         {/* Chat Area */}
         <ScrollView
@@ -634,9 +681,9 @@ const SpeechOnScenarioStep2Screen = () => {
                         style={styles.textToSpeechButton}
                         activeOpacity={0.7}
                         onPress={() => handleTextToSpeech(msg.content)}
-                        disabled={isTTSLoading}
+                        disabled={loadingTTSMessages.has(msg.content)}
                       >
-                        {isTTSLoading ? (
+                        {loadingTTSMessages.has(msg.content) ? (
                           <ActivityIndicator size="small" color="#949494" />
                         ) : (
                           <ThemedIcon iconName="textToSpeech" size={20} tintColor="#949494" />
@@ -658,7 +705,7 @@ const SpeechOnScenarioStep2Screen = () => {
 
         {/* Input Bar or Next Button */}
         {userMessageCount >= MAX_MESSAGES ? (
-          <View style={[styles.nextButtonContainer, { paddingBottom: inputPaddingBottom }]}>
+          <View style={[styles.nextButtonContainer, { paddingBottom: effectiveBottomPadding }]}>
             <TouchableOpacity
               style={[styles.nextButton, isSubmitting && { opacity: 0.6 }]}
               activeOpacity={0.8}
@@ -673,7 +720,7 @@ const SpeechOnScenarioStep2Screen = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={[styles.inputBar, { paddingBottom: inputPaddingBottom }]}>
+          <View style={[styles.inputBar, { paddingBottom: effectiveBottomPadding }]}>
           <TouchableOpacity
             style={[
               styles.iconButton,
@@ -704,6 +751,12 @@ const SpeechOnScenarioStep2Screen = () => {
               placeholderTextColor="#727272"
               value={inputText}
               onChangeText={setInputText}
+              onFocus={() => {
+                setKeyboardVisible(true);
+              }}
+              onBlur={() => {
+                setKeyboardVisible(false);
+              }}
               onSubmitEditing={sendMessage}
               returnKeyType="send"
               blurOnSubmit={false}
@@ -791,14 +844,6 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     width: 24,
-  },
-  taskOptionsBar: {
-    backgroundColor: '#3E4EF0',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
   },
   taskOptionsText: {
     color: '#fff',

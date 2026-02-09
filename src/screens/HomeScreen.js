@@ -30,9 +30,10 @@ export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
+  const isTablet = SCREEN_WIDTH >= 768;
   const STATUSBAR_HEIGHT = insets.top;
   const BANNER_WIDTH = SCREEN_WIDTH - 32; // 16px padding sağ + sol
-  const BANNER_ASPECT_RATIO = 343 / 128; // senin banner görsel oranı (örneğin 346x149px)
+  const BANNER_ASPECT_RATIO = 778 / 278; // banner görsel oranı
   const BANNER_HEIGHT = BANNER_WIDTH / BANNER_ASPECT_RATIO;
 
   const scrollViewRef = useRef(null);
@@ -228,6 +229,68 @@ export default function HomeScreen({ navigation }) {
     },
   ];
 
+  // Optimizasyon: ortak hesaplamaları bir kez yap
+  const totalCards = activityCards.length;
+  const isFullRow = (isTablet && totalCards === 3) || (!isTablet && totalCards === 2);
+  const goalProgressWidth = SCREEN_WIDTH - 32; // paddingHorizontal: 16+16
+
+  // Dinamik activity card stili
+  const getActivityCardStyle = (index) => {
+    const cardsPerRow = isTablet ? 3 : 2;
+    const isLastCard = index === totalCards - 1;
+
+    let cardWidth;
+    if (isFullRow) {
+      if (isTablet) {
+        if (totalCards === 2) {
+          // Tablet 2 kart: alanın 2/3'ü
+          cardWidth = (SCREEN_WIDTH * 2/3 - 12) / 2; // 12px gap
+        } else {
+          // Tablet 3 kart: GoalProgress genişliği kadar
+          cardWidth = (goalProgressWidth - 24) / 3; // 12px gap
+        }
+      } else {
+        if (totalCards === 2) {
+          // Mobil 2 kart: GoalProgress genişliği kadar
+          cardWidth = (goalProgressWidth - 12) / 2; // 12px gap
+        } else {
+          // Mobil 3 kart: şu anki ayarlar korunur
+          const totalGap = 32;
+          cardWidth = (SCREEN_WIDTH - totalGap - 24) / 3;
+        }
+      }
+    } else {
+      // Normal durum: gap hesabı ile
+      const totalGap = isTablet ? 48 : 32;
+      cardWidth = (SCREEN_WIDTH - totalGap - 24) / cardsPerRow;
+    }
+    
+    const shouldHaveMarginRight = !(isFullRow && isLastCard);
+    
+    return {
+      width: cardWidth,
+      borderRadius: 8,
+      marginRight: shouldHaveMarginRight ? 12 : 0,
+      overflow: 'hidden',
+    };
+  };
+
+  // Dinamik ScrollView contentContainer stili
+  const getActivityScrollStyle = () => {
+    const isFullRow = (isTablet && activityCards.length === 3) || (!isTablet && activityCards.length === 2);
+    
+    if (isFullRow) {
+      return {
+        paddingLeft: 16,
+        paddingRight: 16, // Tam sığan durumlarda sağ padding ekle
+      };
+    } else {
+      return {
+        paddingLeft: 16,
+      };
+    }
+  };
+
   const styles = StyleSheet.create({
     container: { 
       flex: 1, 
@@ -253,7 +316,7 @@ export default function HomeScreen({ navigation }) {
       backgroundColor: colors.primary,
     },
     scrollContent: {
-      paddingBottom: 80,
+      paddingBottom: isTablet ? 120 : 100,
       flexGrow: 1,
       backgroundColor: '#fff',
     },
@@ -320,15 +383,15 @@ export default function HomeScreen({ navigation }) {
       alignItems: 'flex-start',
     },
     bannerContent: {
-      paddingLeft: 145,
+      paddingLeft: isTablet ? 300 : 145,
       justifyContent: 'center',
       alignItems: 'flex-start',
       flex: 1,
     },
     bannerTitle: {
       marginTop: 25,
-      fontSize: 18,
-      lineHeight: 26,
+      fontSize: isTablet ? 42 : 18,
+      lineHeight: isTablet ? 52 : 26,
       color: '#000',
     },
 
@@ -338,14 +401,6 @@ export default function HomeScreen({ navigation }) {
     },
     activityCardsScrollView: {
       paddingLeft: 16,
-    },
-    activityCard: {
-      // Ekran genişliği - sol/sağ padding (16+16) - gap / 2
-      // activityCard'da 2 kart varsa 48px, 1 kart varsa 32px
-      width: (SCREEN_WIDTH - (activityCards.length > 2 ? 48 : 32) - 12) / 2,
-      borderRadius: 8,
-      marginRight: 12,
-      overflow: 'hidden',
     },
     activityCardBackground: {
       position: 'absolute',
@@ -530,15 +585,12 @@ export default function HomeScreen({ navigation }) {
               ref={activityScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.activityCardsScrollView}
+              contentContainerStyle={getActivityScrollStyle()}
             >
               {activityCards.map((card, index) => (
                 <TouchableOpacity
                   key={card.id}
-                  style={[
-                    styles.activityCard,
-                    index === activityCards.length - 1 && { marginRight: 16 }
-                  ]}
+                  style={getActivityCardStyle(index)}
                   onPress={card.onPress}
                   activeOpacity={0.8}
                 >

@@ -15,6 +15,33 @@ const SpeechOnScenarioStep1Screen = () => {
   const insets = useSafeAreaInsets();
   const { task } = route.params || {};
 
+  // Tablet ve mobil kontrolü
+  const { width: screenWidth } = Dimensions.get('window');
+  const isTablet = screenWidth >= 768;
+  const basePadding = isTablet ? 50 : 10;
+
+  // Dinamik stil oluşturma
+  const dynamicStyles = StyleSheet.create({
+    buttonWrapper: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      padding: 16,
+      paddingBottom: insets.bottom + basePadding,
+      backgroundColor: '#fff',
+
+      // iOS
+      shadowColor: '#3E4EF0',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 8,
+
+      // Android
+      elevation: 12,
+    }
+  });
+
   useFocusEffect(
     React.useCallback(() => {
       setStatusBarStyle('dark');
@@ -68,7 +95,7 @@ const SpeechOnScenarioStep1Screen = () => {
       </ScrollView>
 
       {/* Start Chat Button */}
-      <View style={styles.buttonWrapper}>
+      <View style={dynamicStyles.buttonWrapper}>
         <TouchableOpacity 
           style={styles.buttonContainer} 
           activeOpacity={0.8}
@@ -130,27 +157,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22
   },
-  buttonWrapper: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-    paddingBottom: 32, // Extra padding for home indicator
-    backgroundColor: '#fff',
-    shadowColor: '#3E4EF0',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
   buttonContainer: {
     backgroundColor: '#3E4EF0',
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 12
-
   },
   buttonText: {
     color: '#fff',

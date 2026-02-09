@@ -15,6 +15,7 @@ import { generateExerciseToken, submitSpeechTask } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
 import { clearCache } from '../store/slices/assignmentSlice';
 import { getMicrophoneEnabled, requestMicrophonePermission } from '../utils/helpers';
+import { useTheme } from '../theme/ThemeContext';
 
 // Android için LayoutAnimation'ı etkinleştir
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -29,7 +30,30 @@ export default function AssignmentDetailScreen() {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const user = useSelector((state) => selectCurrentUser(state));
+  const { colors, shadows } = useTheme();
   const STATUSBAR_HEIGHT = insets.top;
+  
+  // Dinamik padding değerleri
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const isTablet = screenWidth >= 768; // Tablet genişliği 768px ve üzeri
+  
+  // Cihaz tipine göre padding
+  const basePadding = isTablet ? 20 : 10;  // Tablet'te 50px, mobil'de 10px
+  const bottomPadding = insets.bottom + basePadding;
+  
+  // Dinamik stiller
+  const dynamicStyles = StyleSheet.create({
+    floatingButtonContainer: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      zIndex: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+      bottom: bottomPadding,
+    },
+  });
   
   const { task: taskFromParams, assignedTaskId, speechTaskId } = route.params || {};
   
@@ -726,7 +750,7 @@ export default function AssignmentDetailScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: 100 + Math.max(insets.bottom, 16) }
+          { paddingBottom: 100 + bottomPadding }
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -751,10 +775,10 @@ export default function AssignmentDetailScreen() {
           {
             transform: [{ translateY: notificationSlideAnim }],
             opacity: notificationSlideAnim.interpolate({
-              inputRange: [-76, 0],
+              inputRange: [-66, 0],
               outputRange: [1, 0],
             }),
-            bottom: 56,  // Record button ile aynı hizada başlıyor
+            bottom: Math.max(bottomPadding + 16, 66),  // Minimum 66px
           }
         ]}
         pointerEvents={recordingState === 'paused' ? 'auto' : 'none'}
@@ -774,7 +798,7 @@ export default function AssignmentDetailScreen() {
 
       {/* Floating Record Button */}
       {!permissionModalVisible && countdown === 0 && !isStartingRecording && recordingState !== 'finished' && (
-        <View style={styles.floatingButtonContainer}>
+        <View style={dynamicStyles.floatingButtonContainer}>
           <View style={styles.recordButtonWrapper}>
             {/* Left Button - Microphone or Pause */}
             <TouchableOpacity
@@ -906,7 +930,7 @@ export default function AssignmentDetailScreen() {
         animationIn="slideInUp"
         animationOut="slideOutDown"
       >
-        <View style={[styles.finishModalContent, { paddingBottom: Math.max(insets.bottom, 36) }]}>
+        <View style={[styles.finishModalContent, { paddingBottom: bottomPadding }]}>
           {/* Success Icon */}
           <View style={styles.successIconContainer}>
             <ThemedIcon

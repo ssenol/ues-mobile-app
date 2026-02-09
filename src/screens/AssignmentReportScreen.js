@@ -6,7 +6,7 @@ import {
   Alert,
   Animated,
   Dimensions,
-  Image,
+  Image, Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -57,14 +57,17 @@ export default function AssignmentReportScreen({ navigation }) {
   // ========== YÜKSEKLİK DEĞİŞKENLERİ ==========
   const STATUSBAR_HEIGHT = insets.top;
   const HEADER_MARGIN_TOP = 16;
-  const DEFAULT_STICKY_BOTTOM_PADDING = 36;
-  const recordedVoicePaddingBottom = useMemo(() => {
-    if (insets.bottom > 0) {
-      return Math.max(DEFAULT_STICKY_BOTTOM_PADDING, insets.bottom);
-    }
-    return 16;
-  }, [insets.bottom]);
-  const scrollContentPaddingBottom = useMemo(() => recordedVoicePaddingBottom + 24, [recordedVoicePaddingBottom]);
+  
+  // Tablet ve mobil kontrolü
+  const { width: screenWidth } = Dimensions.get('window');
+  const isTablet = screenWidth >= 768;
+  const basePadding = isTablet ? 20 : 10;
+  
+  // Dinamik padding değerleri
+  const bottomPadding = insets.bottom + basePadding;
+  
+  // ScrollView için ekstra padding (tablet'te içeriklerin kalmaması için)
+  const scrollPaddingBottom = bottomPadding + (isTablet ? 30 : 30);
 
   const route = useRoute();
   const { solvedTaskId, reportId } = route.params || {};
@@ -735,7 +738,7 @@ export default function AssignmentReportScreen({ navigation }) {
       <Animated.ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollContentPaddingBottom }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -755,7 +758,7 @@ export default function AssignmentReportScreen({ navigation }) {
       <View
         style={[
           styles.stickyRecordedVoiceContainer,
-          { paddingBottom: recordedVoicePaddingBottom },
+          { paddingBottom: bottomPadding },
           shadows.sticky,
         ]}
       >
@@ -1234,7 +1237,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    paddingBottom: 36,
+    paddingBottom: Platform.OS === "ios" ? 32 : 16,
     height: '85%',
     flexDirection: 'column',
   },
