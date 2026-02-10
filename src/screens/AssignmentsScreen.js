@@ -7,6 +7,7 @@ import { useSelector } from 'react-redux';
 import AssignmentCard from '../components/AssignmentCard';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { ThemedText } from '../components/ThemedText';
+import EmptyStateCard from '../components/EmptyStateCard';
 import { useTheme } from '../theme/ThemeContext';
 import { fetchAssignedSpeechTasksWithCache } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
@@ -470,9 +471,12 @@ export default function AssignmentsScreen({ navigation, route }) {
               ))
             )
           ) : (
-            <ThemedText style={{ textAlign: 'center', padding: 20, color: '#666' }}>
-              No assignments available
-            </ThemedText>
+            <EmptyStateCard
+              iconName={'noassignment'}
+              title ={'Nothing Assigned Yet'}
+              subtitle={"You do not have a task assigned yet."}
+              onLinkPress={() => navigation.navigate('Assignments')}
+            />
           )}
         </View>
       </Animated.ScrollView>

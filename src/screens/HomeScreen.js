@@ -20,6 +20,7 @@ import LoadingOverlay from "../components/LoadingOverlay";
 import NotificationModal from "../components/NotificationModal";
 import ThemedIcon from "../components/ThemedIcon";
 import { ThemedText } from "../components/ThemedText";
+import EmptyStateCard from "../components/EmptyStateCard";
 import { fetchAssignedSpeechTasksWithCache } from "../services/speak";
 import { selectCurrentUser } from "../store/slices/authSlice";
 import { useTheme } from "../theme/ThemeContext";
@@ -732,9 +733,12 @@ export default function HomeScreen({ navigation }) {
                 ))
               )
             ) : (
-              <ThemedText style={{ textAlign: 'center', padding: 20, color: '#666' }}>
-                No assignments available
-              </ThemedText>
+              <EmptyStateCard
+                iconName={'noassignment'}
+                title ={'Nothing Assigned Yet'}
+                subtitle={"You do not have a task assigned yet."}
+                onLinkPress={() => navigation.navigate('Assignments')}
+              />
             )}
           </View>
       </Animated.ScrollView>

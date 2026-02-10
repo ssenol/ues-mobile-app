@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import CompletedAssignmentCard from '../components/CompletedAssignmentCard';
 import { ThemedText } from '../components/ThemedText';
+import EmptyStateCard from '../components/EmptyStateCard';
 import { getCompletedExercises, deleteSolvedTask } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
 import { clearCache } from '../store/slices/assignmentSlice';
@@ -431,9 +432,15 @@ export default function CompletedScreen({ navigation }) {
             ))
           )
         ) : (
-          <View key="empty-state" style={{ padding: 20, alignItems: 'center' }}>
-            <ThemedText style={{ color: '#666' }}>No completed assignments yet</ThemedText>
-          </View>
+          <EmptyStateCard
+            iconName={'report'}
+            title ={'No Completed Assignments'}
+            subtitle={"You can go to Assignments and do your homework."}
+            onLinkPress={() => navigation.navigate('Assignments')}
+            showLink={true}
+            linkIconName={'tabAssignment'}
+            linkText={'Assignments'}
+          />
         )}
       </ScrollView>
 
