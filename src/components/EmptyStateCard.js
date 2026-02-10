@@ -5,7 +5,7 @@ import ThemedIcon from './ThemedIcon';
 import { useTheme } from '../theme/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isTablet = SCREEN_WIDTH >= 768;
+const isTablet = SCREEN_WIDTH >= 744;
 
 const EmptyStateCard = ({ 
   containerStyle,

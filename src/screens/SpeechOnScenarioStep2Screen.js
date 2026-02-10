@@ -48,7 +48,7 @@ const SpeechOnScenarioStep2Screen = () => {
 
   // Dinamik padding değerleri
   const { width: screenWidth } = Dimensions.get('window');
-  const isTablet = screenWidth >= 768;
+  const isTablet = screenWidth >= 744;
   const basePadding = isTablet ? 10 : 10;
   
   // Dinamik taskOptionsBar stili
@@ -67,6 +67,23 @@ const SpeechOnScenarioStep2Screen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [exerciseToken, setExerciseToken] = useState(null);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+
+  // Back butonu kontrolü
+  const handleBackPress = () => {
+    // Chat başladıysa (bot ilk mesajını gönderdiyse) onay iste
+    if (messagesHistory.length > 0) {
+      setConfirmModalVisible(true);
+    } else {
+      // Chat başlamadıysa direkt geri git
+      navigation.goBack();
+    }
+  };
+
+  const handleConfirmBack = () => {
+    setConfirmModalVisible(false);
+    navigation.goBack();
+  };
   const [userMessageCount, setUserMessageCount] = useState(0);
   const [tokenError, setTokenError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -617,7 +634,7 @@ const SpeechOnScenarioStep2Screen = () => {
     <View style={styles.container}>
       {/* Custom Header */}
       <View style={[styles.header, { paddingTop: insets.top }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton} activeOpacity={0.7}>
+        <TouchableOpacity onPress={handleBackPress} style={styles.headerButton} activeOpacity={0.7}>
           <ThemedIcon iconName="back" size={24} tintColor="#3A3A3A" />
         </TouchableOpacity>
         <ThemedText weight="semibold" style={styles.headerTitle}>{stripHtml(taskName) || 'Speech On Scenario'}</ThemedText>
@@ -810,6 +827,18 @@ const SpeechOnScenarioStep2Screen = () => {
             }
           ]}
                     cancelText="Go to Home"
+        />
+
+        {/* Confirm Modal for Back Navigation */}
+        <ConfirmModal
+          visible={confirmModalVisible}
+          onClose={() => setConfirmModalVisible(false)}
+          onConfirm={handleConfirmBack}
+          iconName="info3"
+          title="Are you sure?"
+          description="If you go back, all conversations will be lost."
+          confirmText="Yes, go back"
+          cancelText="Cancel"
         />
       </KeyboardAvoidingView>
     </View>

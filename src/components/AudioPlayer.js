@@ -8,7 +8,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function AudioPlayer({ audioUri, duration, onError }) {
   const player = useAudioPlayer(audioUri);
-  const isTablet = SCREEN_WIDTH >= 768;
+  const isTablet = SCREEN_WIDTH >= 744;
   const [audioWaveformIndex, setAudioWaveformIndex] = useState(0);
   const [waveformHeights, setWaveformHeights] = useState([]);
   const audioWaveformIntervalRef = useRef(null);

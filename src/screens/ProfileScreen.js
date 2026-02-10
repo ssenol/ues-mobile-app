@@ -41,7 +41,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProfileScreen({ navigation }) {
   const dispatch = useDispatch();
-  const isTablet = SCREEN_WIDTH >= 768;
+  const isTablet = SCREEN_WIDTH >= 744;
   const user = useSelector((state) => selectCurrentUser(state));
   const refreshToken = useSelector(selectRefreshToken);
   const { colors, shadows } = useTheme();

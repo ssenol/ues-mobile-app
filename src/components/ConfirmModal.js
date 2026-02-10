@@ -65,6 +65,7 @@ export default function ConfirmModal({
       paddingHorizontal: 32,
       alignItems: 'center',
       justifyContent: 'center',
+      maxWidth: '100%',
       width: '100%',
       marginBottom: singleButton ? 0 : 24,
     },

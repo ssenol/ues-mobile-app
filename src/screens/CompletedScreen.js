@@ -20,7 +20,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function CompletedScreen({ navigation }) {
   const { shadows } = useTheme();
-  const isTablet = SCREEN_WIDTH >= 768;
+  const isTablet = SCREEN_WIDTH >= 744;
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
   const user = useSelector((state) => selectCurrentUser(state));

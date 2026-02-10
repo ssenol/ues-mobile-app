@@ -17,7 +17,7 @@ const SpeechOnScenarioStep1Screen = () => {
 
   // Tablet ve mobil kontrolü
   const { width: screenWidth } = Dimensions.get('window');
-  const isTablet = screenWidth >= 768;
+  const isTablet = screenWidth >= 744;
   const basePadding = isTablet ? 50 : 10;
 
   // Dinamik stil oluşturma

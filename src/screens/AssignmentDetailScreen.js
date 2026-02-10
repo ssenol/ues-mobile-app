@@ -35,7 +35,7 @@ export default function AssignmentDetailScreen() {
   
   // Dinamik padding değerleri
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-  const isTablet = screenWidth >= 768; // Tablet genişliği 768px ve üzeri
+  const isTablet = screenWidth >= 744; // Tablet genişliği 768px ve üzeri
   
   // Cihaz tipine göre padding
   const basePadding = isTablet ? 20 : 10;  // Tablet'te 50px, mobil'de 10px

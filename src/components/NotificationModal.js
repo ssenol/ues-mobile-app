@@ -137,16 +137,16 @@ export default function NotificationModal({ visible = false, onClose = () => {},
     },
     bannerBadge: {
       position: 'absolute',
-      top: -6,
-      right: -6,
+      top: -8,
+      right: -8,
       backgroundColor: '#FF3B30',
-      width: 20,
-      height: 20,
-      borderRadius: 10,
+      width: 22,
+      height: 22,
+      borderRadius: 15,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 2,
-      borderColor: '#fff',
+      /*borderWidth: 2,
+      borderColor: '#FF3B30',*/
     },
     bannerBadgeText: {
       fontSize: 12,
@@ -275,7 +275,7 @@ export default function NotificationModal({ visible = false, onClose = () => {},
             tintColor="#3E4EF0"
           />
           <View style={styles.bannerBadge}>
-            <ThemedText style={styles.bannerBadgeText}>4</ThemedText>
+            <ThemedText weight="bold" style={styles.bannerBadgeText}>4</ThemedText>
           </View>
         </View>
         <View style={styles.bannerContent}>

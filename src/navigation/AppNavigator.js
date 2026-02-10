@@ -41,7 +41,7 @@ export default function AppNavigator() {
   
   // Tablet ve mobil kontrolü
   const { width: screenWidth } = Dimensions.get('window');
-  const isTablet = screenWidth >= 768;
+  const isTablet = screenWidth >= 744;
   const basePadding = isTablet ? 30 : 10;
 
   // Styles'ı colors hook'undan sonra tanımla

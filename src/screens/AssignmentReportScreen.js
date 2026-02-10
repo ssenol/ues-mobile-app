@@ -60,7 +60,7 @@ export default function AssignmentReportScreen({ navigation }) {
   
   // Tablet ve mobil kontrolü
   const { width: screenWidth } = Dimensions.get('window');
-  const isTablet = screenWidth >= 768;
+  const isTablet = screenWidth >= 744;
   const basePadding = isTablet ? 20 : 10;
   
   // Dinamik padding değerleri

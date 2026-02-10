@@ -8,13 +8,14 @@ import AssignmentCard from '../components/AssignmentCard';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { ThemedText } from '../components/ThemedText';
 import EmptyStateCard from '../components/EmptyStateCard';
+import Banner from '../components/Banner';
 import { useTheme } from '../theme/ThemeContext';
 import { fetchAssignedSpeechTasksWithCache } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
 import { buildAssignedSpeechTaskParams } from '../utils/assignmentTransform';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isTablet = SCREEN_WIDTH >= 768;
+const isTablet = SCREEN_WIDTH >= 744;
 
 export default function AssignmentsScreen({ navigation, route }) {
   const { colors, shadows } = useTheme();
@@ -339,10 +340,6 @@ export default function AssignmentsScreen({ navigation, route }) {
     </ScrollView>
   );
 
-  const BANNER_WIDTH = SCREEN_WIDTH - 32;
-  const BANNER_ASPECT_RATIO = 778 / 277;
-  const BANNER_HEIGHT = BANNER_WIDTH / BANNER_ASPECT_RATIO;
-
   return (
     <View style={styles.container}>
       <StatusBar style="dark" translucent backgroundColor="transparent" />
@@ -393,7 +390,7 @@ export default function AssignmentsScreen({ navigation, route }) {
         <View style={styles.summaryCards}>
           <View style={styles.summaryCard}>
             <View style={styles.summaryNumberContainer}>
-              <ThemedText weight="bold" style={styles.summaryNumber}>{solvedAssignments}</ThemedText>
+              <ThemedText style={styles.summaryNumber}>{solvedAssignments}</ThemedText>
             </View>
             <ThemedText style={styles.summaryLabel}>Solved Assignments</ThemedText>
           </View>
@@ -406,18 +403,22 @@ export default function AssignmentsScreen({ navigation, route }) {
         </View>
 
         {/* Banner */}
-        <View style={[styles.bannerContainer, shadows.dark]}>
-          <ImageBackground
-            source={require('../../assets/images/assignments-banner.png')}
-            style={[styles.banner, { width: BANNER_WIDTH, height: BANNER_HEIGHT }]}
-            resizeMode="cover"
-          >
-            <View style={styles.bannerContent}>
-              <ThemedText weight="bold" style={styles.bannerTitle}>Awesome!</ThemedText>
-              <ThemedText style={styles.bannerSubtitle}>You've finished {solvedAssignments} assignments</ThemedText>
+        <Banner type="assignments" solvedCount={solvedAssignments}>
+          {solvedAssignments === 0 ? (
+            <ThemedText style={{ fontSize: isTablet ? 28 : 16, lineHeight: isTablet ? 40 : 22, color: '#fff' }}>
+              Learn, test, and see your {'\n'}progress with <ThemedText weight="bold" style={{ color: '#fff' }}>quizzes.</ThemedText>
+            </ThemedText>
+          ) : (
+            <View>
+              <ThemedText weight="bold" style={{ fontSize: isTablet ? 28 : 16, lineHeight: isTablet ? 40 : 22, color: '#fff' }}>
+                Awesome!
+              </ThemedText>
+              <ThemedText style={{ fontSize: isTablet ? 20 : 12, lineHeight: isTablet ? 28 : 16, color: '#fff', marginTop: 4 }}>
+                You've finished {solvedAssignments} assignments
+              </ThemedText>
             </View>
-          </ImageBackground>
-        </View>
+          )}
+        </Banner>
 
         {/* Filter Tabs */}
         {!isFilterSticky && (
@@ -471,12 +472,30 @@ export default function AssignmentsScreen({ navigation, route }) {
               ))
             )
           ) : (
-            <EmptyStateCard
-              iconName={'noassignment'}
-              title ={'Nothing Assigned Yet'}
-              subtitle={"You do not have a task assigned yet."}
-              onLinkPress={() => navigation.navigate('Assignments')}
-            />
+            selectedFilter === 'Completed' ? (
+              // Completed filtresi ve tamamlanan assignment yoksa
+              <View style={styles.emptyCompletedContainer}>
+                <ImageBackground
+                  source={require('../../assets/images/banner0.png')}
+                  style={styles.emptyCompletedBanner}
+                  resizeMode="cover"
+                >
+                  <View style={styles.emptyCompletedContent}>
+                    <ThemedText style={styles.emptyCompletedText}>
+                      Learn, test, and see your progress with quizzes.
+                    </ThemedText>
+                  </View>
+                </ImageBackground>
+              </View>
+            ) : (
+              // Diğer durumlar için EmptyStateCard
+              <EmptyStateCard
+                iconName={'noassignment'}
+                title={'Nothing Assigned Yet'}
+                subtitle={"You do not have a task assigned yet."}
+                onLinkPress={() => navigation.navigate('Assignments')}
+              />
+            )
           )}
         </View>
       </Animated.ScrollView>
@@ -555,31 +574,6 @@ const styles = StyleSheet.create({
     color: '#3A3A3A',
     flex: 1,
   },
-  bannerContainer: {
-    paddingHorizontal: 16,
-},
-  banner: {
-    /*borderRadius: 12,
-    overflow: 'hidden',
-    justifyContent: 'center',*/
-  },
-  bannerContent: {
-    paddingLeft: SCREEN_WIDTH * (isTablet ? 0.44 : 0.38),
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    flex: 1,
-  },
-  bannerTitle: {
-    fontSize: isTablet ? 42 : 24,
-    lineHeight: isTablet ? 52 : 28,
-    color: '#fff',
-    marginBottom: isTablet ? 8 : 4,
-  },
-  bannerSubtitle: {
-    fontSize: isTablet ? 24 : 14,
-    lineHeight: isTablet ? 32 : 22,
-    color: '#fff',
-  },
   filterTabs: {
     marginVertical: 16,
   },
@@ -637,6 +631,28 @@ const styles = StyleSheet.create({
   },
   quizList: {
     paddingHorizontal: 16,
+  },
+  emptyCompletedContainer: {
+    marginHorizontal: -16,
+  },
+  emptyCompletedBanner: {
+    width: SCREEN_WIDTH,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyCompletedContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyCompletedText: {
+    fontSize: isTablet ? 24 : 18,
+    lineHeight: isTablet ? 32 : 24,
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '600',
   },
 });
 

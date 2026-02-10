@@ -5,7 +5,6 @@ import {
   Animated,
   Dimensions,
   Image,
-  ImageBackground,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -21,6 +20,7 @@ import NotificationModal from "../components/NotificationModal";
 import ThemedIcon from "../components/ThemedIcon";
 import { ThemedText } from "../components/ThemedText";
 import EmptyStateCard from "../components/EmptyStateCard";
+import Banner from "../components/Banner";
 import { fetchAssignedSpeechTasksWithCache } from "../services/speak";
 import { selectCurrentUser } from "../store/slices/authSlice";
 import { useTheme } from "../theme/ThemeContext";
@@ -31,11 +31,8 @@ export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
-  const isTablet = SCREEN_WIDTH >= 768;
+  const isTablet = SCREEN_WIDTH >= 744;
   const STATUSBAR_HEIGHT = insets.top;
-  const BANNER_WIDTH = SCREEN_WIDTH - 32; // 16px padding sağ + sol
-  const BANNER_ASPECT_RATIO = 778 / 278; // banner görsel oranı
-  const BANNER_HEIGHT = BANNER_WIDTH / BANNER_ASPECT_RATIO;
 
   const scrollViewRef = useRef(null);
   const activityScrollRef = useRef(null);
@@ -342,59 +339,34 @@ export default function HomeScreen({ navigation }) {
       flexDirection: 'row',
       alignItems: 'top',
       marginTop: 24,
-      // backgroundColor: "red"
+      marginBottom: 16,
     },
     avatarButton: {
-      width: isTablet ? 80 : 40,
-      height: isTablet ? 80 : 40,
-      borderRadius: isTablet ? 40 : 24,
+      width: 40,
+      height: 40,
+      borderRadius: 24,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 16,
+      backgroundColor: '#F3F4FF'
     },
     username: {
-      fontSize: isTablet ? 36 : 18,
-      lineHeight: isTablet ? 46 : 20,
+      fontSize: 18,
+      lineHeight: 20,
       color: '#fff',
     },
     campusname: {
-      fontSize: isTablet ? 26 : 14,
-      lineHeight: isTablet ? 40 : 20,
+      fontSize: 14,
+      lineHeight: 20,
       color: '#909BFF',
     },
     notification: {
-      width: isTablet ? 64 : 32,
-      height: isTablet ? 64 : 32,
+      width: 32,
+      height: 32,
       borderRadius: 8,
       backgroundColor: '#fff',
       alignItems: 'center',
       justifyContent: 'center',
-    },
-
-    // banner
-    bannerContainer: {
-      alignItems: 'center',
-      // paddingHorizontal: 16,
-      // backgroundColor: "red",
-      marginTop: 16,
-    },
-    banner: {
-      borderRadius: 12,
-      overflow: 'hidden',
-      justifyContent: 'center',
-      alignItems: 'flex-start',
-    },
-    bannerContent: {
-      paddingLeft: SCREEN_WIDTH * 0.35,
-      justifyContent: 'center',
-      alignItems: 'flex-start',
-      flex: 1,
-    },
-    bannerTitle: {
-      /*marginTop: 25,*/
-      fontSize: isTablet ? 42 : 18,
-      lineHeight: isTablet ? 52 : 26,
-      color: '#000',
     },
 
     // Activity Cards
@@ -542,7 +514,7 @@ export default function HomeScreen({ navigation }) {
               {user?.avatarUrl ? (
                 <Image
                   source={{ uri: user.avatarUrl }}
-                  style={{ width: isTablet ? 80 : 40, height: isTablet ? 80 : 40, borderRadius: isTablet ? 40 : 20 }}
+                  style={{ width: 40, height: 40, borderRadius: 20 }}
                 />
               ) : (
                 <ThemedIcon
@@ -564,24 +536,18 @@ export default function HomeScreen({ navigation }) {
             >
               <ThemedIcon
                 iconName="noti"
-                size={isTablet ? "32" : "16"}
+                size={"16"}
                 tintColor={colors.primary}
               />
             </TouchableOpacity>
           </View>
 
           {/* --- Banner --- */}
-          <View style={[styles.bannerContainer, { paddingHorizontal: 16 }]}>
-            <ImageBackground
-              source={require('../../assets/images/home-banner.png')}
-              style={[styles.banner, { width: BANNER_WIDTH, height: BANNER_HEIGHT }]}
-              resizeMode="cover"
-            >
-            <View style={styles.bannerContent}>
-              <ThemedText style={styles.bannerTitle}>Focus on your <ThemedText weight='bold' style={{ color: colors.primary }}>growth</ThemedText>, prepare your <ThemedText weight='bold' style={{ color: colors.primary }}>future!</ThemedText></ThemedText>
-            </View>
-            </ImageBackground>
-          </View>
+          <Banner type="home">
+            <ThemedText style={{ fontSize: isTablet ? 28: 16, lineHeight: isTablet ? 40 : 22, color: '#3a3a3a' }}>
+              Focus on your <ThemedText weight="bold" style={{ color: colors.primary }}>growth,</ThemedText>{'\n'}prepare your <ThemedText weight="bold" style={{ color: colors.primary }}>future!</ThemedText>
+            </ThemedText>
+          </Banner>
 
           {/* --- Goal Progress --- */}
           <View style={{ paddingHorizontal: 16 }}>
