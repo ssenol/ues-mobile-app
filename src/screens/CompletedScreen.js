@@ -406,14 +406,30 @@ export default function CompletedScreen({ navigation }) {
         }
       >
         {completedTasks.length > 0 ? (
-          completedTasks.map((assignment, index) => (
-            <CompletedAssignmentCard
-              key={assignment.solvedTaskId || assignment.id || `task-${index}`}
-              assignment={assignment}
-              onPress={() => handleReportPress(assignment)}
-              onDelete={() => handleDeletePress(assignment)}
-            />
-          ))
+          isTablet ? (
+            // Tablet'te iki sütun halinde göster
+            <View style={styles.assignmentsGrid}>
+              {completedTasks.map((assignment, index) => (
+                <View key={assignment.solvedTaskId || assignment.id || `task-${index}`} style={styles.assignmentGridItem}>
+                  <CompletedAssignmentCard
+                    assignment={assignment}
+                    onPress={() => handleReportPress(assignment)}
+                    onDelete={() => handleDeletePress(assignment)}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : (
+            // Cep telefonunda alt alta göster
+            completedTasks.map((assignment, index) => (
+              <CompletedAssignmentCard
+                key={assignment.solvedTaskId || assignment.id || `task-${index}`}
+                assignment={assignment}
+                onPress={() => handleReportPress(assignment)}
+                onDelete={() => handleDeletePress(assignment)}
+              />
+            ))
+          )
         ) : (
           <View key="empty-state" style={{ padding: 20, alignItems: 'center' }}>
             <ThemedText style={{ color: '#666' }}>No completed assignments yet</ThemedText>
@@ -679,5 +695,16 @@ const styles = StyleSheet.create({
   },
   iosDatePicker: {
     height: 200,
+  },
+  assignmentsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginHorizontal: -8,
+  },
+  assignmentGridItem: {
+    width: '50%',
+    paddingHorizontal: 8,
+    marginBottom: 16,
   },
 });

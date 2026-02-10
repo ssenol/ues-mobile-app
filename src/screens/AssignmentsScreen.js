@@ -447,13 +447,28 @@ export default function AssignmentsScreen({ navigation, route }) {
           }}
         >
           {filteredAssignments.length > 0 ? (
-            filteredAssignments.map((assignment) => (
-              <AssignmentCard
-                key={assignment.id}
-                assignment={assignment}
-                onPress={() => handleAssignmentPress(assignment)}
-              />
-            ))
+            isTablet ? (
+              // Tablet'te iki sütun halinde göster
+              <View style={styles.assignmentsGrid}>
+                {filteredAssignments.map((assignment) => (
+                  <View key={assignment.id} style={styles.assignmentGridItem}>
+                    <AssignmentCard
+                      assignment={assignment}
+                      onPress={() => handleAssignmentPress(assignment)}
+                    />
+                  </View>
+                ))}
+              </View>
+            ) : (
+              // Cep telefonunda alt alta göster
+              filteredAssignments.map((assignment) => (
+                <AssignmentCard
+                  key={assignment.id}
+                  assignment={assignment}
+                  onPress={() => handleAssignmentPress(assignment)}
+                />
+              ))
+            )
           ) : (
             <ThemedText style={{ textAlign: 'center', padding: 20, color: '#666' }}>
               No assignments available
@@ -545,7 +560,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',*/
   },
   bannerContent: {
-    paddingLeft: isTablet ? 330 : 155,
+    paddingLeft: SCREEN_WIDTH * (isTablet ? 0.44 : 0.38),
     justifyContent: 'center',
     alignItems: 'flex-start',
     flex: 1,
@@ -604,6 +619,17 @@ const styles = StyleSheet.create({
   filterTabTextActive: {
     fontSize: 16,
     color: '#3E4EF0',
+  },
+  assignmentsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginHorizontal: -8,
+  },
+  assignmentGridItem: {
+    width: '50%',
+    paddingHorizontal: 8,
+    marginBottom: 0,
   },
   quizList: {
     paddingHorizontal: 16,

@@ -144,8 +144,9 @@ export default function HomeScreen({ navigation }) {
             return dateA - dateB; // Artan sıra (en eski önce)
           });
         
-        // Son 5 assignment'ı al
-        setLastAssignments(unsolvedAssignments.slice(0, 5));
+        // Son 5 assignment'ı al (tablet'te 8)
+        const assignmentCount = isTablet ? 8 : 5;
+        setLastAssignments(unsolvedAssignments.slice(0, assignmentCount));
       } else {
         setAllQuizzes([]);
         setLastAssignments([]);
@@ -343,26 +344,26 @@ export default function HomeScreen({ navigation }) {
       // backgroundColor: "red"
     },
     avatarButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 24,
+      width: isTablet ? 80 : 40,
+      height: isTablet ? 80 : 40,
+      borderRadius: isTablet ? 40 : 24,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 16,
     },
     username: {
-      fontSize: 18,
-      lineHeight: 20,
+      fontSize: isTablet ? 36 : 18,
+      lineHeight: isTablet ? 46 : 20,
       color: '#fff',
     },
     campusname: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isTablet ? 26 : 14,
+      lineHeight: isTablet ? 40 : 20,
       color: '#909BFF',
     },
     notification: {
-      width: 32,
-      height: 32,
+      width: isTablet ? 64 : 32,
+      height: isTablet ? 64 : 32,
       borderRadius: 8,
       backgroundColor: '#fff',
       alignItems: 'center',
@@ -383,13 +384,13 @@ export default function HomeScreen({ navigation }) {
       alignItems: 'flex-start',
     },
     bannerContent: {
-      paddingLeft: isTablet ? 300 : 145,
+      paddingLeft: SCREEN_WIDTH * 0.35,
       justifyContent: 'center',
       alignItems: 'flex-start',
       flex: 1,
     },
     bannerTitle: {
-      marginTop: 25,
+      /*marginTop: 25,*/
       fontSize: isTablet ? 42 : 18,
       lineHeight: isTablet ? 52 : 26,
       color: '#000',
@@ -458,13 +459,24 @@ export default function HomeScreen({ navigation }) {
       marginBottom: 16,
     },
     lastAssignmentsTitle: {
-      fontSize: 18,
-      lineHeight: 26,
+      fontSize: isTablet ? 30 : 18,
+      lineHeight: isTablet ? 40 : 24,
       color: '#3A3A3A',
     },
     allQuizzesLink: {
       fontSize: 14,
       color: colors.primary,
+    },
+    assignmentsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginHorizontal: -8,
+    },
+    assignmentGridItem: {
+      width: '50%',
+      paddingHorizontal: 8,
+      marginBottom: 0,
     },
   });
 
@@ -529,7 +541,7 @@ export default function HomeScreen({ navigation }) {
               {user?.avatarUrl ? (
                 <Image
                   source={{ uri: user.avatarUrl }}
-                  style={{ width: 40, height: 40, borderRadius: 20 }}
+                  style={{ width: isTablet ? 80 : 40, height: isTablet ? 80 : 40, borderRadius: isTablet ? 40 : 20 }}
                 />
               ) : (
                 <ThemedIcon
@@ -551,7 +563,7 @@ export default function HomeScreen({ navigation }) {
             >
               <ThemedIcon
                 iconName="noti"
-                size="16"
+                size={isTablet ? "32" : "16"}
                 tintColor={colors.primary}
               />
             </TouchableOpacity>
@@ -633,45 +645,92 @@ export default function HomeScreen({ navigation }) {
             </View>
 
             {lastAssignments.length > 0 ? (
-              lastAssignments.map((assignment) => (
-                <AssignmentCard
-                  key={assignment.id}
-                  assignment={assignment}
-                  onPress={() => {
-                    // Eğer task completed ise rapor sayfasına git
-                    if (assignment.isSolved) {
-                      // reportId results array'inin içinde
-                      const reportId = assignment.originalTask?.prevSolvedTask?.results?.[0]?.id;
+              isTablet ? (
+                // Tablet'te iki sütun halinde göster
+                <View style={styles.assignmentsGrid}>
+                  {lastAssignments.map((assignment) => (
+                    <View key={assignment.id} style={styles.assignmentGridItem}>
+                      <AssignmentCard
+                        assignment={assignment}
+                        onPress={() => {
+                          // Eğer task completed ise rapor sayfasına git
+                          if (assignment.isSolved) {
+                            // reportId results array'inin içinde
+                            const reportId = assignment.originalTask?.prevSolvedTask?.results?.[0]?.id;
 
-                      if (reportId) {
-                        if (assignment.type === 'speechOnScenario') {
-                          navigation.navigate('ScenarioReport', {
-                            reportId: reportId
-                          });
-                        } else {
-                          navigation.navigate('AssignmentReport', {
-                            reportId: reportId
-                          });
+                            if (reportId) {
+                              if (assignment.type === 'speechOnScenario') {
+                                navigation.navigate('ScenarioReport', {
+                                  reportId: reportId
+                                });
+                              } else {
+                                navigation.navigate('AssignmentReport', {
+                                  reportId: reportId
+                                });
+                              }
+                              return;
+                            }
+                          }
+                          
+                          // Navigate to assignment detail
+                          if (assignment.type === 'speechOnScenario') {
+                            navigation.navigate('SpeechOnScenarioStep1', { 
+                              task: assignment.originalTask 
+                            });
+                          } else if (assignment.type === 'speechOnTopic' || assignment.type === 'readAloud') {
+                            navigation.navigate('ReadAloud', { 
+                              task: assignment.originalTask, // Orijinal task objesini gönder
+                              assignedTaskId: assignment.assignedTaskId,
+                              speechTaskId: assignment.speechTaskId 
+                            });
+                          }
+                        }}
+                      />
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                // Cep telefonunda alt alta göster
+                lastAssignments.map((assignment) => (
+                  <AssignmentCard
+                    key={assignment.id}
+                    assignment={assignment}
+                    onPress={() => {
+                      // Eğer task completed ise rapor sayfasına git
+                      if (assignment.isSolved) {
+                        // reportId results array'inin içinde
+                        const reportId = assignment.originalTask?.prevSolvedTask?.results?.[0]?.id;
+
+                        if (reportId) {
+                          if (assignment.type === 'speechOnScenario') {
+                            navigation.navigate('ScenarioReport', {
+                              reportId: reportId
+                            });
+                          } else {
+                            navigation.navigate('AssignmentReport', {
+                              reportId: reportId
+                            });
+                          }
+                          return;
                         }
-                        return;
                       }
-                    }
-                    
-                    // Navigate to assignment detail
-                    if (assignment.type === 'speechOnScenario') {
-                      navigation.navigate('SpeechOnScenarioStep1', { 
-                        task: assignment.originalTask 
-                      });
-                    } else if (assignment.type === 'speechOnTopic' || assignment.type === 'readAloud') {
-                      navigation.navigate('ReadAloud', { 
-                        task: assignment.originalTask, // Orijinal task objesini gönder
-                        assignedTaskId: assignment.assignedTaskId,
-                        speechTaskId: assignment.speechTaskId 
-                      });
-                    }
-                  }}
-                />
-              ))
+                      
+                      // Navigate to assignment detail
+                      if (assignment.type === 'speechOnScenario') {
+                        navigation.navigate('SpeechOnScenarioStep1', { 
+                          task: assignment.originalTask 
+                        });
+                      } else if (assignment.type === 'speechOnTopic' || assignment.type === 'readAloud') {
+                        navigation.navigate('ReadAloud', { 
+                          task: assignment.originalTask, // Orijinal task objesini gönder
+                          assignedTaskId: assignment.assignedTaskId,
+                          speechTaskId: assignment.speechTaskId 
+                        });
+                      }
+                    }}
+                  />
+                ))
+              )
             ) : (
               <ThemedText style={{ textAlign: 'center', padding: 20, color: '#666' }}>
                 No assignments available

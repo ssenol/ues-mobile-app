@@ -387,7 +387,7 @@ export default function LoginScreen({ navigation }) {
                 </>
               )}
             </View>
-            <ThemedText style={styles.footer}>© 2025 UES</ThemedText>
+            <ThemedText style={styles.footer}>© 2026 UES</ThemedText>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
