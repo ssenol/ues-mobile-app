@@ -352,7 +352,7 @@ export default function HomeScreen({ navigation }) {
     },
     username: {
       fontSize: 18,
-      lineHeight: 20,
+      lineHeight: 24,
       color: '#fff',
     },
     campusname: {

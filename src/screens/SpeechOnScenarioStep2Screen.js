@@ -59,7 +59,7 @@ const SpeechOnScenarioStep2Screen = () => {
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginBottom: isTablet ? 24 : 8,
+    /*marginBottom: isTablet ? 24 : 8,*/
   };
   
   const [inputText, setInputText] = useState('');
@@ -282,6 +282,44 @@ const SpeechOnScenarioStep2Screen = () => {
     initializeChat();
   };
 
+  const generateExerciseToken = async () => {
+    if (!task?.assignedTaskId) {
+      return null;
+    }
+
+    const studentId = user?.userId;
+    if (!studentId) {
+      return null;
+    }
+
+    try {
+      const exerciseTokenPayload = {
+        assignedTaskId: task.assignedTaskId,
+        assignmentRepeatCount: task.assignmentRepeatCount || 1,
+        dueDate: task.dueDate,
+        role: 'student',
+        startDate: task.startDate || task.speechAssignedDate,
+        studentId: studentId,
+        taskId: task.speechTaskId,
+        taskName: task.speechName || task.task?.setting?.taskName || 'Speech On Scenario',
+        taskType: 'speech',
+        environment: 'prod',
+      };
+
+      const tokenResponse = await api.post(API_ENDPOINTS.student.generateExerciseToken, exerciseTokenPayload);
+
+      if (tokenResponse.data?.status === 'success' && tokenResponse.data?.data?.token) {
+        const token = tokenResponse.data.data.token;
+        setExerciseToken(token);
+        return token;
+      }
+    } catch (error) {
+      console.error('Token oluşturulurken hata:', error);
+      console.error('Hata detayı:', error.response?.data);
+    }
+    return null;
+  };
+
   const sendInitialMessage = async (token) => {
     try {
       const { concept, scenario } = task.task.setting.selectedConcept.concept;
@@ -373,8 +411,18 @@ const SpeechOnScenarioStep2Screen = () => {
   };
 
   const handleTextToSpeech = async (messageContent) => {
-    if (!messageContent || !exerciseToken) {
+    if (!messageContent) {
       return;
+    }
+
+    let tokenToUse = exerciseToken;
+
+    if (!tokenToUse) {
+      tokenToUse = await generateExerciseToken();
+      if (!tokenToUse) {
+        console.error('Exercise token oluşturulamadı, TTS işlenemedi');
+        return;
+      }
     }
 
     // Sadece bu mesaj için loading'i true yap
@@ -399,7 +447,7 @@ const SpeechOnScenarioStep2Screen = () => {
         payload,
         {
           headers: {
-            'Authorization': `Bearer ${exerciseToken}`,
+            'Authorization': `Bearer ${tokenToUse}`,
             'Content-Type': 'application/json'
           },
           responseType: 'arraybuffer'
@@ -483,10 +531,12 @@ const SpeechOnScenarioStep2Screen = () => {
       return;
     }
 
-    if (!exerciseToken) {
-      await initializeChat();
+    let tokenToUse = exerciseToken;
 
-      if (!exerciseToken) {
+    if (!tokenToUse) {
+      tokenToUse = await generateExerciseToken();
+      if (!tokenToUse) {
+        console.error('Exercise token oluşturulamadı, ses işlenemedi');
         return;
       }
     }
@@ -510,7 +560,7 @@ const SpeechOnScenarioStep2Screen = () => {
         formData,
         {
           headers: {
-            'Authorization': `Bearer ${exerciseToken}`,
+            'Authorization': `Bearer ${tokenToUse}`,
             'Content-Type': 'multipart/form-data',
           },
         }
@@ -883,7 +933,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   chatAreaContent: {
-    paddingHorizontal: 16,
+    padding: 16,
+    /*backgroundColor: '#c00',*/
   },
   taskCompletionContainer: {
     padding: 16,

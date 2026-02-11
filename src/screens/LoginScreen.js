@@ -32,8 +32,8 @@ const BIOMETRIC_PROMPT_SHOWN_KEY = "biometric_prompt_shown";
 export default function LoginScreen({ navigation }) {
   const dispatch = useDispatch();
   const { colors } = useTheme();
-  const [username, setUsername] = useState("ues-meq-student1"); //
-  const [password, setPassword] = useState("123456"); //
+  const [username, setUsername] = useState(""); // ues-meq-student1
+  const [password, setPassword] = useState(""); // 123456
   const [loading, setLoading] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [biometricPromptModalVisible, setBiometricPromptModalVisible] = useState(false);
@@ -193,6 +193,13 @@ export default function LoginScreen({ navigation }) {
       } catch (err) {
         console.error('Token SecureStore kaydetme hatası:', err);
       }
+      
+      // --- Biyometrik özellik aktifse, son giriş yapan kullanıcının bilgilerini güncelle ---
+      const biometricEnabled = await BiometricAuthService.isBiometricEnabled();
+      if (biometricEnabled) {
+        await BiometricAuthService.saveCredentials(username, password);
+      }
+      
       // --- Biyometrik prompt gösterimi: Eğer daha önce gösterilmediyse, kullanıcıya sor ---
       const promptShown = await AsyncStorage.getItem(BIOMETRIC_PROMPT_SHOWN_KEY);
       if (!promptShown) {
