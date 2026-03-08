@@ -65,6 +65,7 @@ export const icons = {
   leftArrow: (props) => <SvgIcon name="leftArrow" {...props} />,
   rightArrow: (props) => <SvgIcon name="rightArrow" {...props} />,
   textToSpeech: (props) => <SvgIcon name="textToSpeech" {...props} />,
+  microphone: (props) => <SvgIcon name="microphone" {...props} />,
 };
 
 export const getIconSource = (name) => icons[name] ?? null;

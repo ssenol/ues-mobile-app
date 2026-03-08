@@ -103,7 +103,7 @@ const SpeechOnScenarioStep2Screen = () => {
       // Klavye açıkken
       if (Platform.OS === 'ios') {
         // KeyboardAvoidingView zaten padding ekliyor, azaltıyoruz
-        return insets.bottom - 20;
+        return insets.bottom - (isTablet ? 0 : 20);
       } else {
         return insets.bottom + 10;
       }
@@ -115,7 +115,7 @@ const SpeechOnScenarioStep2Screen = () => {
         return insets.bottom + basePadding;
       }
     }
-  }, [keyboardVisible, Platform.OS, insets.bottom, basePadding]);
+  }, [keyboardVisible, insets.bottom, isTablet, basePadding]);
 
   const scrollViewRef = useRef(null);
 
@@ -692,7 +692,7 @@ const SpeechOnScenarioStep2Screen = () => {
       </View>
 
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: '#F3F4FF' }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -insets.bottom}
       >
@@ -797,9 +797,9 @@ const SpeechOnScenarioStep2Screen = () => {
             disabled={isProcessingAudio}
           >
             <ThemedIcon
-              iconName={isRecording ? "stop" : "voice"}
+              iconName={isRecording ? "stop" : "microphone"}
               size={16}
-              tintColor={isRecording ? "#FF3B30" : "#fff"}
+              tintColor="#fff"
             />
           </TouchableOpacity>
           <View style={styles.textInputContainer}>
@@ -876,7 +876,7 @@ const SpeechOnScenarioStep2Screen = () => {
               color: '#3E4EF0'
             }
           ]}
-                    cancelText="Go to Home"
+          cancelText="Go to Home"
         />
 
         {/* Confirm Modal for Back Navigation */}
@@ -931,6 +931,7 @@ const styles = StyleSheet.create({
   },
   chatArea: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   chatAreaContent: {
     padding: 16,
@@ -1020,6 +1021,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     padding: 16,
     gap: 12,
+    backgroundColor: '#F3F4FF',
   },
   textInputContainer: {
     flex: 1,
