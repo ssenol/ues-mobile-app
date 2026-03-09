@@ -1,9 +1,17 @@
-import React from 'react';
-// import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
-import { Image, Modal, StyleSheet, View } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { Modal, StyleSheet, View } from 'react-native';
+import LottieView from 'lottie-react-native';
 import { ThemedText } from './ThemedText';
 
 export default function LoadingOverlay({ visible, message }) {
+  const animationRef = useRef(null);
+
+  useEffect(() => {
+    if (visible && animationRef.current) {
+      animationRef.current.play();
+    }
+  }, [visible]);
+
   return (
     <Modal
       transparent
@@ -12,11 +20,12 @@ export default function LoadingOverlay({ visible, message }) {
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          {/* <ActivityIndicator size="large" color="#fff" /> */}
-          <Image
-            source={require('../../assets/images/loading.gif')}
-            style={styles.loadingGif}
-            resizeMode="contain"
+          <LottieView
+            ref={animationRef}
+            source={require('../../assets/animations/Logo_Animation.json')}
+            autoPlay
+            loop
+            style={styles.lottieAnimation}
           />
           {message && (
             <ThemedText style={styles.message}>{message}</ThemedText>
@@ -41,9 +50,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 120,
   },
-  loadingGif: {
-    width: 115,
-    height: 80,
+  lottieAnimation: {
+    width: 60,
+    height: 60,
   },
   message: {
     marginTop: 16,
