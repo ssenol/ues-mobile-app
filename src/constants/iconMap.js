@@ -2,7 +2,7 @@ import React from 'react';
 import SvgIcon from '../components/SvgIcon';
 
 export const icons = {
-  myeduquiz: (props) => <SvgIcon name="myeduquiz" {...props} />,
+  boostifyspeak: (props) => <SvgIcon name="boostifyspeak" {...props} />,
   wifi: (props) => <SvgIcon name="wifi" {...props} />,
   tabHome: (props) => <SvgIcon name="tabHome" {...props} />,
   tabAssignment: (props) => <SvgIcon name="tabAssignment" {...props} />,

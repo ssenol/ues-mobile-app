@@ -333,10 +333,10 @@ export default function LoginScreen({ navigation }) {
               />
               <View style={styles.headerContent}>
                 <ThemedIcon
-                  iconName="myeduquiz"
+                  iconName="boostifyspeak"
                   style={styles.logo}
-                  width={181}
-                  height={31}
+                  width={223}
+                  height={33}
                   tintColor="#fff"
                 />
                 <ThemedText style={styles.subtitle}>

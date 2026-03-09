@@ -1,8 +1,8 @@
 {
   "expo": {
     "entryPoint": "./App.js",
-    "name": "UES Mobile App",
-    "slug": "ues-mobile-app",
+    "name": "BoostifySpeak",
+    "slug": "boostifyspeak",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -21,14 +21,18 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.ues.uesmobileapp",
-      "buildNumber": "9"
+      "buildNumber": "10"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "background": "#ffffff"
       },
-      "package": "com.ues.uesmobileapp"
+      "package": "com.ues.uesmobileapp",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -44,7 +48,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "b8b1afb1-2bd6-4bf6-b5b7-1aa24aa9b757"
+        "projectId": "b265e6b9-bacb-437b-b64f-53554b99a0dc"
       }
     }
   }

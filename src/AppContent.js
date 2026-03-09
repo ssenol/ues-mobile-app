@@ -160,10 +160,10 @@ export default function AppContent() {
 
         <View style={styles.cardWrapper}>
           <ThemedIcon
-            iconName="myeduquiz"
+            iconName="boostifyspeak"
             style={styles.logo}
-            width={181}
-            height={31}
+            width={223}
+            height={33}
             tintColor="#fff"
           />
           <View style={styles.card}>
