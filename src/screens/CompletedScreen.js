@@ -431,7 +431,7 @@ export default function CompletedScreen({ navigation }) {
               />
             ))
           )
-        ) : (
+        ) : !loading && (
           <EmptyStateCard
             iconName={'report'}
             title ={'No Completed Assignments'}

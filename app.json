@@ -15,12 +15,25 @@
     },
     "ios": {
       "supportsTablet": true,
+      "requireFullScreen": true,
+      "icon": {
+        "light": "./assets/images/icon.png",
+        "dark": "./assets/images/icon-dark.png"
+      },
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Bu uygulama Face ID ile giriş yapmanıza izin verir.",
-        "NSMicrophoneUsageDescription": "Uygulama, sesinizi kaydedip telaffuzunuzu değerlendirmek için mikrofonunuza erişim gerektirir.",
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait"
+        ],
+        "NSFaceIDUsageDescription": "BoostifySpeak uses Face ID to provide secure and convenient login for student accounts.",
+        "NSMicrophoneUsageDescription": "BoostifySpeak uses microphone access to record speaking assignments and provide pronunciation, fluency, and speaking assessment feedback.",
+        "NSCameraUsageDescription": "BoostifySpeak uses camera access to allow students to capture and upload profile photos for their educational account.",
+        "NSPhotoLibraryUsageDescription": "BoostifySpeak uses photo library access to allow students to select and upload profile photos for their educational account.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.ues.uesmobileapp",
+      "bundleIdentifier": "com.ues.boostifyspeak",
       "buildNumber": "10"
     },
     "android": {
@@ -28,11 +41,12 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "background": "#ffffff"
       },
-      "package": "com.ues.uesmobileapp",
+      "package": "com.ues.boostifyspeak",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
-      ]
+      ],
+      "screenOrientation": "portrait"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"

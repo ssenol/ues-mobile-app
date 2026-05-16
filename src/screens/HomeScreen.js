@@ -698,7 +698,7 @@ export default function HomeScreen({ navigation }) {
                   />
                 ))
               )
-            ) : (
+            ) : !loading && (
               <EmptyStateCard
                 iconName={'noassignment'}
                 title ={'Nothing Assigned Yet'}

@@ -471,7 +471,7 @@ export default function AssignmentsScreen({ navigation, route }) {
                 />
               ))
             )
-          ) : (
+          ) : !loading && (
             selectedFilter === 'Completed' ? (
               // Completed filtresi ve tamamlanan assignment yoksa
               <View style={styles.emptyCompletedContainer}>
