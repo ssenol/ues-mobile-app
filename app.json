@@ -57,7 +57,8 @@
       "expo-router",
       "expo-font",
       "expo-audio",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-screen-orientation"
     ],
     "extra": {
       "router": {},

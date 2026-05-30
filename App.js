@@ -1,4 +1,5 @@
 import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black, useFonts } from '@expo-google-fonts/nunito';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -21,6 +22,35 @@ export default function App() {
     Nunito_900Black
   });
   const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    async function lockOrientation() {
+      try {
+        // Portrait moduna kilitle
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      } catch (error) {
+        console.error('Orientation lock error:', error);
+      }
+    }
+
+    // Orientation değişikliklerini dinle ve her zaman portrait'e geri döndür
+    const subscription = ScreenOrientation.addOrientationChangeListener((event) => {
+      const currentOrientation = event.orientationInfo.orientation;
+      // Eğer landscape moduna geçildiyse, portrait'e geri döndür
+      if (
+        currentOrientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
+        currentOrientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT
+      ) {
+        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      }
+    });
+
+    lockOrientation();
+
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded) {
