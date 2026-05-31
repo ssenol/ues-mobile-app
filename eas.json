@@ -7,6 +7,9 @@
     "development": {
       "distribution": "internal",
       "developmentClient": true,
+      "env": {
+        "APP_VARIANT": "development"
+      },
       "ios": {
         "resourceClass": "m-medium",
         "simulator": false
