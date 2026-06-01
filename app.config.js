@@ -2,7 +2,7 @@ const IS_DEV = process.env.APP_VARIANT === 'development';
 
 module.exports = {
   expo: {
-    entryPoint: "./App.js",
+    scheme: "boostifyspeak",
     name: IS_DEV ? "BoostifySpeak DEV" : "BoostifySpeak",
     slug: "boostifyspeak",
     version: "1.0.0",

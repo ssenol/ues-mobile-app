@@ -1,4 +1,4 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {Dimensions, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
@@ -18,8 +18,31 @@ import {useTheme} from "../theme/ThemeContext";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export default function CompletedScreen({ navigation }) {
+export default function CompletedScreen() {
+  const router = useRouter();
   const { shadows } = useTheme();
+
+  // Navigation helper
+  const navigation = {
+    navigate: (screen, params) => {
+      const routes = {
+        'ScenarioReport': '/scenario-report',
+        'AssignmentReport': '/assignment-report'
+      };
+      const pathname = routes[screen] || `/${screen.toLowerCase()}`;
+      if (params) {
+        const serializedParams = {};
+        Object.keys(params).forEach(key => {
+          serializedParams[key] = typeof params[key] === 'object' 
+            ? JSON.stringify(params[key]) 
+            : params[key];
+        });
+        router.push({ pathname, params: serializedParams });
+      } else {
+        router.push(pathname);
+      }
+    }
+  };
   const isTablet = SCREEN_WIDTH >= 744;
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;

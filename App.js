@@ -1,14 +1,15 @@
 import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black, useFonts } from '@expo-google-fonts/nunito';
+import { Slot } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState } from 'react';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Provider } from 'react-redux';
-import { PersistGate } from 'redux-persist/integration/react';
-import AppContent from './src/AppContent';
-import { persistor, store } from './src/store';
-import { ThemeProvider } from './src/theme/ThemeContext';
+import NetInfo from '@react-native-community/netinfo';
+import { ActivityIndicator, Dimensions, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
+import ThemedIcon from './src/components/ThemedIcon';
+import { ThemedText } from './src/components/ThemedText';
+import { useTheme } from './src/theme/ThemeContext';
 
 // Splash screen kapanmadan font yüklemesini bekleyelim
 SplashScreen.preventAutoHideAsync();
@@ -77,17 +78,5 @@ export default function App() {
     return null; // Splash screen zaten gösteriliyor
   };
 
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        <PersistGate loading={<PersistGateLoading />} persistor={persistor}>
-          <ThemeProvider>
-            <SafeAreaProvider>
-              <AppContent />
-            </SafeAreaProvider>
-          </ThemeProvider>
-        </PersistGate>
-      </Provider>
-    </GestureHandlerRootView>
-  );
+  return <Slot />;
 }

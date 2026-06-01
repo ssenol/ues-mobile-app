@@ -17,29 +17,54 @@ const ScenarioTaskDetails = ({ task }) => {
   const ttsSpeed = useSelector(selectTtsSpeed);
   const speed = speedValueToIndex(ttsSpeed);
 
-  if (!task) {
+  if (!task || !task.task) {
+    console.warn('ScenarioTaskDetails: Invalid task structure', task);
     return null;
   }
 
-  const { concept, scenario, title: conceptTitle } = task.task.setting.selectedConcept.concept;
-  const { coverImage } = task.task.data;
+  const taskType = task.task.speechTaskType || task.speechTaskType;
+  const isScenario = taskType === 'speech_on_scenario';
+  
+  // Scenario için
+  const concept = isScenario ? task.task.setting?.selectedConcept?.concept?.concept : null;
+  const scenario = isScenario ? task.task.setting?.selectedConcept?.concept?.scenario : null;
+  const conceptTitle = isScenario ? task.task.setting?.selectedConcept?.concept?.title : null;
+  
+  // Read Aloud ve Speech On Topic için
+  const taskName = task.task.setting?.taskName || task.speechName;
+  const readingText = task.task.data?.readingText;
+  
+  const { coverImage } = task.task.data || {};
 
   return (
     <View style={styles.container}>
-      {/* Concept Card */}
-      <View style={styles.card}>
-        <ThemedText weight="bold" style={styles.cardTitle}>{stripHtml(conceptTitle) || 'Speech On Scenario'}</ThemedText>
-        <ThemedText style={styles.cardContent}>{stripHtml(concept)}</ThemedText>
-      </View>
+      {isScenario ? (
+        <>
+          {/* Concept Card - Sadece Scenario için */}
+          <View style={styles.card}>
+            <ThemedText weight="bold" style={styles.cardTitle}>{stripHtml(conceptTitle) || 'Speech On Scenario'}</ThemedText>
+            <ThemedText style={styles.cardContent}>{stripHtml(concept)}</ThemedText>
+          </View>
 
-      {/* Scenario Card */}
-      <View style={styles.card}>
-        <ThemedText weight="bold" style={styles.cardTitle}>Scenario To Interact</ThemedText>
-        <View style={styles.scenarioContainer}>
-          <ThemedText style={styles.scenarioText}>{stripHtml(scenario)}</ThemedText>
-          {coverImage && <Image source={{ uri: getOptimizedImageUrl(coverImage) }} style={styles.scenarioImage} />}
-        </View>
-      </View>
+          {/* Scenario Card - Sadece Scenario için */}
+          <View style={styles.card}>
+            <ThemedText weight="bold" style={styles.cardTitle}>Scenario To Interact</ThemedText>
+            <View style={styles.scenarioContainer}>
+              <ThemedText style={styles.scenarioText}>{stripHtml(scenario)}</ThemedText>
+              {coverImage && <Image source={{ uri: getOptimizedImageUrl(coverImage) }} style={styles.scenarioImage} />}
+            </View>
+          </View>
+        </>
+      ) : (
+        <>
+          {/* Task Info Card - Read Aloud ve Speech On Topic için */}
+          <View style={styles.card}>
+            <ThemedText weight="bold" style={styles.cardTitle}>{taskName || 'Reading Task'}</ThemedText>
+            {readingText && <ThemedText style={styles.cardContent}>{stripHtml(readingText)}</ThemedText>}
+            {coverImage && <Image source={{ uri: getOptimizedImageUrl(coverImage) }} style={styles.scenarioImage} />}
+          </View>
+        </>
+      )}
 
       {/* Audio Speed */}
       <View style={styles.card}>

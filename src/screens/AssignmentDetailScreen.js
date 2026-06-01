@@ -1,7 +1,7 @@
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { AudioQuality, IOSOutputFormat, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Animated, Dimensions, LayoutAnimation, Linking, Platform, ScrollView, StyleSheet, TouchableOpacity, UIManager, View } from 'react-native';
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,8 +25,16 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function AssignmentDetailScreen() {
-  const navigation = useNavigation();
-  const route = useRoute();
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Parse task from JSON string - useMemo ile cache'le
+  const task = useMemo(() => {
+    return params.task ? JSON.parse(params.task) : null;
+  }, [params.task]);
+  
+  const assignedTaskId = params.assignedTaskId;
+  const speechTaskId = params.speechTaskId;
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const user = useSelector((state) => selectCurrentUser(state));
@@ -55,14 +63,13 @@ export default function AssignmentDetailScreen() {
     },
   });
   
-  const { task: taskFromParams, assignedTaskId, speechTaskId } = route.params || {};
+  // task, assignedTaskId, speechTaskId zaten params'dan parse edildi (yukarıda)
   
   const [permissionModalVisible, setPermissionModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [recordingState, setRecordingState] = useState('idle'); // 'idle', 'recording', 'paused', 'finished'
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isStartingRecording, setIsStartingRecording] = useState(false);
-  const [task, setTask] = useState(null);
   const [taskText, setTaskText] = useState('');
   const [taskType, setTaskType] = useState(null); // 'speech_on_topic' or 'read_aloud'
   const [metadata, setMetadata] = useState([]);
@@ -129,21 +136,20 @@ export default function AssignmentDetailScreen() {
     return html.replace(/<[^>]*>/g, '').trim();
   };
 
-  // Navigation params'dan gelen task'ı işle
+  // Params'dan gelen task'ı işle
   useEffect(() => {
-    if (taskFromParams) {
-      setTask(taskFromParams);
-      setTaskType(taskFromParams.speechTaskType);
+    if (task) {
+      setTaskType(task.speechTaskType || task.task?.speechTaskType);
       
       // Task tipine göre metni ve metadata'yı ayarla
-      if (taskFromParams.speechTaskType === 'speech_on_topic') {
-        setTaskText(taskFromParams.task?.data?.topic || '');
+      if (task.speechTaskType === 'speech_on_topic') {
+        setTaskText(task.task?.data?.topic || '');
         
         // Speech on Topic metadata
         const taskMetadata = [];
         
         // Duration (saniye cinsinden string: "30-50")
-        const durationString = taskFromParams.task?.data?.duration;
+        const durationString = task.task?.data?.duration;
         
         let maxDurationInSeconds = null;
         if (durationString) {
@@ -166,42 +172,42 @@ export default function AssignmentDetailScreen() {
         }
         
         // Min sentences count
-        if (taskFromParams.task?.data?.minSentencesCount) {
+        if (task.task?.data?.minSentencesCount) {
           taskMetadata.push({ 
             icon: 'sentences', 
-            label: `${taskFromParams.task.data.minSentencesCount} Sentences` 
+            label: `${task.task.data.minSentencesCount} Sentences` 
           });
         }
         
         // Min word count
-        if (taskFromParams.task?.data?.minWordCount) {
+        if (task.task?.data?.minWordCount) {
           taskMetadata.push({ 
             icon: 'words', 
-            label: `${taskFromParams.task.data.minWordCount} Words` 
+            label: `${task.task.data.minWordCount} Words` 
           });
         }
         
         setMetadata(taskMetadata);
-      } else if (taskFromParams.speechTaskType === 'read_aloud') {
-        const readingText = taskFromParams.task?.data?.readingText || '';
+      } else if (task.speechTaskType === 'read_aloud') {
+        const readingText = task.task?.data?.readingText || '';
         setTaskText(stripHtml(readingText));
         
         // Read Aloud metadata
         const taskMetadata = [];
         
         // CEFR Level
-        if (taskFromParams.task?.setting?.cefrLevel) {
+        if (task.task?.setting?.cefrLevel) {
           taskMetadata.push({ 
             icon: 'cefr', 
-            label: taskFromParams.task.setting.cefrLevel 
+            label: task.task.setting.cefrLevel 
           });
         }
         
         // Subject/Topic
-        if (taskFromParams.task?.data?.aiReadingMetaData?.subject) {
+        if (task.task?.data?.aiReadingMetaData?.subject) {
           taskMetadata.push({ 
             icon: 'topic', 
-            label: taskFromParams.task.data.aiReadingMetaData.subject 
+            label: task.task.data.aiReadingMetaData.subject 
           });
         }
         
@@ -210,9 +216,9 @@ export default function AssignmentDetailScreen() {
     } else if (!assignedTaskId && !speechTaskId) {
       // Task bilgisi yoksa geri dön
       Alert.alert('Error', 'Task information not found');
-      navigation.goBack();
+      router.back();
     }
-  }, [taskFromParams, assignedTaskId, speechTaskId, navigation]);
+  }, [task, assignedTaskId, speechTaskId, router]);
 
   const handleRecordPress = async () => {
     try {
@@ -592,24 +598,8 @@ export default function AssignmentDetailScreen() {
   }, [recordingState]);
 
   // Geri tuşu ile sayfadan çıkılmaya çalışıldığında uyarı ver
-  // Android'de donanım geri tuşu
-  // iOS'ta swipe gesture
-  // Programatik navigasyon
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-      if (recordingState === 'recording' || recordingState === 'paused' || countdown > 0 || isStartingRecording) {
-        // Prevent default behavior of leaving the screen
-        e.preventDefault();
-        Alert.alert(
-          'Recording in Progress',
-          'You cannot leave while recording. Please stop the recording first.',
-          [{ text: 'OK' }]
-        );
-      }
-    });
-
-    return unsubscribe;
-  }, [navigation, recordingState, countdown, isStartingRecording]);
+  // Note: Expo Router doesn't support beforeRemove listener
+  // Back button already has recording state check in the UI
 
   // Timer cleanup
   useEffect(() => {
@@ -656,7 +646,7 @@ export default function AssignmentDetailScreen() {
         <StatusBar style="dark" translucent backgroundColor="transparent" />
         <View style={[styles.header, { paddingTop: STATUSBAR_HEIGHT }]}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
             style={styles.headerBackButton}
             activeOpacity={0.7}
           >
@@ -686,7 +676,7 @@ export default function AssignmentDetailScreen() {
       >
         {!(recordingState === 'recording' || recordingState === 'paused' || countdown > 0 || isStartingRecording) ? (
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
             style={styles.headerBackButton}
             activeOpacity={0.7}
           >

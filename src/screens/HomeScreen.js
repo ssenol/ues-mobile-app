@@ -1,4 +1,4 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import {
@@ -26,13 +26,41 @@ import { selectCurrentUser } from "../store/slices/authSlice";
 import { useTheme } from "../theme/ThemeContext";
 import { buildAssignedSpeechTaskParams } from "../utils/assignmentTransform";
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen() {
+  const router = useRouter();
   const user = useSelector((state) => selectCurrentUser(state));
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
   const isTablet = SCREEN_WIDTH >= 744;
   const STATUSBAR_HEIGHT = insets.top;
+
+  // Navigation helper - React Navigation'dan Expo Router'a geçiş için
+  const navigation = {
+    navigate: (screen, params) => {
+      const routes = {
+        'Assignments': '/assignments',
+        'Profile': '/profile',
+        'ScenarioReport': '/scenario-report',
+        'AssignmentReport': '/assignment-report',
+        'SpeechOnScenarioStep1': '/speech-step1',
+        'AssignmentDetail': '/assignment-detail'
+      };
+      const pathname = routes[screen] || `/${screen.toLowerCase()}`;
+      if (params) {
+        // Object params'ları JSON.stringify ile gönder
+        const serializedParams = {};
+        Object.keys(params).forEach(key => {
+          serializedParams[key] = typeof params[key] === 'object' 
+            ? JSON.stringify(params[key]) 
+            : params[key];
+        });
+        router.push({ pathname, params: serializedParams });
+      } else {
+        router.push(pathname);
+      }
+    }
+  };
 
   const scrollViewRef = useRef(null);
   const activityScrollRef = useRef(null);
@@ -312,7 +340,6 @@ export default function HomeScreen({ navigation }) {
       flex: 1,
       zIndex: 2,
       marginTop: STATUSBAR_HEIGHT,
-      backgroundColor: colors.primary,
     },
     scrollContent: {
       paddingBottom: isTablet ? 120 : 100,
@@ -644,11 +671,12 @@ export default function HomeScreen({ navigation }) {
                             navigation.navigate('SpeechOnScenarioStep1', { 
                               task: assignment.originalTask 
                             });
-                          } else if (assignment.type === 'speechOnTopic' || assignment.type === 'readAloud') {
-                            navigation.navigate('ReadAloud', { 
-                              task: assignment.originalTask, // Orijinal task objesini gönder
-                              assignedTaskId: assignment.assignedTaskId,
-                              speechTaskId: assignment.speechTaskId 
+                          } else {
+                            // Read Aloud ve Speech On Topic için AssignmentDetail
+                            navigation.navigate('AssignmentDetail', { 
+                              task: assignment.originalTask,
+              assignedTaskId: assignment.assignedTaskId,
+                              speechTaskId: assignment.speechTaskId
                             });
                           }
                         }}
@@ -687,11 +715,12 @@ export default function HomeScreen({ navigation }) {
                         navigation.navigate('SpeechOnScenarioStep1', { 
                           task: assignment.originalTask 
                         });
-                      } else if (assignment.type === 'speechOnTopic' || assignment.type === 'readAloud') {
-                        navigation.navigate('ReadAloud', { 
-                          task: assignment.originalTask, // Orijinal task objesini gönder
+                      } else {
+                        // Read Aloud ve Speech On Topic için AssignmentDetail
+                        navigation.navigate('AssignmentDetail', { 
+                          task: assignment.originalTask,
                           assignedTaskId: assignment.assignedTaskId,
-                          speechTaskId: assignment.speechTaskId 
+                          speechTaskId: assignment.speechTaskId
                         });
                       }
                     }}

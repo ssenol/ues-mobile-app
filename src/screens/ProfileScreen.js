@@ -35,11 +35,11 @@ import {
   setBiometricEnabled
 } from "../utils/helpers";
 import { performLogout } from "../utils/logoutHelper";
-import {useFocusEffect} from "@react-navigation/native";
+import {useFocusEffect} from "expo-router";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export default function ProfileScreen({ navigation }) {
+export default function ProfileScreen() {
   const dispatch = useDispatch();
   const isTablet = SCREEN_WIDTH >= 744;
   const user = useSelector((state) => selectCurrentUser(state));

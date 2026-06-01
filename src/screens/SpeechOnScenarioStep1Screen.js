@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, Image, Dimensions, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { ThemedText } from '../components/ThemedText';
 import ThemedIcon from '../components/ThemedIcon';
@@ -10,10 +10,12 @@ import ScenarioTaskDetails from '../components/ScenarioTaskDetails';
 const { width } = Dimensions.get('window');
 
 const SpeechOnScenarioStep1Screen = () => {
-  const route = useRoute();
-  const navigation = useNavigation();
+  const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const { task } = route.params || {};
+  
+  // Parse task from JSON string
+  const task = params.task ? JSON.parse(params.task) : null;
 
   // Tablet ve mobil kontrolü
   const { width: screenWidth } = Dimensions.get('window');
@@ -68,7 +70,7 @@ const SpeechOnScenarioStep1Screen = () => {
       {/* Custom Header */}
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => router.back()}
           style={styles.headerButton}
           activeOpacity={0.7}
         >
@@ -99,7 +101,10 @@ const SpeechOnScenarioStep1Screen = () => {
         <TouchableOpacity 
           style={styles.buttonContainer} 
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('SpeechOnScenarioStep2', { task })}
+          onPress={() => router.push({
+            pathname: '/speech-step2',
+            params: { task: JSON.stringify(task) }
+          })}
         >
           <ThemedText weight="bold" style={styles.buttonText}>Start Chat</ThemedText>
         </TouchableOpacity>

@@ -1,4 +1,4 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, ImageBackground, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -17,13 +17,15 @@ import { buildAssignedSpeechTaskParams } from '../utils/assignmentTransform';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isTablet = SCREEN_WIDTH >= 744;
 
-export default function AssignmentsScreen({ navigation, route }) {
+export default function AssignmentsScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
   const { colors, shadows } = useTheme();
   const insets = useSafeAreaInsets();
   const user = useSelector((state) => selectCurrentUser(state));
   const STATUSBAR_HEIGHT = insets.top;
   // Route params'tan gelen filtreyi kullan, yoksa 'All'
-  const initialFilter = route?.params?.filter || 'All';
+  const initialFilter = params?.filter || 'All';
   const [selectedFilter, setSelectedFilter] = useState(initialFilter);
   const [isFilterSticky, setIsFilterSticky] = useState(false);
   const [allQuizzes, setAllQuizzes] = useState([]);
@@ -148,8 +150,8 @@ export default function AssignmentsScreen({ navigation, route }) {
       setStatusBarStyle('dark');
       
       // Route params varsa onu kullan, yoksa veya null ise 'All' yap
-      // Tabbar'dan geldiğinde route.params.filter null veya undefined olacak
-      const filter = route?.params?.filter;
+      // Tabbar'dan geldiğinde params.filter null veya undefined olacak
+      const filter = params?.filter;
       if (filter && filter !== null) {
         setSelectedFilter(filter);
         setTimeout(() => scrollToFilter(filter), 150);
@@ -174,7 +176,7 @@ export default function AssignmentsScreen({ navigation, route }) {
       return () => {
         setIsFilterSticky(false);
       };
-    }, [route?.params?.filter, fetchAssignments])
+    }, [params?.filter, fetchAssignments])
   );
 
   const handleScroll = Animated.event(
@@ -276,12 +278,14 @@ export default function AssignmentsScreen({ navigation, route }) {
 
       if (reportId) {
         if (assignment.type === 'speechOnScenario') {
-          navigation.navigate('ScenarioReport', {
-            reportId: reportId
+          router.push({
+            pathname: '/scenario-report',
+            params: { reportId }
           });
         } else {
-          navigation.navigate('AssignmentReport', {
-            reportId: reportId
+          router.push({
+            pathname: '/assignment-report',
+            params: { reportId }
           });
         }
         return;
@@ -290,14 +294,19 @@ export default function AssignmentsScreen({ navigation, route }) {
     
     // Completed değilse normal akış
     if (assignment.type === 'speechOnScenario') {
-      navigation.navigate('SpeechOnScenarioStep1', { 
-        task: assignment.originalTask 
+      router.push({
+        pathname: '/speech-step1',
+        params: { task: JSON.stringify(assignment.originalTask) }
       });
-    } else if (assignment.type === 'readAloud' || assignment.type === 'speechOnTopic') {
-      navigation.navigate('ReadAloud', { 
-        task: assignment.originalTask, // Orijinal task objesini gönder
-        assignedTaskId: assignment.assignedTaskId,
-        speechTaskId: assignment.speechTaskId 
+    } else {
+      // Read Aloud ve Speech On Topic için AssignmentDetail
+      router.push({
+        pathname: '/assignment-detail',
+        params: {
+          task: JSON.stringify(assignment.originalTask),
+          assignedTaskId: assignment.assignedTaskId,
+          speechTaskId: assignment.speechTaskId
+        }
       });
     }
   };
@@ -390,7 +399,7 @@ export default function AssignmentsScreen({ navigation, route }) {
         <View style={styles.summaryCards}>
           <View style={styles.summaryCard}>
             <View style={styles.summaryNumberContainer}>
-              <ThemedText style={styles.summaryNumber}>{solvedAssignments}</ThemedText>
+              <ThemedText weight="bold" style={styles.summaryNumber}>{solvedAssignments}</ThemedText>
             </View>
             <ThemedText style={styles.summaryLabel}>Solved Assignments</ThemedText>
           </View>

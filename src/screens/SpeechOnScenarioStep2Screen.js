@@ -16,7 +16,7 @@ import {
 import { useAudioRecorder, setAudioModeAsync, AudioQuality, IOSOutputFormat, useAudioPlayer } from 'expo-audio';
 import axios from 'axios';
 import api, { API_ENDPOINTS } from '../config/api';
-import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../store/slices/authSlice';
 import { selectTtsSpeed } from '../store/slices/settingsSlice';
@@ -39,12 +39,14 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const SpeechOnScenarioStep2Screen = () => {
-  const route = useRoute();
-  const navigation = useNavigation();
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Parse task from JSON string
+  const task = params.task ? JSON.parse(params.task) : null;
   const insets = useSafeAreaInsets();
   const user = useSelector((state) => selectCurrentUser(state));
   const ttsSpeed = useSelector(selectTtsSpeed);
-  const { task } = route.params || {};
 
   // Dinamik padding değerleri
   const { width: screenWidth } = Dimensions.get('window');
@@ -76,13 +78,13 @@ const SpeechOnScenarioStep2Screen = () => {
       setConfirmModalVisible(true);
     } else {
       // Chat başlamadıysa direkt geri git
-      navigation.goBack();
+      router.back();
     }
   };
 
   const handleConfirmBack = () => {
     setConfirmModalVisible(false);
-    navigation.goBack();
+    router.back();
   };
   const [userMessageCount, setUserMessageCount] = useState(0);
   const [tokenError, setTokenError] = useState(false);
@@ -861,7 +863,7 @@ const SpeechOnScenarioStep2Screen = () => {
           visible={successModalVisible}
           onClose={() => {
             setSuccessModalVisible(false);
-            navigation.navigate('MainTabs', { screen: 'Home' });
+            router.push('/');
           }}
           iconName="bigcheck"
           title="Task Completed!"
@@ -871,7 +873,7 @@ const SpeechOnScenarioStep2Screen = () => {
               text: 'View Report',
               onPress: () => {
                 setSuccessModalVisible(false);
-                navigation.navigate('MainTabs', { screen: 'Completed' });
+                router.push('/completed');
               },
               color: '#3E4EF0'
             }

@@ -1,4 +1,4 @@
-import {useFocusEffect, useRoute} from '@react-navigation/native';
+import {useFocusEffect, useLocalSearchParams, useRouter} from 'expo-router';
 import {StatusBar} from 'expo-status-bar';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
@@ -94,15 +94,16 @@ const parseCorrection = (html, fonts) => {
   return parts.length > 0 ? parts : null;
 };
 
-export default function ScenarioReportScreen({ navigation }) {
+export default function ScenarioReportScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
   const { colors, fonts, shadows } = useTheme();
   const insets = useSafeAreaInsets();
 
   const STATUSBAR_HEIGHT = insets.top;
   const HEADER_MARGIN_TOP = 16;
 
-  const route = useRoute();
-  const { solvedTaskId, reportId } = route.params || {};
+  const { solvedTaskId, reportId } = params || {};
   const taskId = reportId || solvedTaskId;
   const user = useSelector((state) => selectCurrentUser(state));
 
@@ -128,7 +129,7 @@ export default function ScenarioReportScreen({ navigation }) {
   const fetchReportData = useCallback(async () => {
     if (!taskId) {
       Alert.alert('Error', 'Report ID is missing');
-      navigation.goBack();
+      router.back();
       return;
     }
 
@@ -140,16 +141,16 @@ export default function ScenarioReportScreen({ navigation }) {
         setReportData(response.data);
       } else {
         Alert.alert('Error', 'Failed to load report data');
-        navigation.goBack();
+        router.back();
       }
     } catch (error) {
       console.error('ScenarioReportScreen fetchReportData error:', error);
       Alert.alert('Error', 'Failed to load report data');
-      navigation.goBack();
+      router.back();
     } finally {
       setLoading(false);
     }
-  }, [taskId, navigation]);
+  }, [taskId, router]);
 
   useEffect(() => {
     fetchReportData();

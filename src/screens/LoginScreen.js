@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from 'expo-secure-store';
+import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -29,7 +30,7 @@ import ThemedIcon from "../components/ThemedIcon";
 // Biyometrik hatırlatma Alert'inin daha önce gösterilip gösterilmediğini tutan anahtar.
 const BIOMETRIC_PROMPT_SHOWN_KEY = "biometric_prompt_shown";
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen() {
   const dispatch = useDispatch();
   const { colors } = useTheme();
   const [username, setUsername] = useState(""); // ues-meq-student1
@@ -46,35 +47,37 @@ export default function LoginScreen({ navigation }) {
   // Biyometrik doğrulama işlemi sırasında yüklenme durumunu yönetir.
   const [biometricLoading, setBiometricLoading] = useState(false);
 
-  useEffect(() => {
-    // Otomatik biyometrik giriş kaldırıldı
-    // Biyometrik buton görünürlüğü kontrolü
-    // Biyometrik butonun görünürlüğünü ve tipini belirleyen kontrol fonksiyonu.
-    const checkBiometricButton = async () => {
-      const enabled = await BiometricAuthService.isBiometricEnabled();
-      // Eğer ayarlarda biyometrik toggle açık ise, buton mutlaka görünsün
-      if (enabled) {
-        const type = await BiometricAuthService.getBiometricType();
-        setBiometricButtonType(type);
-        setShowBiometricButton(true);
-        return;
-      }
-      const creds = await BiometricAuthService.getCredentials();
-      if (creds) {
-        const type = await BiometricAuthService.getBiometricType();
-        setBiometricButtonType(type);
-        setShowBiometricButton(true);
-      } else {
-        setShowBiometricButton(false);
-      }
-    };
-    checkBiometricButton();
+  // Biyometrik butonun görünürlüğünü ve tipini belirleyen kontrol fonksiyonu.
+  const checkBiometricButton = useCallback(async () => {
+    const enabled = await BiometricAuthService.isBiometricEnabled();
+    // Eğer ayarlarda biyometrik toggle açık ise, buton mutlaka görünsün
+    if (enabled) {
+      const type = await BiometricAuthService.getBiometricType();
+      setBiometricButtonType(type);
+      setShowBiometricButton(true);
+      return;
+    }
+    const creds = await BiometricAuthService.getCredentials();
+    if (creds) {
+      const type = await BiometricAuthService.getBiometricType();
+      setBiometricButtonType(type);
+      setShowBiometricButton(true);
+    } else {
+      setShowBiometricButton(false);
+    }
+  }, []);
 
-    // --- EKRANA HER GELİŞTE BUTON KONTROLÜ ---
-    return navigation.addListener("focus", () => {
+  // İlk mount'ta kontrol
+  useEffect(() => {
+    checkBiometricButton();
+  }, [checkBiometricButton]);
+
+  // Ekrana her gelişte buton kontrolü
+  useFocusEffect(
+    useCallback(() => {
       checkBiometricButton();
-    });
-  }, [navigation]);
+    }, [checkBiometricButton])
+  );
 
   // Biyometrik ile otomatik giriş fonksiyonu
   // Biyometrik doğrulama sonrası kaydedilmiş kimlik bilgileriyle giriş yapar.

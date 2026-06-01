@@ -1,4 +1,4 @@
-import {useFocusEffect, useRoute} from '@react-navigation/native';
+import {useFocusEffect, useLocalSearchParams, useRouter} from 'expo-router';
 import {StatusBar} from 'expo-status-bar';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
@@ -50,7 +50,9 @@ const FEEDBACK_TYPE_ICON_MAP = {
   'suggestions-for-improvement': 'report4',
 };
 
-export default function AssignmentReportScreen({ navigation }) {
+export default function AssignmentReportScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
   const { colors, fonts, shadows } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -69,8 +71,7 @@ export default function AssignmentReportScreen({ navigation }) {
   // ScrollView için ekstra padding (tablet'te içeriklerin kalmaması için)
   const scrollPaddingBottom = bottomPadding + (isTablet ? 30 : 30);
 
-  const route = useRoute();
-  const { solvedTaskId, reportId } = route.params || {};
+  const { solvedTaskId, reportId } = params || {};
   // reportId veya solvedTaskId kullan (backward compatibility)
   const taskId = reportId || solvedTaskId;
   const user = useSelector((state) => selectCurrentUser(state));
@@ -100,7 +101,7 @@ export default function AssignmentReportScreen({ navigation }) {
   const fetchReportData = useCallback(async () => {
     if (!taskId) {
       Alert.alert('Error', 'Report ID is missing');
-      navigation.goBack();
+      router.back();
       return;
     }
 
@@ -112,16 +113,16 @@ export default function AssignmentReportScreen({ navigation }) {
         setReportData(response.data);
       } else {
         Alert.alert('Error', 'Failed to load report data');
-        navigation.goBack();
+        router.back();
       }
     } catch (error) {
       console.error('AssignmentReportScreen fetchReportData error:', error);
       Alert.alert('Error', 'Failed to load report data');
-      navigation.goBack();
+      router.back();
     } finally {
       setLoading(false);
     }
-  }, [taskId, navigation]);
+  }, [taskId, router]);
 
   // Load audio file URL
   const loadAudioUrl = useCallback(async () => {
@@ -717,7 +718,7 @@ export default function AssignmentReportScreen({ navigation }) {
       >
         <TouchableOpacity
           onPress={() => {
-            navigation.goBack();
+            router.back();
           }}
           style={styles.headerBackButton}
           activeOpacity={0.7}

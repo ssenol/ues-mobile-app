@@ -1,6 +1,6 @@
 {
   "expo": {
-    "entryPoint": "./App.js",
+    "scheme": "boostifyspeak",
     "name": "BoostifySpeak",
     "slug": "boostifyspeak",
     "version": "1.0.0",
@@ -53,6 +53,7 @@
     },
     "owner": "selcuksenol",
     "plugins": [
+      "expo-dev-client",
       "expo-secure-store",
       "expo-router",
       "expo-font",
