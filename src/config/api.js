@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
     generateExerciseToken: `${BASE_URL}/student/generate-exercise-auth-token`,
     submitSpeechTask: `${BASE_URL}/student/submit-speech-task`,
     saveSpeechOnScenarioProgress: `${BASE_URL}/student/save-speech-on-scenario-progress`,
+    scoreScenarioTurnAudio: `${BASE_URL}/student/score-scenario-turn-audio`,
     getCompletedExercises: `${BASE_URL}/student/get-student-completed-exercises`,
     getSolvedExerciseDetail: `${BASE_URL}/student/get-solved-exercise-detail`,
     deleteSolvedTask: `${BASE_URL}/student/delete-solved-task`,

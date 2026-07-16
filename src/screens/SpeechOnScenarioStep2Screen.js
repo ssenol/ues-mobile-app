@@ -91,6 +91,7 @@ const SpeechOnScenarioStep2Screen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [taskDetailsModalVisible, setTaskDetailsModalVisible] = useState(false);
+  const [offTopicModalVisible, setOffTopicModalVisible] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [recordingUri, setRecordingUri] = useState(null);
@@ -98,6 +99,9 @@ const SpeechOnScenarioStep2Screen = () => {
   const [lastRecordingUri, setLastRecordingUri] = useState(null);
   const [currentTTSAudio, setCurrentTTSAudio] = useState(null);
   const [loadingTTSMessages, setLoadingTTSMessages] = useState(new Map()); // Her mesaj için ayrı loading
+
+  // En son kaydedilen turun score-scenario-turn-audio sonucu; mesaj gönderilince ilgili mesaja aktarılır
+  const pendingSpeechScoreRef = useRef(null);
 
   // Platform ve klavye durumuna göre padding hesapla
   const effectiveBottomPadding = useMemo(() => {
@@ -160,6 +164,7 @@ const SpeechOnScenarioStep2Screen = () => {
 
         // Kayıtlı sesi işle
         processAudioToText(uri);
+        scoreTurnAudio(uri);
       }
     }
   );
@@ -383,6 +388,7 @@ const SpeechOnScenarioStep2Screen = () => {
         translation: msg.translation || '',
         voiceRecord: msg.voiceRecord || null,
         correction: msg.correction || '',
+        speechScore: msg.speechScore || null,
         id: msg.id
       }));
 
@@ -586,6 +592,50 @@ const SpeechOnScenarioStep2Screen = () => {
     }
   };
 
+  // Turun ses kaydını Microsoft tabanlı puanlamaya gönderir; sonuç bir sonraki sendMessage'da mesaja eklenir
+  const scoreTurnAudio = async (audioUri) => {
+    if (!audioUri) {
+      return;
+    }
+
+    let tokenToUse = exerciseToken;
+
+    if (!tokenToUse) {
+      tokenToUse = await generateExerciseToken();
+      if (!tokenToUse) {
+        console.error('Exercise token oluşturulamadı, tur puanlanamadı');
+        return;
+      }
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', {
+        uri: audioUri,
+        type: 'audio/m4a',
+        name: 'recording.m4a',
+      });
+
+      const response = await axios.post(
+        API_ENDPOINTS.student.scoreScenarioTurnAudio,
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${tokenToUse}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.data?.status === 'success' && response.data?.data) {
+        pendingSpeechScoreRef.current = response.data.data;
+      }
+    } catch (error) {
+      console.error('Tur puanlama hatası:', error);
+      console.error('Hata detayı:', error.response?.data);
+    }
+  };
+
   const sendMessage = async () => {
     if (!inputText.trim() || isSending || !exerciseToken || userMessageCount >= MAX_MESSAGES) {
       return;
@@ -601,12 +651,13 @@ const SpeechOnScenarioStep2Screen = () => {
       translation: '',
       voiceRecord: null,
       correction: '',
+      speechScore: pendingSpeechScoreRef.current,
       id: generateGuid()
     };
+    pendingSpeechScoreRef.current = null;
 
     const updatedHistory = [...messagesHistory, userMessage];
     setMessagesHistory(updatedHistory);
-    setUserMessageCount(prev => prev + 1);
     setIsSending(true);
 
     try {
@@ -640,6 +691,8 @@ const SpeechOnScenarioStep2Screen = () => {
       );
 
       if (response.data?.status === 'success' && response.data?.data?.aiResponse) {
+        const offTopic = !!response.data.data.offTopic;
+
         const assistantMessage = {
           role: 'assistant',
           content: response.data.data.aiResponse,
@@ -649,6 +702,13 @@ const SpeechOnScenarioStep2Screen = () => {
         };
 
         setMessagesHistory([...updatedHistory, assistantMessage]);
+
+        if (offTopic) {
+          // Konu dışı cevap: tur ilerlemez, öğrenci konuya dönmeye yönlendirilir
+          setOffTopicModalVisible(true);
+        } else {
+          setUserMessageCount(prev => prev + 1);
+        }
       }
     } catch (error) {
       console.error('Mesaj gönderilirken hata:', error);
@@ -879,6 +939,17 @@ const SpeechOnScenarioStep2Screen = () => {
             }
           ]}
           cancelText="Go to Home"
+        />
+
+        {/* Off Topic Modal */}
+        <ConfirmModal
+          visible={offTopicModalVisible}
+          onClose={() => setOffTopicModalVisible(false)}
+          singleButton
+          iconName="info3"
+          title="Stay on Topic"
+          description="Your answer doesn't seem related to the scenario. Please try to respond to the topic so we can continue."
+          confirmText="Got it"
         />
 
         {/* Confirm Modal for Back Navigation */}
