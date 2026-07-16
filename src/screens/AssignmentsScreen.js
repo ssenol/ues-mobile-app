@@ -502,7 +502,7 @@ export default function AssignmentsScreen() {
                 iconName={'noassignment'}
                 title={'Nothing Assigned Yet'}
                 subtitle={"You do not have a task assigned yet."}
-                onLinkPress={() => navigation.navigate('Assignments')}
+                onLinkPress={() => router.push('/assignments')}
               />
             )
           )}

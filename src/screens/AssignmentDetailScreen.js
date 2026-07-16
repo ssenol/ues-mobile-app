@@ -491,7 +491,7 @@ export default function AssignmentDetailScreen() {
 
         // Navigate directly to Completed screen
         setTimeout(() => {
-          navigation.navigate('MainTabs', { screen: 'Completed' });
+          router.push('/completed');
         }, 300);
         // Alert.alert(
         //   'Success',
@@ -988,7 +988,7 @@ export default function AssignmentDetailScreen() {
         visible={successModalVisible}
         onClose={() => {
           setSuccessModalVisible(false);
-          navigation.navigate('MainTabs', { screen: 'Home' });
+          router.push('/');
         }}
         iconName="bigcheck"
         title="Task Completed!"
@@ -998,7 +998,7 @@ export default function AssignmentDetailScreen() {
             text: 'View Report',
             onPress: () => {
               setSuccessModalVisible(false);
-              navigation.navigate('MainTabs', { screen: 'Completed' });
+              router.push('/completed');
             },
             color: '#3E4EF0'
           }

@@ -264,7 +264,7 @@ export default function ScenarioReportScreen() {
         <StatusBar style="light" translucent backgroundColor="transparent" />
         <ActivityIndicator size="large" color="#3E4EF0" />
         <ThemedText style={styles.loadingText}>Loading report...</ThemedText>
-        <TouchableOpacity style={styles.loadingBackButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.loadingBackButton} onPress={() => router.back()} activeOpacity={0.7}>
           <ThemedText style={styles.loadingBackText}>Go Back</ThemedText>
         </TouchableOpacity>
       </View>
@@ -372,7 +372,7 @@ export default function ScenarioReportScreen() {
         }}
       >
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => router.back()}
           style={styles.headerBackButton}
           activeOpacity={0.7}
         >
