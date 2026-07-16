@@ -1,996 +1,273 @@
-import {useFocusEffect, useLocalSearchParams, useRouter} from 'expo-router';
-import {StatusBar} from 'expo-status-bar';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Dimensions,
-  Image, Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
-import Modal from 'react-native-modal';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useSelector} from 'react-redux';
+import {useLocalSearchParams} from 'expo-router';
+import React, {useState} from 'react';
+import {ActivityIndicator, Alert, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
 import AudioPlayer from '../components/AudioPlayer';
 import CircularProgress from '../components/CircularProgress';
-import EmptyStateCard from '../components/EmptyStateCard';
+import InfoModal from '../components/InfoModal';
+import ReportAnnotatedText from '../components/report/ReportAnnotatedText';
+import {getHighlightIssues} from '../components/report/reportIssueCategories';
+import ReportScreenShell from '../components/report/ReportScreenShell';
+import reportStyles from '../components/report/reportStyles';
 import ThemedIcon from '../components/ThemedIcon';
 import {ThemedText} from '../components/ThemedText';
-import {generateFileUrl, getSolvedExerciseDetail} from '../services/speak';
-import {selectCurrentUser} from '../store/slices/authSlice';
 import {useTheme} from '../theme/ThemeContext';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const STRONG_SEGMENT_REGEX = /(<strong>.*?<\/strong>)/gi;
+const VOICE_METRIC_INFO = [
+  { key: 'prosody', label: 'Prosody', description: 'Stress, rhythm and intonation of your speech.' },
+  { key: 'pronunciation', label: 'Pronunciation', description: 'How accurately individual sounds were produced.' },
+  { key: 'completeness', label: 'Completeness', description: 'How much of the expected text you actually produced.' },
+  { key: 'fluency', label: 'Fluency', description: 'Smoothness, pacing and pausing.' },
+  { key: 'accuracy', label: 'Accuracy', description: 'Correctness of the words you produced.' },
+];
 
-const getExampleSegments = (text) => {
-  if (!text) return [];
+function RecordingTab({ firstResult, reportData, issuesPanel, mistakes, voiceErrors, resolvedAudioUrl, audioResolving }) {
+  const { shadows } = useTheme();
+  const isReadAloud = reportData.subType === 'read_aloud';
+  const resultDetail = firstResult?.result || {};
+  const transcription = resultDetail.transcription || '';
+  const audioDuration = firstResult?.durationAsSeconds ?? resultDetail.durationAsSeconds;
 
-  return text
-    .split(STRONG_SEGMENT_REGEX)
-    .filter(Boolean)
-    .map((segment) => {
-      const isStrong = /<strong>.*<\/strong>/i.test(segment);
-      return {
-        text: segment.replace(/<\/?strong>/gi, ''),
-        isStrong,
-      };
-    });
-};
+  const languageConventionIssues = (mistakes || []).filter((m) => m.type !== 'logic-error');
+  const logicIssues = (mistakes || []).filter((m) => m.type === 'logic-error');
+  const pronunciationIssues = voiceErrors || [];
 
-const FEEDBACK_TYPE_ICON_MAP = {
-  'content-relevance': 'report1',
-  'tone-and-perspective': 'report2',
-  'performance-summary': 'report3',
-  'suggestions-for-improvement': 'report4',
-};
+  // Aynı anda sadece aktif panonun (ve Language Convention'daysa seçili kategorinin) hataları vurgulanır
+  const highlightedLcIssues = issuesPanel.lcFilter === 'all'
+    ? languageConventionIssues
+    : languageConventionIssues.filter((i) => i.type === issuesPanel.lcFilter);
+  const annotationIssues = getHighlightIssues(issuesPanel.activeIssueTab, issuesPanel.lcFilter, {
+    pronunciationIssues,
+    lcIssues: languageConventionIssues,
+    logicIssues,
+  });
 
-export default function AssignmentReportScreen() {
-  const router = useRouter();
-  const params = useLocalSearchParams();
-  const { colors, fonts, shadows } = useTheme();
-  const insets = useSafeAreaInsets();
-
-  // ========== YÜKSEKLİK DEĞİŞKENLERİ ==========
-  const STATUSBAR_HEIGHT = insets.top;
-  const HEADER_MARGIN_TOP = 16;
-  
-  // Tablet ve mobil kontrolü
-  const { width: screenWidth } = Dimensions.get('window');
-  const isTablet = screenWidth >= 744;
-  const basePadding = isTablet ? 20 : 10;
-  
-  // Dinamik padding değerleri
-  const bottomPadding = insets.bottom + basePadding;
-  
-  // ScrollView için ekstra padding (tablet'te içeriklerin kalmaması için)
-  const scrollPaddingBottom = bottomPadding + (isTablet ? 30 : 30);
-
-  const { solvedTaskId, reportId } = params || {};
-  // reportId veya solvedTaskId kullan (backward compatibility)
-  const taskId = reportId || solvedTaskId;
-  const user = useSelector((state) => selectCurrentUser(state));
-
-  // ========== STATE DEĞİŞKENLERİ ==========
-  const [loading, setLoading] = useState(true);
-  const [reportData, setReportData] = useState(null);
-  const [activeTab, setActiveTab] = useState('speech-components');
-  const [showMoreCharts, setShowMoreCharts] = useState(false);
-  const [isFilterSticky, setIsFilterSticky] = useState(false);
-  const [filterTabsY, setFilterTabsY] = useState(0);
-  const [filterTabsHeight, setFilterTabsHeight] = useState(70); // Filter tabs yüksekliği (başlangıç tahmini)
-  const [headerHeight, setHeaderHeight] = useState(STATUSBAR_HEIGHT + 30); // Başlangıç tahmini
-  const [blueSectionActualHeight, setBlueSectionActualHeight] = useState(284); // Mavi zemin gerçek yüksekliği
-  const [audioModalVisible, setAudioModalVisible] = useState(false);
-  const [audioUrl, setAudioUrl] = useState(null);
-  const [loadingAudio, setLoadingAudio] = useState(false);
-
-  // ========== REF DEĞİŞKENLERİ ==========
-  const scrollViewRef = useRef(null);
-  const filterTabsRef = useRef(null);
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const headerTranslateYValue = useRef(new Animated.Value(0)).current;
-  const lastTranslateYRef = useRef(0); // Son translateY değerini sakla (gereksiz setValue çağrılarını önlemek için)
-
-  // Fetch report data
-  const fetchReportData = useCallback(async () => {
-    if (!taskId) {
-      Alert.alert('Error', 'Report ID is missing');
-      router.back();
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await getSolvedExerciseDetail(taskId);
-
-      if (response?.success || response?.status_code === 200) {
-        setReportData(response.data);
-      } else {
-        Alert.alert('Error', 'Failed to load report data');
-        router.back();
-      }
-    } catch (error) {
-      console.error('AssignmentReportScreen fetchReportData error:', error);
-      Alert.alert('Error', 'Failed to load report data');
-      router.back();
-    } finally {
-      setLoading(false);
-    }
-  }, [taskId, router]);
-
-  // Load audio file URL
-  const loadAudioUrl = useCallback(async () => {
-    // audioUrl result array'inin içinde
-    const audioFileUrl = reportData?.result?.[0]?.audioUrl;
-
-    if (!audioFileUrl) {
-      Alert.alert('Error', 'Audio file not found');
-      return;
-    }
-
-    try {
-      setLoadingAudio(true);
-      const response = await generateFileUrl(audioFileUrl);
-
-      if (response?.success && response?.data) {
-        setAudioUrl(response.data);
-        setAudioModalVisible(true);
-      } else {
-        Alert.alert('Error', 'Failed to load audio file');
-      }
-    } catch (error) {
-      console.error('Error loading audio URL:', error);
-      Alert.alert('Error', 'Failed to load audio file');
-    } finally {
-      setLoadingAudio(false);
-    }
-  }, [reportData]);
-
-  useEffect(() => {
-    fetchReportData();
-  }, [fetchReportData]);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchReportData();
-
-      return () => {
-        const scrollNode = typeof scrollViewRef.current?.scrollTo === 'function'
-          ? scrollViewRef.current
-          : scrollViewRef.current?.getNode?.();
-
-        scrollNode?.scrollTo?.({ y: 0, animated: false });
-        headerTranslateYValue.setValue(0);
-        lastTranslateYRef.current = 0;
-        setIsFilterSticky(false);
-      };
-    }, [fetchReportData, headerTranslateYValue])
-  );
-
-  // Mavi zeminin ScrollView içindeki görünür yüksekliği
-  // Mavi zemin total: blueSectionActualHeight (onLayout ile ölçülür)
-  // Header mavi zeminin içinde, bu yüzden görünür yükseklik: blueSectionActualHeight - headerHeight
-  const BLUE_SECTION_HEIGHT = useMemo(() => {
-    return blueSectionActualHeight - (headerHeight + HEADER_MARGIN_TOP);
-  }, [blueSectionActualHeight, headerHeight, HEADER_MARGIN_TOP]);
-
-  const FILTER_TABS_STICKY_PADDING = 12; // Sticky filter tabs paddingVertical değeri
-
-  // Handle scroll - Filter tabs mavi zeminin altına gelince birlikte hareket eder
-  const handleScrollListener = useCallback((event) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-
-    // Filter tabs sticky kontrolü
-    // Filter tabs'ın üst kenarı header'ın alt kenarına tam geldiğinde sticky olmalı
-    // Scroll pozisyonu X olduğunda filter tabs ekranda (filterTabsY - X) pozisyonunda
-    // Filter tabs header'ın altına tam geldiğinde: filterTabsY - X = headerHeight
-    // Yani: X = filterTabsY - headerHeight
-    const stickyThreshold = filterTabsY > 0
-      ? filterTabsY - FILTER_TABS_STICKY_PADDING
-      : BLUE_SECTION_HEIGHT;
-
-    // Tüm güncellemeleri requestAnimationFrame içine al (eski cihazlar için optimizasyon)
-    requestAnimationFrame(() => {
-      // State güncellemelerini optimize et - sadece değiştiğinde güncelle
-      if (offsetY >= stickyThreshold && stickyThreshold > 0) {
-        if (!isFilterSticky) {
-          setIsFilterSticky(true);
-        }
-      } else if (isFilterSticky) {
-        setIsFilterSticky(false);
-      }
-
-      // Mavi zemin kaydırma kontrolü (legacy dahil tüm cihazlar için çalışır)
-      if (filterTabsY > 0) {
-        // Filter tabs'ın üst kenarı mavi zeminin alt kenarına 12px kala geldiği scroll pozisyonu
-        // Sticky filter tabs'ın padding'i (12px) nedeniyle mavi zemin 12px erken hareket etmeli
-        // Böylece sticky olduğunda pürüzsüz geçiş sağlanır
-        // Scroll pozisyonu X olduğunda filter tabs ekranda (filterTabsY - X) pozisyonunda
-        // Filter tabs mavi zeminin altına 12px kala geldiğinde: filterTabsY - X = BLUE_SECTION_HEIGHT - 12
-        // Yani: X = filterTabsY - BLUE_SECTION_HEIGHT - 12 (eksi işareti çünkü "kala" = daha erken)
-        const blueSectionBottomReached = filterTabsY - BLUE_SECTION_HEIGHT - FILTER_TABS_STICKY_PADDING;
-
-        let newTranslateY = 0;
-
-        if (offsetY < blueSectionBottomReached) {
-          // Durum 1: Filter tabs henüz mavi zeminin altına gelmedi - Mavi zemin sabit
-          newTranslateY = 0;
-        } else if (isFilterSticky) {
-          // Durum 2: Filter tabs sticky - Mavi zemin tamamen yukarı kaymış, sabit
-          // Filter tabs sticky olduğunda padding 12px var, bu yüzden mavi zemin 12px daha az kaymalı
-          // Böylece filter tabs'ın üst kenarı (padding dahil) mavi zeminin alt kenarına 12px kala olur
-          newTranslateY = -(BLUE_SECTION_HEIGHT - FILTER_TABS_STICKY_PADDING);
-        } else {
-          // Durum 3: Filter tabs mavi zeminin altında ama sticky değil - Birlikte kayıyorlar
-          // Filter tabs ve mavi zemin 1:1 oranında birlikte yukarı kayıyor
-          const scrolledDistance = offsetY - blueSectionBottomReached;
-          const translateY = -scrolledDistance;
-          // Maksimum translateY: Filter tabs sticky olduğunda ulaşacağı değer (12px padding hesaba katılıyor)
-          const maxTranslateY = -(BLUE_SECTION_HEIGHT - FILTER_TABS_STICKY_PADDING);
-          // translateY'yi maxTranslateY ile sınırla
-          newTranslateY = Math.max(translateY, maxTranslateY - FILTER_TABS_STICKY_PADDING);
-        }
-
-        // Sadece değer değiştiyse setValue çağır (gereksiz çağrıları önle)
-        if (Math.abs(newTranslateY - lastTranslateYRef.current) > 0.5) {
-          headerTranslateYValue.setValue(newTranslateY);
-          lastTranslateYRef.current = newTranslateY;
-        }
-      } else {
-        // Filter tabs pozisyonu henüz bilinmiyor - HomeScreen'deki gibi basit kaydırma
-        let newTranslateY = 0;
-        if (offsetY >= BLUE_SECTION_HEIGHT) {
-          newTranslateY = -(offsetY - BLUE_SECTION_HEIGHT);
-        }
-
-        // Sadece değer değiştiyse setValue çağır (gereksiz çağrıları önle)
-        if (Math.abs(newTranslateY - lastTranslateYRef.current) > 0.5) {
-          headerTranslateYValue.setValue(newTranslateY);
-          lastTranslateYRef.current = newTranslateY;
-        }
-      }
-    });
-  }, [filterTabsY, BLUE_SECTION_HEIGHT, isFilterSticky, headerTranslateYValue]);
-
-  const handleScroll = useMemo(() => {
-    return Animated.event(
-      [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-      {
-        useNativeDriver: false,
-        listener: handleScrollListener,
-      }
-    );
-  }, [handleScrollListener, scrollY]);
-
-  const scrollToTabContentStart = useCallback(() => {
-    const targetY = filterTabsY > 0 ? filterTabsY - FILTER_TABS_STICKY_PADDING + 1 : 0;
-
-    if (!scrollViewRef.current) return;
-
-    const scrollNode =
-      typeof scrollViewRef.current.scrollTo === 'function'
-        ? scrollViewRef.current
-        : scrollViewRef.current.getNode?.();
-
-    scrollNode?.scrollTo?.({ y: targetY, animated: true });
-  }, [filterTabsY]);
-
-  const handleTabPress = useCallback(
-    (tabKey) => {
-      if (activeTab === tabKey) {
-        // Sadece sticky durumunda scroll yap
-        if (isFilterSticky) {
-          scrollToTabContentStart();
-        }
-        return;
-      }
-      setActiveTab(tabKey);
-      // Scroll resetini bir sonraki frame'e bırakmak daha stabil oluyor
-      // Sadece sticky durumunda scroll yap
-      if (isFilterSticky) {
-        requestAnimationFrame(scrollToTabContentStart);
-      }
-    },
-    [activeTab, scrollToTabContentStart, isFilterSticky]
-  );
-
-  const renderFilterTabsContent = () => (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.filterTabsScrollContent}
-      style={styles.filterTabsScrollView}
-    >
-      <TouchableOpacity
-        style={[
-          styles.filterTab,
-          activeTab === 'speech-components' && styles.filterTabActive
-        ]}
-        onPress={() => handleTabPress('speech-components')}
-        activeOpacity={0.7}
-      >
-        <ThemedText
-          weight="bold"
-          style={activeTab === 'speech-components' ? styles.filterTabTextActive : styles.filterTabText}
-        >
-          Speech Components
+  return (
+    <View>
+      <View style={[styles.introCard, shadows.light]}>
+        <ThemedText weight="bold" style={styles.tabIntroTitle}>
+          {isReadAloud ? 'Your reading, annotated' : 'Your speech, annotated'}
         </ThemedText>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.filterTab,
-          activeTab === 'error-analysis' && styles.filterTabActive
-        ]}
-        onPress={() => handleTabPress('error-analysis')}
-        activeOpacity={0.7}
-      >
-        <ThemedText
-          weight="bold"
-          style={activeTab === 'error-analysis' ? styles.filterTabTextActive : styles.filterTabText}
-        >
-          Error Analysis
+        <ThemedText style={styles.tabIntroSubtitle}>
+          Words with feedback are highlighted. Open a tab to see voice, language and logic detail.
         </ThemedText>
-      </TouchableOpacity>
-    </ScrollView>
-  );
-
-  const renderMainContent = () => (
-    <>
-      {/* User Info Card */}
-      <View style={styles.userInfoCard}>
-        <View style={styles.userInfoLeft}>
-          <View style={styles.profileImageContainer}>
-            {user?.avatarUrl ? (
-              <Image
-                source={{ uri: user.avatarUrl }}
-                style={{ width: 40, height: 40, borderRadius: 20 }}
-              />
-            ) : (
-              <ThemedIcon
-                iconName="avatar"
-                size={40}
-              />
-            )}
-          </View>
-          <View style={styles.userInfoText}>
-            <ThemedText weight="bold" style={styles.userGreeting}>
-              Hello, {studentName}!
-            </ThemedText>
-            <ThemedText style={styles.userClass}>{className}</ThemedText>
-          </View>
-        </View>
-        <View style={styles.userInfoRight}>
-          <View style={styles.dateTimeRow}>
-            <ThemedIcon
-              iconName="date"
-              size={16}
-              tintColor="#B7B7B7"
-            />
-            <ThemedText style={styles.dateTimeText}>
-              {formatDate(solvedDate)}
-            </ThemedText>
-          </View>
-          <View style={styles.dateTimeRow}>
-            <ThemedIcon
-              iconName="time"
-              size={16}
-              tintColor="#B7B7B7"
-            />
-            <ThemedText style={styles.dateTimeText}>
-              {formatTime(solvedDate)}
-            </ThemedText>
-          </View>
-        </View>
       </View>
 
-      {/* Assignment Statistic Card */}
-      <View style={[styles.statisticCard, shadows.light]}>
-        <View style={styles.statisticHeader}>
-          <ThemedText weight="bold" style={styles.statisticTitle}>
-            Assignment Statistic
-          </ThemedText>
-          <View style={[styles.scoreBadge, { backgroundColor: scoreBackgroundColor }]}> 
-            <View style={[styles.scoreIconContainer, { backgroundColor: scoreColor }]}> 
-              <ThemedIcon
-                iconName={scoreIcon}
-                size={16}
-                tintColor={colors.white}
-              />
-            </View>
-            <ThemedText weight="semiBold" style={[styles.scoreBadgeText, { color: scoreColor }]}> 
-              Score {mainScore}
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-        
-        <View style={styles.circularProgressContainer}>
-          <CircularProgress
-            value={voiceEvaluationResult.fluency || 0}
-            label="Fluency"
-            size={80}
-            strokeWidth={8}
-            color="#3E4EF0"
-            shouldAnimate={true}
+      <View style={{ gap: 16 }}>
+        {resolvedAudioUrl ? (
+          <AudioPlayer
+            audioUri={resolvedAudioUrl}
+            duration={audioDuration}
+            onError={(error) => {
+              console.error('Audio playback error:', error);
+              Alert.alert('Playback Error', 'Failed to play audio.');
+            }}
           />
-          <CircularProgress
-            value={voiceEvaluationResult.prosody || 0}
-            label="Prosody"
-            size={80}
-            strokeWidth={8}
-            color="#3E4EF0"
-            shouldAnimate={true}
-          />
-          <CircularProgress
-            value={voiceEvaluationResult.completeness || 0}
-            label="Completeness"
-            size={80}
-            strokeWidth={8}
-            color="#3E4EF0"
-            shouldAnimate={true}
-          />
-        </View>
-
-        {showMoreCharts && (
-          <View style={styles.moreChartsContainer}>
-            <CircularProgress
-              value={voiceEvaluationResult.pronunciation || 0}
-              label="Pronunciation"
-              size={80}
-              strokeWidth={8}
-              color="#3E4EF0"
-              shouldAnimate={showMoreCharts}
-            />
-            <CircularProgress
-              value={voiceEvaluationResult.accuracy || 0}
-              label="Accuracy"
-              size={80}
-              strokeWidth={8}
-              color="#3E4EF0"
-              shouldAnimate={showMoreCharts}
-            />
-            <CircularProgress
-              value={voiceEvaluationResult.clarity || 0}
-              label="Clarity"
-              size={80}
-              strokeWidth={8}
-              color="#3E4EF0"
-              shouldAnimate={showMoreCharts}
-            />
+        ) : audioResolving ? (
+          <ActivityIndicator size="small" color="#3E4EF0" />
+        ) : (
+          <View style={[styles.noRecordingCard, shadows.light]}>
+            <ThemedText style={styles.noRecordingText}>No recording available for this submission.</ThemedText>
           </View>
         )}
 
-        <View style={styles.divider} />
-        <View style={styles.moreLinkContainer}>
-          <TouchableOpacity 
-            style={styles.moreLink}
-            onPress={() => setShowMoreCharts(!showMoreCharts)}
-            activeOpacity={0.7}
-          >
-            <ThemedText weight='bold' style={styles.moreLinkText}>
-              {showMoreCharts ? 'Less' : 'More'}
+        {!!transcription && (
+          <View>
+            <ThemedText weight="bold" style={reportStyles.sectionLabel}>
+              {isReadAloud ? 'YOUR READING' : 'RESPONSE'}
             </ThemedText>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Filter Tabs - Normal durumda ScrollView içinde */}
-      {!isFilterSticky && (
-        <View
-          ref={filterTabsRef}
-          style={styles.filterTabs}
-          onLayout={(event) => {
-            const { y, height, width, x } = event.nativeEvent.layout;
-            setFilterTabsY(y);
-            setFilterTabsHeight(height); // Filter tabs yüksekliğini dinamik olarak kaydet
-          }}
-        >
-          {renderFilterTabsContent()}
-        </View>
-      )}
-      
-      {/* Sticky Filter Tabs için spacer - Dinamik yükseklik + 24px paddingTop */}
-      {isFilterSticky && <View style={{ height: filterTabsHeight + 24 }} />}
-
-      {/* Tab Content - Sekme yapısı */}
-      {activeTab === 'speech-components' && (
-        <View style={styles.section}>
-          {feedbacks.length > 0 ? (
-            feedbacks.map((feedback, index) => {
-              const iconName = FEEDBACK_TYPE_ICON_MAP[feedback.type] || 'report1';
-              return (
-                <View key={index} style={[styles.feedbackCard, shadows.light]}>
-                  <View style={styles.feedbackHeader}>
-                    <View style={styles.feedbackIconContainer}>
-                      <ThemedIcon
-                        iconName={iconName}
-                        size={32}
-                        tintColor="#3E4EF0"
-                      />
-                    </View>
-                    <View style={styles.feedbackContent}>
-                      <ThemedText weight="semiBold" style={styles.feedbackType}>
-                        {feedback.type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </ThemedText>
-                      <ThemedText style={styles.feedbackText}>
-                        {feedback.feedback}
-                      </ThemedText>
-                    </View>
-                  </View>
-                </View>
-              );
-            })
-          ) : (
-            <EmptyStateCard
-              iconName="report"
-              title="Report"
-              subtitle="No feedback available"/>
-          )}
-        </View>
-      )}
-
-      {activeTab === 'error-analysis' && (
-        <View style={styles.section}>
-          {/* <ThemedText weight="bold" style={styles.sectionTitle}>About Errors</ThemedText> */}
-          {mistakes.length > 0 ? (
-            mistakes.map((mistake, index) => {
-              const formattedType = (mistake?.type || 'Error')
-                .replace(/-/g, ' ')
-                .replace(/\b\w/g, (c) => c.toUpperCase());
-              const wrongWord = mistake?.wrongWord || mistake?.incorrectWord || '';
-              const correctWord = mistake?.correctWord || '';
-              const detail = mistake?.detailFeedbackWithReason || mistake?.explanation || '';
-              const example = mistake?.exampleOfUsage || mistake?.example || '';
-              const exampleSegments = getExampleSegments(example);
-
-              return (
-                <View key={index} style={[styles.errorCard, shadows.light]}>
-                  <ThemedText
-                    weight="semiBold"
-                    style={[styles.errorType, { color: '#EB4335' }]}
-                  >
-                    {formattedType}
-                  </ThemedText>
-
-                  {wrongWord ? (
-                    <ThemedText weight='bold' style={styles.incorrectWord}>{wrongWord}</ThemedText>
-                  ) : null}
-
-                  {correctWord ? (
-                    <ThemedText weight='semiBold' style={styles.correctWord}>{correctWord}</ThemedText>
-                  ) : null}
-
-                  {detail ? (
-                    <ThemedText weight='bold' style={styles.errorExplanation}>{detail}</ThemedText>
-                  ) : null}
-
-                  {exampleSegments.length > 0 ? (
-                    <View style={styles.exampleContainer}>
-                      <ThemedText weight='semiBold' style={styles.exampleLabel}>Example:</ThemedText>
-                      <Text style={[styles.exampleText, { fontFamily: fonts.regular }] }>
-                        {exampleSegments.map((segment, segmentIndex) => (
-                          <Text
-                            key={`example-${index}-${segmentIndex}`}
-                            style={[
-                              segment.isStrong ? styles.exampleTextBold : null,
-                              { fontFamily: segment.isStrong ? fonts.bold : fonts.regular },
-                            ]}
-                          >
-                            {segment.text}
-                          </Text>
-                        ))}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-              );
-            })
-          ) : (
-            <EmptyStateCard
-              iconName="bigcheck"
-              title="Great Job!"
-              subtitle="You made no mistakes in this task."/>
-          )}
-        </View>
-      )}
-
-      <View style={{ height: 32 }} />
-    </>
-  );
-
-  // Format date
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
-  };
-
-  // Format time
-  const formatTime = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
-  };
-
-  if (loading || !reportData) {
-    return (
-      <View style={styles.loadingContainer}>
-        <StatusBar style="light" translucent backgroundColor="transparent" />
-        <ActivityIndicator size="large" color="#3E4EF0" />
-        <ThemedText style={styles.loadingText}>Loading report...</ThemedText>
-        <TouchableOpacity style={styles.loadingBackButton} onPress={() => router.back()} activeOpacity={0.7}>
-          <ThemedText style={styles.loadingBackText}>Go Back</ThemedText>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const firstResult = reportData.result && reportData.result.length > 0 ? reportData.result[0] : null;
-  const voiceEvaluationResult = firstResult?.result?.voiceEvaluationResult || {};
-  const feedbacks = firstResult?.result?.feedback || [];
-  const mistakes = firstResult?.result?.mistakes || [];
-  const mainScore = reportData.mainScore || 0;
-  const solvedDate = reportData.solvedDate || reportData.createdAt;
-  const studentInfo = reportData.studentInfo || {};
-  const className = studentInfo.className || (user?.classInfo && Array.isArray(user.classInfo) ? user.classInfo[0] : null) || '-';
-  const studentName = studentInfo.studentName || user?.name || '';
-
-  // Score color
-  const getScoreColor = (score) => {
-    if (score >= 85) return colors.goalGreen;
-    if (score >= 60) return colors.goalOrange;
-    return colors.goalRed;
-  };
-
-  const getScoreBackgroundColor = (score) => {
-    if (score >= 85) return colors.goalBackgroundGreen;
-    if (score >= 60) return colors.goalBackgroundOrange;
-    return colors.goalBackgroundRed;
-  };
-
-  const getScoreIcon = (score) => {
-    if (score >= 85) return 'goalGreen';
-    if (score >= 60) return 'goalOrange';
-    return 'goalRed';
-  };
-
-  const scoreColor = getScoreColor(mainScore);
-  const scoreBackgroundColor = getScoreBackgroundColor(mainScore);
-  const scoreIcon = getScoreIcon(mainScore);
-
-  // HTML'den metni temizle
-  const stripHtml = (html) => {
-    if (!html) return '';
-    return html.replace(/<[^>]*>/g, '').trim();
-  };
-
-  return (
-    <View style={styles.container}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
-
-      {/* Mavi arka plan - Animated.View ile kaydırılabilir */}
-      {/* headerTranslateYValue: Scroll pozisyonuna göre mavi zeminin kaydırılma miktarı */}
-      {/* Filter tabs sticky olduğunda mavi zemin yukarı kaydırılır (negatif translateY) */}
-      {/* Mavi zeminin alt kenarı header + filter tabs yüksekliğinde olmalı */}
-      {/* Böylece filter tabs mavi zeminin altında kalır */}
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.headerBackground,
-          {
-            transform: [{ translateY: headerTranslateYValue }],
-          },
-        ]}
-        onLayout={(event) => {
-          const { height } = event.nativeEvent.layout;
-          setBlueSectionActualHeight(height);
-        }}
-      >
-        <Image
-          pointerEvents="none"
-          source={require('../../assets/images/screenHeader.png')}
-          style={styles.headerBg}
-          resizeMode="cover"
-        />
-      </Animated.View>
-
-      {/* Header */}
-      <View
-        style={[styles.header, { paddingTop: STATUSBAR_HEIGHT, marginTop: HEADER_MARGIN_TOP }]}
-        onLayout={(event) => {
-          const { height } = event.nativeEvent.layout;
-          setHeaderHeight(height);
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            router.back();
-          }}
-          style={styles.headerBackButton}
-          activeOpacity={0.7}
-        >
-          <ThemedIcon
-            iconName="back"
-            size={24}
-            tintColor="#fff"
-          />
-        </TouchableOpacity>
-        <ThemedText weight="semibold" style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-          {stripHtml(reportData.taskName) || 'Assignment Report'}
-        </ThemedText>
-        <View style={styles.headerRight} />
-      </View>
-
-      {/* Scrollable Content */}
-      <Animated.ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      >
-        {renderMainContent()}
-      </Animated.ScrollView>
-
-      {/* Sticky Filter Tabs - Header'ın altında */}
-      {isFilterSticky && (
-        <View
-          style={[styles.filterTabsSticky, { top: headerHeight + HEADER_MARGIN_TOP }]}
-        >
-          {renderFilterTabsContent()}
-        </View>
-      )}
-
-      <View
-        style={[
-          styles.stickyRecordedVoiceContainer,
-          { paddingBottom: bottomPadding },
-          shadows.sticky,
-        ]}
-      >
-        <TouchableOpacity 
-          style={styles.recordedVoiceButton}
-          onPress={loadAudioUrl}
-          activeOpacity={0.8}
-          disabled={loadingAudio}
-        >
-          <ThemedText weight="bold" style={styles.recordedVoiceButtonText}>
-            {loadingAudio ? 'Loading...' : 'Recorded Voice'}
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      {/* Audio Player Modal */}
-      <Modal
-        isVisible={audioModalVisible}
-        onBackdropPress={() => setAudioModalVisible(false)}
-        style={styles.audioModal}
-        backdropColor="#3E4EF0"
-        backdropOpacity={0.95}
-        useNativeDriverForBackdrop
-        useNativeDriver
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-      >
-        <View style={styles.audioModalContent}>
-          {/* Close Button */}
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setAudioModalVisible(false)}
-            activeOpacity={0.8}
-          >
-            <ThemedIcon iconName="close" size={24} tintColor="#3A3A3A" />
-          </TouchableOpacity>
-
-          {/* Title */}
-          <ThemedText weight="bold" style={styles.audioModalTitle}>
-            Recorded Voice
-          </ThemedText>
-
-          {/* Audio Player */}
-          {audioUrl && (
-            <AudioPlayer
-              audioUri={audioUrl}
-              duration={reportData?.result?.[0]?.durationAsSeconds}
-              onError={(error) => {
-                console.error('Audio playback error:', error);
-                Alert.alert(
-                  'Playback Error',
-                  'Failed to play audio. Do you want to try loading it again?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Retry', onPress: loadAudioUrl }
-                  ]
-                );
-              }}
-            />
-          )}
-
-          {/* Transcription */}
-          {reportData?.result?.[0]?.result?.transcription && (
-            <View style={styles.transcriptionContainer}>
-              <ThemedText weight="semibold" style={styles.transcriptionLabel}>
-                Transcription
-              </ThemedText>
-              <ScrollView
-                style={styles.transcriptionBox}
-                nestedScrollEnabled={true}
-                showsVerticalScrollIndicator={true}
-              >
-                <ThemedText style={styles.transcriptionText}>
-                  {reportData.result[0].result.transcription}
-                </ThemedText>
-              </ScrollView>
+            <View style={[styles.transcriptionCard, shadows.light]}>
+              <ReportAnnotatedText
+                text={transcription}
+                issues={annotationIssues}
+                onIssuePress={(issue) => issuesPanel.handleIssuePress(issue, {
+                  pronunciation: pronunciationIssues,
+                  languageConvention: highlightedLcIssues,
+                  logic: logicIssues,
+                })}
+                style={styles.transcriptionText}
+              />
             </View>
-          )}
-        </View>
-      </Modal>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
 
+function VoiceResultCharts({ firstResult }) {
+  const [showMoreCharts, setShowMoreCharts] = useState(false);
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const voiceResult = firstResult?.result?.voiceResult || {};
+
+  return (
+    <View>
+      <View style={styles.divider} />
+
+      <View style={styles.chartsHeaderRow}>
+        <TouchableOpacity
+          onPress={() => setInfoModalVisible(true)}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ThemedIcon iconName="info" size={20} tintColor="#969696" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.circularProgressContainer}>
+        <CircularProgress value={voiceResult.prosody || 0} label="Prosody" size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate />
+        <CircularProgress value={voiceResult.pronunciation || 0} label="Pronunciation" size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate />
+        <CircularProgress value={voiceResult.completeness || 0} label="Completeness" size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate />
+      </View>
+
+      {showMoreCharts && (
+        <View style={styles.moreChartsContainer}>
+          <CircularProgress value={voiceResult.fluency || 0} label="Fluency" size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate={showMoreCharts} />
+          <CircularProgress value={voiceResult.accuracy || 0} label="Accuracy" size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate={showMoreCharts} />
+        </View>
+      )}
+
+      <View style={styles.divider} />
+      <View style={styles.moreLinkContainer}>
+        <TouchableOpacity style={styles.moreLink} onPress={() => setShowMoreCharts((v) => !v)} activeOpacity={0.7}>
+          <ThemedText weight="bold" style={styles.moreLinkText}>
+            {showMoreCharts ? 'Less' : 'More'}
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
+
+      <InfoModal
+        visible={infoModalVisible}
+        onClose={() => setInfoModalVisible(false)}
+        title="Scoring Criteria"
+      >
+        <ScrollView style={{ paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+          {VOICE_METRIC_INFO.map((metric, index) => (
+            <View
+              key={metric.key}
+              style={[styles.metricInfoRow, index === VOICE_METRIC_INFO.length - 1 && { borderBottomWidth: 0 }]}
+            >
+              <ThemedText weight="bold" style={styles.metricInfoLabel}>{metric.label}</ThemedText>
+              <ThemedText style={styles.metricInfoDescription}>{metric.description}</ThemedText>
+            </View>
+          ))}
+        </ScrollView>
+      </InfoModal>
+    </View>
+  );
+}
+
+export default function AssignmentReportScreen() {
+  const params = useLocalSearchParams();
+  const { solvedTaskId, reportId } = params || {};
+  const taskId = reportId || solvedTaskId;
+
+  return (
+    <ReportScreenShell
+      taskId={taskId}
+      headerTitleFallback="Assignment Report"
+      firstTabKey="recording"
+      firstTabLabel="Your Recording"
+      getCriteria={(firstResult) => firstResult?.result?.criteria || []}
+      getFeedback={(firstResult) => firstResult?.result?.feedback || null}
+      getMistakes={(firstResult) => firstResult?.result?.mistakes || []}
+      getVoiceErrors={(firstResult) => firstResult?.result?.voiceErrors || []}
+      getResponseTextForIssues={(firstResult) => firstResult?.result?.transcription || ''}
+      getScoreBreakdown={(firstResult) => firstResult?.result?.scoreBreakdown || null}
+      getAudioUrl={(firstResult) => firstResult?.audioUrl}
+      getCompletenessInfo={(scoreBreakdown, reportData) => {
+        const isReadAloud = reportData?.subType === 'read_aloud';
+        return {
+          label: isReadAloud ? 'Reading Completeness' : 'Speaking Completeness',
+          note: `You ${isReadAloud ? 'read' : 'spoke'} ${scoreBreakdown?.completeness ?? 0}% of the expected length, so your maximum possible score is capped at ${scoreBreakdown?.maxAchievable ?? 0}. ${isReadAloud ? 'Read' : 'Speak'} the full expected amount to lift this cap.`,
+        };
+      }}
+      renderFirstTab={({ firstResult, reportData, issuesPanel, mistakes, voiceErrors, resolvedAudioUrl, audioResolving }) => (
+        <RecordingTab
+          firstResult={firstResult}
+          reportData={reportData}
+          issuesPanel={issuesPanel}
+          mistakes={mistakes}
+          voiceErrors={voiceErrors}
+          resolvedAudioUrl={resolvedAudioUrl}
+          audioResolving={audioResolving}
+        />
+      )}
+      renderStatisticExtra={({ firstResult }) => <VoiceResultCharts firstResult={firstResult} />}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F4FF',
+  introCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
   },
-  headerBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 284,
-    zIndex: 1,
+  tabIntroTitle: {
+    fontSize: 18,
+    lineHeight: 26,
+    color: '#3A3A3A',
+    marginBottom: 4,
   },
-  headerBg: {
-    width: '100%',
-    height: '100%',
+  tabIntroSubtitle: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#727272',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    zIndex: 2,
+  noRecordingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
   },
-  headerBackButton: {
-    width: 24,
-    height: 24,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: 16,
-    color: '#fff',
-    flex: 1,
+  noRecordingText: {
+    fontSize: 14,
+    color: '#727272',
     textAlign: 'center',
   },
-  headerRight: {
-    width: 24,
-  },
-  scrollView: {
-    flex: 1,
-    zIndex: 2,
-    marginTop: 0,
-  },
-  scrollContent: {
-    padding: 16,
-    flexGrow: 1,
-  },
-  userInfoCard: {
+  transcriptionCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
-  userInfoLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  profileImageContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  userInfoText: {
-    flex: 1,
-  },
-  userGreeting: {
-    fontSize: 16,
-    lineHeight: 22,
+  transcriptionText: {
+    fontSize: 15,
+    lineHeight: 24,
     color: '#3A3A3A',
-    marginBottom: 2,
-  },
-  userClass: {
-    fontSize: 14,
-    color: '#3A3A3A',
-  },
-  userInfoRight: {
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  dateTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  dateTimeText: {
-    fontSize: 12,
-    color: '#B7B7B7',
-  },
-  statisticCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-  },
-  statisticHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  statisticTitle: {
-    fontSize: 18,
-    color: '#3A3A3A',
-  },
-  scoreBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-    borderRadius: 8,
-    gap: 8,
-  },
-  scoreIconContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scoreBadgeText: {
-    fontSize: 14,
-    lineHeight: 20,
   },
   divider: {
     height: 1,
     backgroundColor: '#F3F4FF',
-    marginBottom: 16,
+    marginVertical: 16,
+  },
+  chartsHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 8,
+  },
+  metricInfoRow: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4FF',
+  },
+  metricInfoLabel: {
+    fontSize: 15,
+    color: '#3A3A3A',
+    marginBottom: 4,
+  },
+  metricInfoDescription: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#727272',
   },
   circularProgressContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 16,
   },
   moreChartsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 16,
+    justifyContent: 'center',
+    gap: 32,
     marginTop: 8,
   },
   moreLinkContainer: {
@@ -1004,283 +281,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#3E4EF0',
-  },
-  filterTabs: {
-    marginBottom: 24,
-  },
-  filterTabsSticky: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    zIndex: 100,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-    shadowColor: "#3E4EF0",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 12,
-  },
-  filterTabsScrollView: {
-    flexGrow: 0,
-  },
-  filterTabsScrollContent: {
-    paddingLeft: 0,
-    paddingRight: 0,
-    alignItems: 'center',
-  },
-  filterTab: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 0,
-  },
-  filterTabActive: {
-    backgroundColor: '#E7E9FF',
-  },
-  filterTabText: {
-    fontSize: 16,
-    color: '#ABB3FF',
-  },
-  filterTabTextActive: {
-    fontSize: 16,
-    color: '#3E4EF0',
-  },
-  section: {
-    backgroundColor: 'transparent',
-    padding: 0,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    color: '#3A3A3A',
-    marginBottom: 16,
-  },
-  feedbackCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
-    marginBottom: 16,
-  },
-  feedbackHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  feedbackIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    backgroundColor: '#F3F4FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  feedbackContent: {
-    flex: 1,
-  },
-  feedbackType: {
-    fontSize: 14,
-    lineHeight: 24,
-    color: '#3A3A3A',
-    marginBottom: 2,
-  },
-  feedbackText: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#727272',
-  },
-  errorCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
-    marginBottom: 16,
-  },
-  errorType: {
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 8,
-  },
-  wordComparison: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  incorrectWord: {
-    fontSize: 14,
-    lineHeight: 24,
-    color: '#EB4335',
-    textDecorationLine: 'line-through',
-    marginBottom: 8,
-  },
-  correctWord: {
-    fontSize: 14,
-    lineHeight: 24,
-    color: '#34A853',
-    marginBottom: 8,
-  },
-  errorExplanation: {
-    fontSize: 14,
-    lineHeight: 24,
-    color: '#727272',
-  },
-  exampleContainer: {
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4FF',
-    paddingTop: 12,
-  },
-  exampleLabel: {
-    fontSize: 14,
-    color: '#3A3A3A',
-    marginBottom: 4,
-  },
-  exampleText: {
-    fontSize: 14,
-    lineHeight: 24,
-    color: '#3A3A3A',
-  },
-  exampleTextBold: {
-    lineHeight: 24,
-    color: '#3A3A3A',
-  },
-  errorText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#3A3A3A',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#727272',
-    textAlign: 'center',
-    padding: 20,
-  },
-  noMistakesContainer: {
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-  },
-  noMistakesTitle: {
-    fontSize: 18,
-    lineHeight: 26,
-    color: '#3A3A3A',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  noMistakesMessage: {
-    fontSize: 16,
-    lineHeight: 20,
-    color: '#3A3A3A',
-    textAlign: 'center',
-  },
-  stickyRecordedVoiceContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    paddingHorizontal: 32,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-    zIndex: 100,
-  },
-  recordedVoiceButton: {
-    backgroundColor: '#3E4EF0',
-    borderRadius: 32,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recordedVoiceButtonText: {
-    fontSize: 16,
-    color: '#fff',
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#F3F4FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: '#3A3A3A',
-  },
-  loadingBackButton: {
-    marginTop: 24,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-    backgroundColor: '#3E4EF0',
-  },
-  loadingBackText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  audioModal: {
-    margin: 0,
-    justifyContent: 'flex-end',
-  },
-  audioModalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: Platform.OS === "ios" ? 32 : 16,
-    height: '85%',
-    flexDirection: 'column',
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  audioModalTitle: {
-    fontSize: 24,
-    lineHeight: 32,
-    color: '#3A3A3A',
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  transcriptionContainer: {
-    marginTop: 32,
-    width: '100%',
-    flex: 1,
-    minHeight: 0, // ScrollView için gerekli
-  },
-  transcriptionLabel: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#3A3A3A',
-    marginBottom: 12,
-  },
-  transcriptionBox: {
-    backgroundColor: '#F3F4FF',
-    borderRadius: 12,
-    padding: 16,
-    flex: 1,
-    minHeight: 0, // ScrollView için gerekli
-  },
-  transcriptionText: {
-    fontSize: 14,
-    lineHeight: 24,
-    color: '#3A3A3A',
   },
 });

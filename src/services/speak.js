@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import api, { API_ENDPOINTS } from '../config/api';
 import store from '../store';
 import {
@@ -197,6 +198,29 @@ export const deleteSolvedTask = async (taskId, studentIds) => {
   return response.data;
 };
 
+const arrayBufferToBase64 = (buffer) => {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+};
+
+// Bir kelimenin doğru telaffuzunu TTS ile üretir, local dosyaya yazar ve oynatılabilir URI döner
+export const getWordTts = async (word, speed = 'slow', voice = 'nova') => {
+  const response = await api.post(
+    API_ENDPOINTS.question.wordTts,
+    { input: word, speed, voice },
+    { responseType: 'arraybuffer' }
+  );
+
+  const base64 = arrayBufferToBase64(response.data);
+  const fileUri = `${FileSystem.documentDirectory}word_tts_${Date.now()}.mp3`;
+  await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: 'base64' });
+  return fileUri;
+};
+
 export default {
   fetchSpeechTasks,
   saveSpeechResult,
@@ -209,4 +233,5 @@ export default {
   getSolvedExerciseDetail,
   generateFileUrl,
   deleteSolvedTask,
+  getWordTts,
 };

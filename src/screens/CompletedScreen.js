@@ -165,9 +165,6 @@ export default function CompletedScreen() {
           const score = firstAttempt?.mainScore || 0;
           const solvedTaskId = firstAttempt?.solvedTaskId || null;
           const status = firstAttempt?.status || 'success'; // status bilgisini al
-          
-          // TEST: İlk sonucun status'ünü 'pending' yap
-          // const testStatus = index === 0 ? 'pending' : status;
 
           const getTaskType = () => {
             if (isSpeechOnTopic) return 'Speech On Topic';
@@ -187,7 +184,6 @@ export default function CompletedScreen() {
             score: Math.round(score),
             solvedTaskId: solvedTaskId, // Detay için kullanılacak
             status: status, // Status bilgisini ekle
-            // status: testStatus, // Status bilgisini ekle
             // assignedTaskId: exercise.assignedTaskId,
             // speechTaskId: exercise.taskId || exercise.speechTaskId,
           };

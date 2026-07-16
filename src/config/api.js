@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
   question: {
     textToSpeech: `${BASE_URL}/question/text-to-speech`,
     processAudioToText: `${BASE_URL}/question/process-audio-to-text`,
+    wordTts: `${BASE_URL}/question/word-tts`,
   },
   user: {
     setUserProfile: `${BASE_URL}/user/set-user-profile`,
