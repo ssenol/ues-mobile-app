@@ -198,6 +198,16 @@ export const deleteSolvedTask = async (taskId, studentIds) => {
   return response.data;
 };
 
+// My Progress sekmesi için özet istatistikler (KPI, skor trendi, kriter ortalamaları vb.)
+export const getSelfAnalytics = async (userId, type = 'speaking') => {
+  const response = await api.post(
+    API_ENDPOINTS.student.getSelfAnalytics,
+    { userId, type },
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+  return response.data;
+};
+
 const arrayBufferToBase64 = (buffer) => {
   let binary = '';
   const bytes = new Uint8Array(buffer);
@@ -234,4 +244,5 @@ export default {
   generateFileUrl,
   deleteSolvedTask,
   getWordTts,
+  getSelfAnalytics,
 };

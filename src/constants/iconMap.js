@@ -9,6 +9,7 @@ export const icons = {
   tabNotification: (props) => <SvgIcon name="tabNotification" {...props} />,
   tabProfile: (props) => <SvgIcon name="tabProfile" {...props} />,
   tabCompleted: (props) => <SvgIcon name="tabCompleted" {...props} />,
+  tabMyProgress: (props) => <SvgIcon name="tabMyProgress" {...props} />,
   logout: (props) => <SvgIcon name="logout" {...props} />,
   user: (props) => <SvgIcon name="user" {...props} />,
   password: (props) => <SvgIcon name="password" {...props} />,

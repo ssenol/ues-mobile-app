@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
     getCompletedExercises: `${BASE_URL}/student/get-student-completed-exercises`,
     getSolvedExerciseDetail: `${BASE_URL}/student/get-solved-exercise-detail`,
     deleteSolvedTask: `${BASE_URL}/student/delete-solved-task`,
+    getSelfAnalytics: `${BASE_URL}/student/get-self-analytics`,
   },
   speechScenario: {
     chatResponse: `${BASE_URL}/question/speech-on-scenario-chat-response`,
