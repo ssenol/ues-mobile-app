@@ -1,459 +1,121 @@
-# UES Mobile App
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Proje Özeti
 
-UES Mobile App, öğrencilerin konuşma görevlerini (speech tasks) yönetmesini sağlayan bir React Native mobil uygulamasıdır. Öğrenciler atanan görevleri görüntüleyebilir, konuşma senaryolarını tamamlayabilir, ses kayıtları yapabilir ve ilerlemelerini takip edebilir.
+BoostifySpeak (iç adı: UES Mobile App), öğrencilerin konuşma görevlerini (speech tasks) yönetmesini sağlayan bir React Native + Expo mobil uygulamasıdır. Öğrenciler atanan görevleri görüntüler, konuşma senaryolarını tamamlar, ses kaydı yapar ve ilerlemesini takip eder.
 
-**Versiyon:** 1.0.0
-**Platform:** iOS (iPhone 16 test cihazı)
-**Geliştirme Ortamı:** Expo ~54
+- **Versiyon:** 1.0.0 · **Expo SDK:** ~54 · **React Native:** 0.81.5 · **React:** 19.1.0
+- **Test cihazı:** iPhone 16 (fiziksel cihaz, `npm run ios` bunu hedefler)
+- **Backend:** `https://quizmaker-api.onrender.com/api/v0.0.1`
 
----
-
-## Teknoloji Stack
-
-### Core
-- **React Native:** 0.81.5
-- **React:** 19.1.0
-- **Expo:** ~54.0.25
-- **Expo Dev Client:** ~6.0.18
-
-### State Management
-- **Redux Toolkit:** ^2.8.2 (Modern Redux yaklaşımı)
-- **Redux Persist:** ^6.0.0 (AsyncStorage ile persist)
-- **React Redux:** ^9.2.0
-
-### Navigation
-- **React Navigation v7:**
-  - `@react-navigation/native`: ^7.1.8
-  - `@react-navigation/native-stack`: ^7.3.10
-  - `@react-navigation/bottom-tabs`: ^7.4.0
-
-### API & Network
-- **Axios:** ^1.9.0
-- **Base URL:** `https://quizmaker-api.onrender.com/api/v0.0.1`
-- **NetInfo:** ^11.4.1 (Network durumu takibi)
-
-### UI & Media
-- **Expo Audio:** ~1.0.15 (Ses kaydı/çalma)
-- **Expo Image:** ~3.0.10
-- **Expo Haptics:** ~15.0.7
-- **Expo Linear Gradient:** ~15.0.7
-- **Expo Blur:** ~15.0.7
-- **React Native Modal:** ^14.0.0-rc.1
-- **React Native SVG:** 15.12.1
-- **@expo/vector-icons:** ^15.0.3
-- **@expo-google-fonts/nunito:** ^0.4.2
-
-### Charts & Visualization
-- **React Native Gifted Charts:** ^1.4.61
-- **React Native Chart Kit:** ^6.12.0
-- **Victory Native:** ^36.6.11
-- **d3-shape:** ^3.2.0
-
-### Storage & Security
-- **AsyncStorage:** 2.2.0 (Yerel veri saklama)
-- **Expo Secure Store:** ~15.0.7 (Güvenli veri saklama)
-- **Expo Local Authentication:** ~17.0.7 (Biometric auth)
-
-### Utilities
-- **Expo File System:** ~19.0.17
-- **DateTimePicker:** 8.4.4
-- **Expo Constants:** ~18.0.10
-
----
-
-## Proje Yapısı
-
-```
-/src
-├── AppContent.js              # Ana uygulama container
-├── components/                # Reusable UI bileşenleri
-│   ├── ActionButton.js
-│   ├── AssignmentCard.js
-│   ├── AudioPlayer.js
-│   ├── CircularProgress.js
-│   ├── CompletedAssignmentCard.js
-│   ├── ConfirmModal.js
-│   ├── CustomInput.js
-│   ├── EmptyStateCard.js
-│   ├── GoalProgress.js
-│   ├── InfoModal.js
-│   ├── InlineCalendar.js
-│   ├── LoadingOverlay.js
-│   ├── NotificationModal.js
-│   ├── ScenarioTaskDetails.js
-│   ├── SvgIcon.js            # SVG icon renderer
-│   ├── ThemedIcon.js         # Expo vector icons wrapper
-│   └── ThemedText.js         # Themed text component
-│
-├── config/
-│   └── api.js                # Axios instance, interceptors, endpoints
-│
-├── constants/
-│   ├── iconMap.js            # Icon mapping
-│   └── svgIcons.json         # SVG icon definitions
-│
-├── navigation/
-│   └── AppNavigator.js       # Root navigation (Stack + BottomTabs)
-│
-├── screens/                  # Screen components
-│   ├── AssignmentDetailScreen.js
-│   ├── AssignmentReportScreen.js
-│   ├── AssignmentsScreen.js
-│   ├── CompletedScreen.js
-│   ├── HomeScreen.js
-│   ├── LoginScreen.js
-│   ├── NotificationsScreen.js
-│   ├── ProfileScreen.js
-│   ├── ScenarioReportScreen.js
-│   ├── SpeechOnScenarioStep1Screen.js
-│   └── SpeechOnScenarioStep2Screen.js
-│
-├── services/                 # API service layer
-│
-├── store/                    # Redux store
-│   ├── index.js             # Store configuration
-│   └── slices/
-│       ├── authSlice.js     # Authentication state
-│       ├── speakSlice.js    # Speech results state
-│       ├── assignmentSlice.js  # Assignment cache
-│       └── settingsSlice.js    # App settings (TTS speed)
-│
-├── theme/                   # Theme configuration
-│
-└── utils/                   # Utility functions
-```
-
----
-
-## Redux Store Yapısı
-
-### Slices
-
-#### 1. **authSlice**
-**Persist:** `accessToken`, `currentUser`, `refreshToken`, `isAuthenticated`, `tokenAcquiredAt`
-
-```javascript
-{
-  accessToken: string,
-  refreshToken: string,
-  currentUser: object,
-  isAuthenticated: boolean,
-  tokenAcquiredAt: timestamp
-}
-```
-
-#### 2. **speakSlice**
-**Persist:** `speakResults`, `currentAssignment`
-
-```javascript
-{
-  speakResults: array,
-  currentAssignment: object
-}
-```
-
-#### 3. **assignmentSlice**
-**Persist:** `cachedAssignments`, `cacheTimestamp`, `totalAssignments`, `completedAssignments`
-
-```javascript
-{
-  cachedAssignments: array,
-  cacheTimestamp: timestamp,
-  totalAssignments: number,
-  completedAssignments: number
-}
-```
-
-#### 4. **settingsSlice**
-**Persist:** `ttsSpeed`
-
-```javascript
-{
-  ttsSpeed: number  // Text-to-speech hız ayarı
-}
-```
-
----
-
-## API Yapısı
-
-### Base URL
-```
-https://quizmaker-api.onrender.com/api/v0.0.1
-```
-
-### Endpoints
-
-#### Authentication
-- `POST /auth/login` - Kullanıcı girişi
-- `POST /auth/refresh-mobile-app-access-token` - Token yenileme
-
-#### Student
-- `GET /student/get-assigned-speech-tasks` - Atanan görevleri getir
-- `POST /student/generate-exercise-auth-token` - Egzersiz token'ı oluştur
-- `POST /student/submit-speech-task` - Konuşma görevi gönder
-- `POST /student/save-speech-on-scenario-progress` - Senaryo ilerlemesini kaydet
-- `GET /student/get-student-completed-exercises` - Tamamlanan egzersizler
-- `GET /student/get-solved-exercise-detail` - Çözülen egzersiz detayı
-- `DELETE /student/delete-solved-task` - Çözülmüş görevi sil
-
-#### Speech Scenario
-- `POST /question/speech-on-scenario-chat-response` - Senaryo chat yanıtı
-
-#### Question/Audio
-- `POST /question/text-to-speech` - Metin → Ses dönüşümü
-- `POST /question/process-audio-to-text` - Ses → Metin dönüşümü
-
-#### User
-- `POST /user/set-user-profile` - Kullanıcı profili güncelle
-
-### Token Management
-
-**Otomatik Token Refresh:**
-- Access token 24 saat sonra otomatik yenilenir
-- Request interceptor ile kontrol edilir
-- 401 hatası durumunda refresh token kullanılır
-- Refresh başarısızsa otomatik logout
-
-```javascript
-// Token kontrolü: 24 saat geçtiyse yenile
-if (now - tokenAcquiredAt > 24 * 60 * 60 * 1000) {
-  // Refresh token ile yeni access token al
-}
-```
-
----
-
-## Özellikler
-
-### 1. **Authentication**
-- Login ekranı
-- Token-based auth (JWT)
-- Otomatik token refresh (24 saat)
-- Secure token storage (SecureStore)
-- Biometric authentication desteği
-
-### 2. **Assignment Management**
-- Görev listesi (cache mekanizmalı)
-- Görev detayları
-- Görev filtreleme
-- Görev tamamlama durumu
-
-### 3. **Speech on Scenario**
-- 2 adımlı konuşma senaryosu
-- Gerçek zamanlı ses kaydı
-- Speech-to-text dönüşüm
-- Text-to-speech oynatma
-- TTS hız ayarı (settingsSlice)
-- Chat-based senaryo ilerlemesi
-
-### 4. **Progress Tracking**
-- Circular progress göstergeleri
-- Goal progress takibi
-- Tamamlanma grafikleri (Charts)
-- Inline calendar görünümü
-
-### 5. **Completed Exercises**
-- Tamamlanan egzersiz listesi
-- Egzersiz detay görüntüleme
-- Çözülen görev silme
-
-### 6. **Profile & Settings**
-- Kullanıcı profili
-- Versiyon bilgisi
-- TTS hız ayarı
-
-### 7. **Notifications**
-- Bildirim ekranı
-- Modal bildirimler
-
----
-
-## Kod Kuralları
-
-### Component Yazım
-- **Functional components** kullan (hooks ile)
-- **PascalCase:** Component dosya isimleri (`HomeScreen.js`)
-- **camelCase:** Function ve değişken isimleri
-
-### State Management
-- Redux Toolkit'in **createSlice** pattern'ini kullan
-- Async işlemler için **createAsyncThunk** kullan
-- Persist edilecek state'leri `whitelist` ile belirt
-
-### Navigation
-- **Native Stack** ana navigation için
-- **Bottom Tabs** ana ekranlar için
-- Screen props: `navigation`, `route`
-
-### API Calls
-- **Axios instance** kullan (`src/config/api.js`)
-- API çağrıları service layer'da olmalı
-- Error handling her zaman yapılmalı
-- Loading state'leri kullan
-
-### Styling
-- **Inline styles** veya StyleSheet kullan
-- Themed components kullan (`ThemedText`, `ThemedIcon`)
-- Linear gradient, blur gibi Expo bileşenleri tercih et
-
-### Icon Kullanımı
-- **SVG icons:** `SvgIcon` component + `svgIcons.json`
-- **Vector icons:** `ThemedIcon` component + `@expo/vector-icons`
-- Icon mapping: `iconMap.js`
-
-### Audio/Media
-- **Expo Audio** kullan (react-native-sound değil)
-- Ses izinleri kontrol et
-- Cleanup (unload) her zaman yap
-
-### Error Handling
-- Try-catch blokları kullan
-- User-friendly error mesajları
-- Modal ile hata göster (InfoModal, ConfirmModal)
-
----
-
-## NPM Scripts
+## Komutlar
 
 ```bash
-npm start          # Expo dev server başlat
-npm run android    # Android'de çalıştır
-npm run ios        # iOS'ta çalıştır (iPhone 16)
-npm run web        # Web'de çalıştır
-npm run lint       # ESLint kontrolü
+npm start                              # Expo dev server (dev client gerekli, Expo Go DESTEKLENMİYOR)
+npm run ios                            # iOS'ta çalıştır (iPhone 16 fiziksel cihaz, expo run:ios)
+npm run android                        # Android'de çalıştır
+npm run web                            # Web'de çalıştır
+npm run lint                           # expo lint (eslint-config-expo/flat)
+npx expo start --clear                 # Metro cache temizleyerek başlat
+npx expo prebuild --clean              # Native projeleri (ios/android) yeniden üret
 ```
 
----
+Bu projede birim/entegrasyon test altyapısı (Jest vb.) **yok** — `npm run lint` ve manuel/fiziksel cihaz testi mevcut doğrulama yoludur.
 
-## Development Workflow
+Native bağımlılık eklendiğinde veya `app.config.js`/plugin değişikliğinde `ios`/`android` klasörleri prebuild ile senkronize edilmeli (`expo-dev-client` kullanıldığı için Expo Go ile çalışmaz).
 
-### Branch Strategy
-- **master:** Ana branch (production ready)
-- Commit mesajları Türkçe
-- Co-Authored-By: Claude Sonnet 4.5 ile commit
+## Mimari
 
-### Testing Device
-- **iPhone 16** (fiziksel cihaz)
-- iOS native build: `npm run ios --device "iPhone 16"`
+### Giriş noktası ve routing — Expo Router (dosya tabanlı), React Navigation DEĞİL
 
-### Common Tasks
+`package.json`'daki `main` alanı `index.js`'e işaret eder; `index.js` sadece `expo-router/entry`'i import eder. Gerçek uygulama ağacı **`app/`** klasöründeki dosya tabanlı route'lardan kurulur:
 
-**API değişiklikleri:**
-1. `src/config/api.js` → Endpoint ekle/güncelle
-2. Service layer → API call fonksiyonu
-3. Redux slice → Async thunk oluştur
-4. Component → useDispatch ile çağır
-
-**Yeni ekran ekleme:**
-1. `src/screens/` → Screen component oluştur
-2. `src/navigation/AppNavigator.js` → Route ekle
-3. Navigation props kullan (`navigation`, `route`)
-
-**Yeni icon ekleme:**
-1. SVG için: `src/constants/svgIcons.json` → SVG path ekle
-2. Vector icon için: `ThemedIcon` ile kullan
-3. Mapping: `src/constants/iconMap.js` → Mapping ekle
-
-**Redux state ekleme:**
-1. `src/store/slices/` → Yeni slice oluştur
-2. `src/store/index.js` → Slice'ı import et ve reducer'a ekle
-3. Persist config ekle (gerekirse)
-
----
-
-## Önemli Notlar
-
-### Cache Mekanizması
-- Assignments cache edilir (`assignmentSlice`)
-- Cache timestamp ile kontrol edilir
-- Offline-first yaklaşım
-
-### Token Security
-- Access token: AsyncStorage (persist)
-- Refresh token: AsyncStorage (persist)
-- Secure Store kullanımı önerilir (gelecek)
-
-### Performance
-- Lazy loading kullan
-- FlatList için `keyExtractor`, `getItemLayout` optimize et
-- Image için Expo Image kullan (fast cache)
-- Reanimated 2 için worklet kullan
-
-### Audio Permissions
-- iOS: `Info.plist` mikrophone izni
-- Android: `AndroidManifest.xml` RECORD_AUDIO izni
-
-### Network Durumu
-- NetInfo ile online/offline kontrolü
-- Offline durumda cache'ten göster
-- Reconnection stratejisi
-
----
-
-## Yakın Zamandaki Değişiklikler
-
-*Git status'tan:*
-- ✅ Profil ekranına versiyon bilgisi eklendi
-- ✅ Logo ve ana ekran görselleri güncellendi
-- ✅ TestFlight için production ayarlandı
-- ✅ Filtre seçenekleri, cache mekanizması, yeni ikonlar eklendi
-- ✅ Modal komponentleri ortak hale getirildi
-- ✅ Task silme özelliği eklendi
-- ✅ Senaryo rapor ekranı oluşturuldu (`ScenarioReportScreen.js`)
-- ✅ Settings slice eklendi (`settingsSlice.js`)
-
----
-
-## Troubleshooting
-
-### iOS Build Hataları
-```bash
-# Pods temizle
-cd ios && pod deintegrate && pod install
+```
+app/
+├── _layout.tsx              # Root layout: Redux Provider, PersistGate, ThemeProvider, Stack((auth)|(tabs))
+├── (auth)/
+│   ├── _layout.tsx
+│   └── login.tsx
+├── (tabs)/
+│   ├── _layout.tsx           # Auth kontrolü + platforma göre tab bar seçimi (aşağıya bakın)
+│   ├── index.tsx              # Home
+│   ├── assignments.tsx
+│   ├── completed.tsx
+│   ├── notifications.tsx
+│   └── profile.tsx
+├── assignment-detail.tsx
+├── assignment-report.tsx
+├── scenario-report.tsx
+├── speech-step1.tsx
+└── speech-step2.tsx
 ```
 
-### Metro Cache Temizle
-```bash
-npm start -- --reset-cache
+`app/**/*.tsx` dosyaları **ince sarmalayıcılardır** — gerçek ekran implementasyonu `src/screens/*.js`'te yaşar ve route dosyası sadece onu import edip render eder:
+
+```tsx
+// app/(tabs)/index.tsx
+import HomeScreen from '../../src/screens/HomeScreen';
+export default function Home() { return <HomeScreen />; }
 ```
 
-### AsyncStorage Temizle
-```javascript
-import AsyncStorage from '@react-native-async-storage/async-storage';
-AsyncStorage.clear();
-```
+Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `app/` altında uygun konuma ince route dosyasını ekle. `app/` dosyaları TypeScript (`.tsx`, `@/*` path alias), `src/` dosyaları ise düz JavaScript (`.js`) — proje bu ikisini bilinçli olarak ayırıyor, karıştırmayın.
 
-### Token Refresh Sorunları
-- `src/config/api.js` interceptor kontrol et
-- Token timestamp doğru mu?
-- Refresh token valid mi?
+**Ölü kod uyarısı:** `App.js`, `src/AppContent.js` ve `src/navigation/AppNavigator.js` (React Navigation Stack+BottomTabs tabanlı eski mimari) hâlâ repoda duruyor ama **hiçbir yerden import edilmiyor** — Expo Router migration'ından kalan artık. Bunları örnek/referans olarak kullanmayın; gerçek navigasyon her zaman `app/_layout.tsx`'ten başlar.
 
----
+### Tab bar: platforma göre iki farklı implementasyon
 
-## İletişim & Dokümantasyon
+`app/(tabs)/_layout.tsx`, `Dimensions` ile ekran genişliğine bakıp iPad mi iPhone mu olduğuna karar verir:
+- **iPad** (`SCREEN_WIDTH >= 744`): React Navigation'ın `Tabs` bileşeni + özel `tabBar={(props) => <CustomTabBar {...props} />}` (`src/components/CustomTabBar.js`) — mavi zeminli, floating custom tab bar.
+- **iPhone**: `expo-router/unstable-native-tabs`'tan `NativeTabs` — iOS 26 Liquid Glass native tab bar, ikonlar `assets/icons/tab-*.png`'den.
 
-- **API Dokümantasyon:** Backend takımından talep et
-- **Design System:** Figma (varsa)
-- **Git:** master branch üzerinde geliştirme
+Tab bar davranışını değiştirirken hangi platform dalını etkilediğinizi netleştirin; ikisi tamamen ayrı componentlerdir.
 
----
+### Redux store
 
-## TODO / Gelecek Geliştirmeler
+`src/store/index.js` dört slice'ı `redux-persist` ile ayrı ayrı `persistReducer`'a sarar (her biri kendi `whitelist`'iyle, AsyncStorage backend):
 
-- [ ] TypeScript entegrasyonu (`.ts`, `.tsx`)
-- [ ] Unit test (Jest + React Native Testing Library)
-- [ ] E2E test (Detox)
-- [ ] Push notification (Expo Notifications)
-- [ ] Analytics (Firebase/Amplitude)
-- [ ] Error tracking (Sentry)
-- [ ] Secure token storage (SecureStore migration)
-- [ ] Dark mode desteği
-- [ ] i18n (çoklu dil desteği)
-- [ ] Accessibility (a11y) iyileştirmeleri
+| Slice | Persist edilen alanlar |
+|---|---|
+| `authSlice` | `accessToken`, `refreshToken`, `currentUser`, `isAuthenticated`, `tokenAcquiredAt` |
+| `speakSlice` | `speakResults`, `currentAssignment` |
+| `assignmentSlice` | `cachedAssignments`, `cacheTimestamp`, `totalAssignments`, `completedAssignments` |
+| `settingsSlice` | `ttsSpeed` |
 
----
+Yeni bir slice eklerken `src/store/index.js`'e hem reducer'ı hem karşılık gelen `persistConfig`'i (whitelist ile) eklemeyi unutmayın.
 
-*Son güncelleme: 2026-02-06*
+### API katmanı ve token yönetimi
+
+`src/config/api.js` tek bir axios instance'ı ve `API_ENDPOINTS` sözlüğünü tanımlar; tüm endpoint URL'leri buradan türetilir (dağınık string literal yerine). Request/response interceptor'lar:
+- Access token 24 saatten eskiyse (`tokenAcquiredAt`) her istekten önce refresh token ile otomatik yeniler.
+- 401 alan istekleri bir kez retry eder (`refreshToken` ile), başarısızsa Redux `logout()` dispatch eder.
+- `config.skipAuthInterceptor` ile bazı istekler auth kontrolünden muaf tutulabilir.
+
+Yeni bir endpoint eklerken `API_ENDPOINTS`'e ekleyin ve çağrıyı `src/services/` altındaki ilgili service dosyasından yapın (`auth.js`, `speak.js`, `biometricAuth.js`) — component'ler doğrudan axios/`api` çağırmaz.
+
+### İkon sistemi: iki paralel sistem bir arada
+
+- **SVG ikonlar:** `SvgIcon` component + `src/constants/svgIcons.json` (path tanımları).
+- **Vector/PNG ikonlar:** `ThemedIcon` component + `@expo/vector-icons` + `src/constants/iconMap.js` (isim → ikon eşlemesi).
+
+Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migration Roadmap): eski `Icon` component'i kaldırılıp her yerin `ThemedIcon` + `iconMap` üzerinden çalışması hedefleniyor. Yeni ikon eklerken önce `iconMap.js`'te karşılığı olup olmadığını kontrol edin.
+
+### Tema
+
+`src/theme/ThemeContext.js` renkleri (`colors`), gölgeleri (`shadows`) ve font ailesini (Nunito ağırlıkları) tek bir `theme` objesinde tutar; `useTheme()` hook'u ile component'lerde okunur. Dark mode yok — `userInterfaceStyle: "light"` olarak sabitlenmiş (`app.config.js`).
+
+### Build konfigürasyonu
+
+- `app.config.js` (statik `app.json` değil) — `APP_VARIANT=development` env değişkenine göre dev/prod arasında icon, bundle identifier (`com.ues.boostifyspeak[.dev]`) ve isim değiştirir.
+- `eas.json` build profilleri: `development` (internal, dev client, APK), `preview` (internal, APK), `production` (store, app-bundle/ios).
+- iOS `buildNumber` her production build'de manuel artırılıyor (`app.config.js` içinde).
+
+## Kod Kuralları (proje-özel)
+
+- **Component yazımı:** Functional + hooks, PascalCase dosya adı (`HomeScreen.js`), camelCase fonksiyon/değişken.
+- **Yorumlar ve iletişim Türkçe** (mevcut kod tabanı Türkçe yorum kullanıyor).
+- Persist edilecek Redux state'leri her zaman `whitelist` ile açıkça belirtin (yukarıdaki tablo).
+- API çağrıları service layer'da (`src/services/`) toplanır, component'lerden direkt axios çağrısı yapılmaz.
+- Ses işlemleri için `expo-audio` kullanılır (react-native-sound değil); recording/playback sonrası her zaman unload/cleanup yapılır.
+- Yeni ekran eklerken önce `src/screens/`, sonra `app/` altında ince route wrapper — asla tersi.
