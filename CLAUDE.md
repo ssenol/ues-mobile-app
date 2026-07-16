@@ -43,7 +43,8 @@ app/
 │   ├── index.tsx              # Home
 │   ├── assignments.tsx
 │   ├── completed.tsx
-│   ├── notifications.tsx
+│   ├── notifications.tsx    # geçici olarak gizli (bkz. _layout.tsx içindeki yorumlar)
+│   ├── my-progress.tsx
 │   └── profile.tsx
 ├── assignment-detail.tsx
 ├── assignment-report.tsx
@@ -66,9 +67,9 @@ Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `ap
 
 ### Tab bar: platforma göre iki farklı implementasyon
 
-`app/(tabs)/_layout.tsx`, `Dimensions` ile ekran genişliğine bakıp iPad mi iPhone mu olduğuna karar verir:
-- **iPad** (`SCREEN_WIDTH >= 744`): React Navigation'ın `Tabs` bileşeni + özel `tabBar={(props) => <CustomTabBar {...props} />}` (`src/components/CustomTabBar.js`) — mavi zeminli, floating custom tab bar.
-- **iPhone**: `expo-router/unstable-native-tabs`'tan `NativeTabs` — iOS 26 Liquid Glass native tab bar, ikonlar `assets/icons/tab-*.png`'den.
+`app/(tabs)/_layout.tsx`, ekran genişliğine (`Dimensions`) VE iOS sürümüne (`Platform.Version`) bakıp karar verir:
+- **iPad** (`SCREEN_WIDTH >= 744`) **veya iOS 26'dan eski iPhone**: React Navigation'ın `Tabs` bileşeni + özel `tabBar={(props) => <CustomTabBar {...props} />}` (`src/components/CustomTabBar.js`) — mavi zeminli, floating custom tab bar. NativeTabs'ın custom PNG ikonları eski (Liquid Glass öncesi) iOS'ta ikonun arkasında istenmeyen gri bir kapsül gösteriyor, bu yüzden o sürümlerde de CustomTabBar kullanılıyor.
+- **iPhone, iOS 26+**: `expo-router/unstable-native-tabs`'tan `NativeTabs` — iOS 26 Liquid Glass native tab bar, ikonlar `assets/icons/tab-*.png`'den.
 
 Tab bar davranışını değiştirirken hangi platform dalını etkilediğinizi netleştirin; ikisi tamamen ayrı componentlerdir.
 

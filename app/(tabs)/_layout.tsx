@@ -7,6 +7,11 @@ import CustomTabBar from '@/src/components/CustomTabBar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isIPad = Platform.OS === 'ios' && SCREEN_WIDTH >= 744;
+// NativeTabs (Liquid Glass) sadece iOS 26+ üzerinde düzgün çalışıyor; eski iPhone'larda
+// custom PNG sekme ikonlarının arkasında istenmeyen gri bir kapsül görünüyor.
+// Bu yüzden iOS 26 altındaki iPhone'larda da iPad'deki floating CustomTabBar'a düşülüyor.
+const iosMajorVersion = Platform.OS === 'ios' ? parseInt(String(Platform.Version), 10) : 0;
+const supportsLiquidGlassTabs = Platform.OS === 'ios' && iosMajorVersion >= 26;
 
 export default function TabsLayout() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -15,8 +20,8 @@ export default function TabsLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // iPad: Custom TabBar (mavi zemin, altta)
-  if (isIPad) {
+  // iPad veya iOS 26 altındaki iPhone: Custom TabBar (mavi zemin, altta)
+  if (isIPad || !supportsLiquidGlassTabs) {
     return (
       <Tabs
         tabBar={(props) => <CustomTabBar {...props} />}
@@ -36,12 +41,17 @@ export default function TabsLayout() {
           name="completed"
           options={{ title: 'Completed' }}
         />
-        {/* Notifications sekmesi şimdilik kaldırıldı, yerine başka bir ikon/sekme gelecek
+        {/* Notifications sekmesi şimdilik kaldırıldı, yerine başka bir ikon/sekme gelecek.
+        href:null ile route dosyası (app/(tabs)/notifications.tsx) korunuyor ama Expo Router'ın
+        dosya tabanlı otomatik keşfiyle tab bar'a eklenmesi engelleniyor. */}
         <Tabs.Screen
           name="notifications"
-          options={{ title: 'Notifications' }}
+          options={{ href: null }}
         />
-        */}
+        <Tabs.Screen
+          name="my-progress"
+          options={{ title: 'My Progress' }}
+        />
         <Tabs.Screen
           name="profile"
           options={{ title: 'Profile' }}
@@ -50,7 +60,7 @@ export default function TabsLayout() {
     );
   }
 
-  // iPhone: NativeTabs (Liquid Glass)
+  // iPhone (iOS 26+): NativeTabs (Liquid Glass)
   return (
     <NativeTabs
       tintColor={DynamicColorIOS({ dark: '#3E4EF0', light: '#3E4EF0' })}
@@ -76,6 +86,11 @@ export default function TabsLayout() {
         <Label>Notifications</Label>
       </NativeTabs.Trigger>
       */}
+
+      <NativeTabs.Trigger name="my-progress">
+        <Icon src={require('../../assets/icons/tab-my-progress.png')} />
+        <Label>My Progress</Label>
+      </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="profile">
         <Icon src={require('../../assets/icons/tab-profile.png')} />

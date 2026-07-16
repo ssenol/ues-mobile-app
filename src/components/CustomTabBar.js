@@ -1,7 +1,6 @@
 import React from 'react';
-import { Dimensions, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedText } from './ThemedText';
 import ThemedIcon from './ThemedIcon';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -12,10 +11,10 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
   const theme = useTheme();
   const { colors, shadows } = theme;
   
-  // iPad kontrolü (sadece iOS tablet)
-  const isTablet = Platform.OS === 'ios' && SCREEN_WIDTH >= 744;
-  const horizontalPadding = isTablet ? 180 : 10; // Yatay padding
-  const verticalPadding = isTablet ? 10 : 10; // Dikey padding
+  // Tablet kontrolü (iPad ve Android tablet dahil, ekran genişliğine göre)
+  const isTablet = SCREEN_WIDTH >= 744;
+  const horizontalPadding = isTablet ? 240 : 24; // Yatay padding
+  const verticalPadding = isTablet ? 10 : 20; // Dikey padding (telefonlarda alta yapışmasın)
   
   // Tab icon mapping
   const getTabIcon = (routeName) => {
@@ -24,6 +23,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
       'assignments': 'tabAssignment',
       'completed': 'tabCompleted',
       'notifications': 'tabNotification',
+      'my-progress': 'tabMyProgress',
       'profile': 'tabProfile',
     };
     return iconMap[routeName] || 'tabHome';
@@ -50,19 +50,20 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
       justifyContent: "center",
       height: 56,
     },
-    tabLabel: {
-      fontSize: 10,
-      marginTop: 2,
-      fontFamily: 'Nunito_600SemiBold',
-    },
   });
   
+  // href:null verilen (gizlenen) route'lar options.tabBarItemStyle.display='none' olarak işaretlenir;
+  // varsayılan tab bar bunu kendisi filtreliyor ama custom render'da elle filtrelememiz gerekiyor
+  const visibleRoutes = state.routes.filter(
+    (route) => descriptors[route.key]?.options?.tabBarItemStyle?.display !== 'none'
+  );
+
   return (
     <View style={tabBarStyles.tabBarContainer}>
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
+      {visibleRoutes.map((route) => {
+        const index = state.routes.indexOf(route);
         const isFocused = state.index === index;
-        
+
         const onPress = () => {
           const event = navigation.emit({
             type: 'tabPress',
@@ -87,14 +88,6 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
               size={24}
               tintColor={isFocused ? '#fff' : 'rgba(255, 255, 255, 0.6)'}
             />
-            <ThemedText
-              style={[
-                tabBarStyles.tabLabel,
-                { color: isFocused ? '#fff' : 'rgba(255, 255, 255, 0.6)' }
-              ]}
-            >
-              {options.title || route.name}
-            </ThemedText>
           </TouchableOpacity>
         );
       })}
