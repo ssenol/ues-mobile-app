@@ -32,16 +32,18 @@ export default function TabsLayout() {
           name="assignments" 
           options={{ title: 'Assignments' }}
         />
-        <Tabs.Screen 
-          name="completed" 
+        <Tabs.Screen
+          name="completed"
           options={{ title: 'Completed' }}
         />
-        <Tabs.Screen 
-          name="notifications" 
+        {/* Notifications sekmesi şimdilik kaldırıldı, yerine başka bir ikon/sekme gelecek
+        <Tabs.Screen
+          name="notifications"
           options={{ title: 'Notifications' }}
         />
-        <Tabs.Screen 
-          name="profile" 
+        */}
+        <Tabs.Screen
+          name="profile"
           options={{ title: 'Profile' }}
         />
       </Tabs>
@@ -68,10 +70,12 @@ export default function TabsLayout() {
         <Label>Completed</Label>
       </NativeTabs.Trigger>
 
+      {/* Notifications sekmesi şimdilik kaldırıldı, yerine başka bir ikon/sekme gelecek
       <NativeTabs.Trigger name="notifications">
         <Icon src={require('../../assets/icons/tab-notifications.png')} />
         <Label>Notifications</Label>
       </NativeTabs.Trigger>
+      */}
 
       <NativeTabs.Trigger name="profile">
         <Icon src={require('../../assets/icons/tab-profile.png')} />

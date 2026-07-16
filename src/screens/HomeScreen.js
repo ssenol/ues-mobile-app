@@ -556,6 +556,7 @@ export default function HomeScreen() {
               <ThemedText style={styles.campusname}>{user?.campusName}</ThemedText>
             </View>
 
+            {/* Notifications ikonu şimdilik gizlendi, yerine başka bir ikon gelecek
             <TouchableOpacity
               style={styles.notification}
               onPress={() => setNotificationModalVisible(true)}
@@ -567,6 +568,7 @@ export default function HomeScreen() {
                 tintColor={colors.primary}
               />
             </TouchableOpacity>
+            */}
           </View>
 
           {/* --- Banner --- */}
