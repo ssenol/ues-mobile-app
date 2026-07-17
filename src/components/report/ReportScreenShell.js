@@ -22,7 +22,6 @@ import ReportCriterionDetail from './ReportCriterionDetail';
 import ReportErrorModal from './ReportErrorModal';
 import ReportFeedbackTab from './ReportFeedbackTab';
 import ReportIssuesBottomSheet from './ReportIssuesBottomSheet';
-import ReportMistakesTab from './ReportMistakesTab';
 import ReportOverallTab from './ReportOverallTab';
 import ReportPronunciationModal from './ReportPronunciationModal';
 import ReportTabBar from './ReportTabBar';
@@ -32,7 +31,7 @@ import useResolvedAudioUrl from './useResolvedAudioUrl';
 import {getScoreBackgroundColor, getScoreColor, getScoreIcon, stripHtml} from './reportUtils';
 
 // Read Aloud, Speech on Topic ve Speech on Scenario raporlarının ortak iskeleti.
-// Header, mavi zemin, kullanıcı/istatistik kartı, sticky tab bar ve Feedback/Mistakes/Criteria
+// Header, mavi zemin, kullanıcı/istatistik kartı, sticky tab bar ve Feedback/Criteria
 // sekmelerinin render'ı burada; her ekran sadece ilk sekmenin içeriğini ve
 // criteria/feedback/mistakes'in reportData içindeki konumunu (adapter) sağlar.
 export default function ReportScreenShell({
@@ -48,6 +47,8 @@ export default function ReportScreenShell({
   getCompletenessInfo,
   getVoiceErrors,
   getResponseTextForIssues,
+  getVoiceResult,
+  getDurationSeconds,
   getAudioUrl,
   renderStatisticExtra,
 }) {
@@ -199,6 +200,8 @@ export default function ReportScreenShell({
   const mistakes = getMistakes(firstResult, reportData) || [];
   const voiceErrors = typeof getVoiceErrors === 'function' ? getVoiceErrors(firstResult, reportData) || [] : [];
   const responseTextForIssues = typeof getResponseTextForIssues === 'function' ? getResponseTextForIssues(firstResult, reportData) || '' : '';
+  const voiceResult = typeof getVoiceResult === 'function' ? getVoiceResult(firstResult, reportData) || null : null;
+  const durationSeconds = typeof getDurationSeconds === 'function' ? getDurationSeconds(firstResult, reportData) || null : null;
   const scoreBreakdown = typeof getScoreBreakdown === 'function' ? getScoreBreakdown(firstResult, reportData) || null : null;
   const completenessInfo = (typeof getCompletenessInfo === 'function' && scoreBreakdown)
     ? getCompletenessInfo(scoreBreakdown, reportData) || {}
@@ -220,7 +223,6 @@ export default function ReportScreenShell({
     { key: 'overall', label: 'Overall' },
     { key: firstTabKey, label: firstTabLabel },
     { key: 'feedback', label: 'Feedback' },
-    { key: 'mistakes', label: 'Mistakes' },
     ...criteria.map((c) => ({ key: c.key, label: c.name || c.key })),
   ];
 
@@ -367,12 +369,18 @@ export default function ReportScreenShell({
             <ReportFeedbackTab feedback={feedback} studentName={studentName} />
           )}
 
-          {activeTab === 'mistakes' && (
-            <ReportMistakesTab mistakes={mistakes} />
-          )}
-
           {criteria.map((c) => (
-            activeTab === c.key && <ReportCriterionDetail key={c.key} criterion={c} />
+            activeTab === c.key && (
+              <ReportCriterionDetail
+                key={c.key}
+                criterion={c}
+                mistakes={mistakes}
+                voiceErrors={voiceErrors}
+                voiceResult={voiceResult}
+                responseText={responseTextForIssues}
+                durationSeconds={durationSeconds}
+              />
+            )
           ))}
         </View>
 

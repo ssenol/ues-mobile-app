@@ -172,6 +172,8 @@ export default function AssignmentReportScreen() {
       getMistakes={(firstResult) => firstResult?.result?.mistakes || []}
       getVoiceErrors={(firstResult) => firstResult?.result?.voiceErrors || []}
       getResponseTextForIssues={(firstResult) => firstResult?.result?.transcription || ''}
+      getVoiceResult={(firstResult) => firstResult?.result?.voiceResult || null}
+      getDurationSeconds={(firstResult) => firstResult?.durationAsSeconds ?? firstResult?.result?.durationAsSeconds}
       getScoreBreakdown={(firstResult) => firstResult?.result?.scoreBreakdown || null}
       getAudioUrl={(firstResult) => firstResult?.audioUrl}
       getCompletenessInfo={(scoreBreakdown, reportData) => {
