@@ -10,7 +10,9 @@ import { ThemeProvider } from '@/src/theme/ThemeContext';
 import { persistor, store } from '@/src/store';
 
 // Splash screen'i font yüklenene kadar göster
-SplashScreen.preventAutoHideAsync();
+// Native splash o view controller için henüz kayıtlı değilse (dev client'ın kendi splash
+// döngüsüyle çakışma) reddedebilir — bu zararsız, sadece unhandled rejection'ı önlüyoruz
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
