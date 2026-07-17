@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {ActivityIndicator, Dimensions, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
+import CircularProgress from '../CircularProgress';
 import EmptyStateCard from '../EmptyStateCard';
 import InfoModal from '../InfoModal';
 import reportStyles from '../report/reportStyles';
@@ -9,7 +10,7 @@ import {ThemedText} from '../ThemedText';
 import ThemedIcon from '../ThemedIcon';
 import {useTheme} from '../../theme/ThemeContext';
 import {getSelfAnalytics} from '../../services/speak';
-import {BarRow, LineTrend, RadarChart, StatTile} from './ProgressCharts';
+import {BarRow, LineTrend, StatTile} from './ProgressCharts';
 import {
   formatDuration,
   formatErrorTypeLabel,
@@ -136,39 +137,61 @@ export default function MyProgressPanel({ userId }) {
   const maxErrorCount = Math.max(1, ...sortedErrors.map((e) => e.count));
   const maxVoiceErrorAccuracy = 100;
 
+  const statTiles = [
+    { key: 'submissions', label: 'SUBMISSIONS', value: kpis.submissions },
+    {
+      key: 'avgScore',
+      label: 'AVG SCORE',
+      value: Math.round(kpis.avgScore),
+      unit: '/ 100',
+      valueColor: getScoreColor(colors, kpis.avgScore),
+    },
+    {
+      key: 'bestScore',
+      label: 'BEST SCORE',
+      value: kpis.bestScore,
+      unit: '/ 100',
+      valueColor: getScoreColor(colors, kpis.bestScore),
+    },
+    {
+      key: 'totalMistakes',
+      label: 'TOTAL MISTAKES',
+      value: kpis.totalMistakes,
+      valueColor: kpis.totalMistakes > 0 ? colors.goalRed : undefined,
+    },
+    { key: 'timeSpoken', label: 'TIME SPOKEN', value: formatDuration(kpis.totalSeconds) },
+  ];
+
   return (
     <View>
-      <View style={styles.tileRow}>
-        <StatTile label="SUBMISSIONS" value={kpis.submissions} style={styles.tileHalf} />
-        <StatTile
-          label="AVG SCORE"
-          value={Math.round(kpis.avgScore)}
-          unit="/ 100"
-          valueColor={getScoreColor(colors, kpis.avgScore)}
-          style={styles.tileHalf}
-        />
-      </View>
-      <View style={styles.tileRow}>
-        <StatTile
-          label="BEST SCORE"
-          value={kpis.bestScore}
-          unit="/ 100"
-          valueColor={getScoreColor(colors, kpis.bestScore)}
-          style={styles.tileHalf}
-        />
-        <StatTile
-          label="TOTAL MISTAKES"
-          value={kpis.totalMistakes}
-          valueColor={kpis.totalMistakes > 0 ? colors.goalRed : undefined}
-          style={styles.tileHalf}
-        />
-      </View>
-      <StatTile label="TIME SPOKEN" value={formatDuration(kpis.totalSeconds)} style={{ marginTop: 8 }} />
+      {isTablet ? (
+        <View style={styles.tileRow}>
+          {statTiles.map((t) => (
+            <StatTile key={t.key} label={t.label} value={t.value} unit={t.unit} valueColor={t.valueColor} style={styles.tileFifth} />
+          ))}
+        </View>
+      ) : (
+        <>
+          <View style={styles.tileRow}>
+            {statTiles.slice(0, 2).map((t) => (
+              <StatTile key={t.key} label={t.label} value={t.value} unit={t.unit} valueColor={t.valueColor} style={styles.tileHalf} />
+            ))}
+          </View>
+          <View style={styles.tileRow}>
+            {statTiles.slice(2, 4).map((t) => (
+              <StatTile key={t.key} label={t.label} value={t.value} unit={t.unit} valueColor={t.valueColor} style={styles.tileHalf} />
+            ))}
+          </View>
+          <StatTile label={statTiles[4].label} value={statTiles[4].value} style={{ marginTop: 8 }} />
+        </>
+      )}
 
       <View style={styles.section}>
         <SectionHeader title="VOICE PROFILE" onInfoPress={() => setInfoKey('voiceProfile')} />
         <View style={[reportStyles.card, styles.voiceProfileCard]}>
-          <RadarChart metrics={voiceProfileMetrics} color={colors.primary} />
+          {voiceProfileMetrics.map((m) => (
+            <CircularProgress key={m.key} value={m.value} label={m.label} size={isTablet ? 90 : 72} strokeWidth={7} color={colors.primary} />
+          ))}
         </View>
       </View>
 
@@ -199,12 +222,12 @@ export default function MyProgressPanel({ userId }) {
             meta={`${kpis.submissions} tasks`}
             onInfoPress={() => setInfoKey('subTypeBreakdown')}
           />
-          <View style={styles.subTypeGrid}>
+          <View style={[styles.subTypeGrid, isTablet && styles.subTypeGridTablet]}>
             {subTypeBreakdown.map((s) => {
               const pct = kpis.submissions > 0 ? Math.round((s.count / kpis.submissions) * 100) : 0;
               const color = getScoreColor(colors, s.avgScore);
               return (
-                <View key={s.subType} style={[reportStyles.card, styles.subTypeCard]}>
+                <View key={s.subType} style={[reportStyles.card, isTablet && styles.subTypeCardTablet]}>
                   <View style={styles.subTypeHeader}>
                     <ThemedText weight="semiBold" style={styles.subTypeTitle} numberOfLines={1}>
                       {SUBTYPE_LABELS[s.subType] || s.subType}
@@ -355,6 +378,9 @@ const styles = StyleSheet.create({
   tileHalf: {
     flex: 1,
   },
+  tileFifth: {
+    flex: 1,
+  },
   section: {
     marginTop: 20,
   },
@@ -377,16 +403,19 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   voiceProfileCard: {
-    alignItems: 'center',
-  },
-  subTypeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  subTypeGrid: {
     gap: 8,
   },
-  subTypeCard: {
-    flexBasis: '48%',
-    flexGrow: 1,
+  subTypeGridTablet: {
+    flexDirection: 'row',
+  },
+  subTypeCardTablet: {
+    flex: 1,
   },
   subTypeHeader: {
     flexDirection: 'row',

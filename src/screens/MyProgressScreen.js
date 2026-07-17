@@ -1,5 +1,6 @@
-import {StatusBar} from 'expo-status-bar';
-import React from 'react';
+import {useFocusEffect} from 'expo-router';
+import {StatusBar, setStatusBarStyle} from 'expo-status-bar';
+import React, {useCallback} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useSelector} from 'react-redux';
@@ -10,6 +11,14 @@ import {selectCurrentUser} from '../store/slices/authSlice';
 export default function MyProgressScreen() {
   const insets = useSafeAreaInsets();
   const user = useSelector((state) => selectCurrentUser(state));
+
+  // Diğer sekmelerdeki gibi: sekmeler arası geçişte status bar stilinin başka
+  // bir ekrandan kalıp yanlış görünmesini önlemek için her focus'ta zorla ayarla
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('dark');
+    }, [])
+  );
 
   if (!user) return null;
 

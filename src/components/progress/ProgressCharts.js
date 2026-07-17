@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {StyleSheet, View} from 'react-native';
-import Svg, {Circle, G, Line, Path, Polygon} from 'react-native-svg';
+import Svg, {Circle, G, Line, Path} from 'react-native-svg';
 import {ThemedText} from '../ThemedText';
 
 // boostifywrite/src/components/AnalyticsCharts.tsx'teki grafik primitive'lerinin
@@ -87,57 +87,11 @@ export function LineTrend({ data, color = '#3E4EF0', width: fixedWidth, xLabels 
           </ThemedText>
         )
       ))}
-    </View>
-  );
-}
-
-const RADAR_RINGS = [25, 50, 75, 100];
-
-// n eksenli (metrics.length) örümcek ağı grafiği — Voice Profile bölümü için
-export function RadarChart({ metrics, size = 240, color = '#3E4EF0' }) {
-  const center = size / 2;
-  const labelPad = 40;
-  const maxR = center - labelPad;
-  const n = metrics.length;
-  const startAngle = -Math.PI / 2;
-  const angleStep = (2 * Math.PI) / n;
-
-  const pointAt = (i, valuePercent) => {
-    const angle = startAngle + i * angleStep;
-    const r = (Math.min(100, Math.max(0, valuePercent)) / 100) * maxR;
-    return { x: center + r * Math.cos(angle), y: center + r * Math.sin(angle) };
-  };
-
-  const ringPoints = (level) => Array.from({ length: n }, (_, i) => pointAt(i, level))
-    .map((p) => `${p.x},${p.y}`).join(' ');
-
-  const dataPoints = metrics.map((m, i) => pointAt(i, m.value));
-  const dataPolygon = dataPoints.map((p) => `${p.x},${p.y}`).join(' ');
-
-  return (
-    <View style={{ width: size, height: size }}>
-      <Svg width={size} height={size}>
-        {RADAR_RINGS.map((level) => (
-          <Polygon key={level} points={ringPoints(level)} fill="none" stroke="#E7E9FF" strokeWidth={1} />
-        ))}
-        {metrics.map((m, i) => {
-          const outer = pointAt(i, 100);
-          return <Line key={i} x1={center} y1={center} x2={outer.x} y2={outer.y} stroke="#E7E9FF" strokeWidth={1} />;
-        })}
-        <Polygon points={dataPolygon} fill={color} fillOpacity={0.25} stroke={color} strokeWidth={2} />
-        {dataPoints.map((p, i) => (
-          <Circle key={i} cx={p.x} cy={p.y} r={4} fill={color} />
-        ))}
-      </Svg>
-      {metrics.map((m, i) => {
-        const labelPoint = pointAt(i, 122);
+      {gridTicks.map((t) => {
+        const y = LINE_PAD.t + innerH * (1 - t / 100);
         return (
-          <ThemedText
-            key={i}
-            weight="semiBold"
-            style={[styles.radarLabel, { left: labelPoint.x - 45, top: labelPoint.y - 8 }]}
-          >
-            {m.label} <ThemedText weight="bold" style={{ color }}>({m.value})</ThemedText>
+          <ThemedText key={`y-${t}`} style={[styles.lineYLabel, { top: y - 6 }]}>
+            {t}
           </ThemedText>
         );
       })}
@@ -275,12 +229,13 @@ const styles = StyleSheet.create({
     color: '#969696',
     textAlign: 'center',
   },
-  radarLabel: {
+  lineYLabel: {
     position: 'absolute',
-    width: 90,
-    fontSize: 11,
-    color: '#3A3A3A',
-    textAlign: 'center',
+    left: 0,
+    width: LINE_PAD.l - 6,
+    fontSize: 9,
+    color: '#969696',
+    textAlign: 'right',
   },
   donutCenter: {
     flex: 1,
