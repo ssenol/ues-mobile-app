@@ -2,9 +2,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from 'expo-secure-store';
 import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Dimensions,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -29,10 +30,14 @@ import ThemedIcon from "../components/ThemedIcon";
 
 // Biyometrik hatırlatma Alert'inin daha önce gösterilip gösterilmediğini tutan anahtar.
 const BIOMETRIC_PROMPT_SHOWN_KEY = "biometric_prompt_shown";
+// iPhone 6s/SE gibi küçük ekranlarda header ve boşlukları küçültüp içeriğin sığmasını kolaylaştırır
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const isSmallScreen = SCREEN_HEIGHT < 700;
 
 export default function LoginScreen() {
   const dispatch = useDispatch();
   const { colors } = useTheme();
+  const scrollViewRef = useRef(null);
   const [username, setUsername] = useState(""); // ues-meq-student1
   const [password, setPassword] = useState(""); // 123456
   const [loading, setLoading] = useState(false);
@@ -245,7 +250,7 @@ export default function LoginScreen() {
     headerContainer: {
       position: 'relative',
       width: '100%',
-      height: 285,
+      height: isSmallScreen ? 180 : 285,
     },
     headerImage: {
       width: '100%',
@@ -253,7 +258,7 @@ export default function LoginScreen() {
     },
     headerContent: {
       position: 'absolute',
-      top: 90,
+      top: isSmallScreen ? 46 : 90,
       width: '100%',
       alignItems: 'center',
     },
@@ -268,9 +273,9 @@ export default function LoginScreen() {
     formContainer: {
       marginHorizontal: 16,
       backgroundColor: colors.white,
-      marginTop: -100,
+      marginTop: isSmallScreen ? -60 : -100,
       borderRadius: 16,
-      padding: 24,
+      padding: isSmallScreen ? 16 : 24,
     },
     welcome: {
       fontSize: 24,
@@ -283,7 +288,7 @@ export default function LoginScreen() {
       lineHeight: 22,
       textAlign: 'center',
       marginTop: 6,
-      marginBottom: 24,
+      marginBottom: isSmallScreen ? 12 : 24,
     },
     inputs: {
       gap: 16,
@@ -300,22 +305,22 @@ export default function LoginScreen() {
     divider: {
       height: 1,
       backgroundColor: '#eee',
-      marginVertical: 24,
+      marginVertical: isSmallScreen ? 16 : 24,
     },
     otherLogins: {
       textAlign: 'center',
       color: colors.color555,
       fontSize: 16,
       lineHeight: 18,
-      marginBottom: 24,
+      marginBottom: isSmallScreen ? 16 : 24,
     },
     footer: {
       color: "#969696",
       fontSize: 12,
       lineHeight: 16,
       textAlign: 'center',
-      marginTop: 40,
-      marginBottom: 24,
+      marginTop: isSmallScreen ? 16 : 40,
+      marginBottom: isSmallScreen ? 12 : 24,
     },
   });
 
@@ -327,7 +332,7 @@ export default function LoginScreen() {
         style={{ flex: 1 }}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView contentContainerStyle={styles.container}>
+          <ScrollView ref={scrollViewRef} contentContainerStyle={styles.container}>
             <View style={styles.headerContainer}>
               <Image
                 source={require('../../assets/images/screenHeader.png')}
@@ -365,6 +370,7 @@ export default function LoginScreen() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
+                  onFocus={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
                 />
               </View>
 

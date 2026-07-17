@@ -9,6 +9,8 @@ const CustomInput = ({
   secureTextEntry,
   value,
   onChangeText,
+  autoCapitalize = 'sentences',
+  onFocus,
 }) => {
   const { colors, fonts } = useTheme();
   const styles = makeStyles(colors, fonts);
@@ -38,6 +40,8 @@ const CustomInput = ({
         secureTextEntry={secureTextEntry}
         value={value}
         onChangeText={onChangeText}
+        autoCapitalize={autoCapitalize}
+        onFocus={onFocus}
       />
     </View>
   );
