@@ -5,7 +5,7 @@ module.exports = {
     scheme: "boostifyspeak",
     name: IS_DEV ? "BoostifySpeak DEV" : "BoostifySpeak",
     slug: "boostifyspeak",
-    version: "1.0.0",
+    version: "1.1.0",
     orientation: "portrait",
     icon: IS_DEV ? "./assets/images/icon-dev.png" : "./assets/images/icon.png",
     userInterfaceStyle: "light",
