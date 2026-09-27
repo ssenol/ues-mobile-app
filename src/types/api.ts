@@ -20,5 +20,6 @@ export interface AuthUser {
   name?: string;
   avatarUrl?: string;
   classInfo?: string[];
+  campusName?: string;
   [key: string]: unknown;
 }

@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from 'expo-secure-store';
+import { isAxiosError } from "axios";
 import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -16,7 +17,6 @@ import {
 } from "react-native";
 import useResponsive from '../hooks/useResponsive';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 import ActionButton from "../components/ActionButton";
 import ConfirmModal from "../components/ConfirmModal";
 import CustomInput from "../components/CustomInput";
@@ -24,7 +24,8 @@ import { ThemedText } from "../components/ThemedText";
 import authService from "../services/auth";
 import BiometricAuthService from "../services/biometricAuth";
 import { store } from "../store/index";
-import { setCredentials } from "../store/slices/authSlice";
+import { CredentialsPayload, setCredentials } from "../store/slices/authSlice";
+import { useAppDispatch } from "../store/hooks";
 import { useTheme } from "../theme/ThemeContext";
 import ThemedIcon from "../components/ThemedIcon";
 
@@ -35,16 +36,20 @@ export default function LoginScreen() {
   // iPhone 6s/SE gibi küçük ekranlarda (veya kısa iPad penceresinde) header ve boşlukları küçültüp içeriğin sığmasını kolaylaştırır
   const { height: SCREEN_HEIGHT } = useResponsive();
   const isSmallScreen = SCREEN_HEIGHT < 700;
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { colors } = useTheme();
-  const scrollViewRef = useRef(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const [username, setUsername] = useState(""); // ues-meq-student1
   const [password, setPassword] = useState(""); // 123456
   const [loading, setLoading] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [biometricPromptModalVisible, setBiometricPromptModalVisible] = useState(false);
   const [biometricPromptType, setBiometricPromptType] = useState("");
-  const [pendingCredentials, setPendingCredentials] = useState(null);
+  const [pendingCredentials, setPendingCredentials] = useState<{
+    credentials: CredentialsPayload;
+    username: string;
+    password: string;
+  } | null>(null);
   // Biyometrik giriş butonunun gösterilip gösterilmeyeceğini belirler.
   const [showBiometricButton, setShowBiometricButton] = useState(false);
   // Biyometrik butonunda yazacak olan doğrulama tipinin adını tutar.
@@ -86,7 +91,7 @@ export default function LoginScreen() {
 
   // Biyometrik ile otomatik giriş fonksiyonu
   // Biyometrik doğrulama sonrası kaydedilmiş kimlik bilgileriyle giriş yapar.
-  const handleLoginWithCredentials = async (username, password) => {
+  const handleLoginWithCredentials = async (username: string, password: string) => {
     try {
       setLoading(true);
       const response = await authService.login(username, password);
@@ -223,7 +228,7 @@ export default function LoginScreen() {
       // navigation ile yönlendirme kaldırıldı, AppNavigator otomatik yönlendirecek
     } catch (error) {
       setLoading(false);
-      const statusCode = error?.response?.status;
+      const statusCode = isAxiosError(error) ? error.response?.status : undefined;
       if (statusCode === 401) {
         setErrorModalVisible(true);
       } else {
@@ -326,7 +331,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right", "bottom"]}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <StatusBar style="light" />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}

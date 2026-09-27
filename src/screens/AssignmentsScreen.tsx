@@ -1,10 +1,10 @@
+import { isAxiosError } from 'axios';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, ImageBackground, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, ImageBackground, LayoutRectangle, NativeScrollEvent, NativeSyntheticEvent, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSelector } from 'react-redux';
 import AssignmentCard from '../components/AssignmentCard';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { ThemedText } from '../components/ThemedText';
@@ -13,29 +13,38 @@ import Banner from '../components/Banner';
 import { useTheme } from '../theme/ThemeContext';
 import { fetchAssignedSpeechTasksWithCache } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
+import { store } from '../store';
+import { selectIsCacheValid } from '../store/slices/assignmentSlice';
 import { buildAssignedSpeechTaskParams } from '../utils/assignmentTransform';
+import { useAppSelector } from '../store/hooks';
+import type { Assignment, AssignmentType, AssignmentWithDueDate } from '../types/assignment';
+
+type FilterName = 'All' | 'Speech On Topic' | 'Read Aloud' | 'Speech On Scenario';
+
+// Animated.ScrollView ref'i; eski RN sürümlerinde getNode() ile asıl ScrollView'a ulaşılıyordu
+type AnimatedScrollRef = ScrollView & { getNode?: () => ScrollView };
 
 
 export default function AssignmentsScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams<{ filter?: FilterName }>();
   const { colors, shadows } = useTheme();
   const { width: SCREEN_WIDTH, isTablet } = useResponsive();
   const styles = useMemo(() => createStyles(isTablet, SCREEN_WIDTH), [isTablet, SCREEN_WIDTH]);
   const insets = useSafeAreaInsets();
-  const user = useSelector((state) => selectCurrentUser(state));
+  const user = useAppSelector(selectCurrentUser);
   const STATUSBAR_HEIGHT = insets.top;
   // Route params'tan gelen filtreyi kullan, yoksa 'All'
-  const initialFilter = params?.filter || 'All';
-  const [selectedFilter, setSelectedFilter] = useState(initialFilter);
+  const initialFilter: FilterName = params?.filter || 'All';
+  const [selectedFilter, setSelectedFilter] = useState<FilterName>(initialFilter);
   const [isFilterSticky, setIsFilterSticky] = useState(false);
-  const [allQuizzes, setAllQuizzes] = useState([]);
+  const [allQuizzes, setAllQuizzes] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const filterTabsRef = useRef(null);
-  const headerRef = useRef(null);
-  const scrollViewRef = useRef(null);
-  const quizListRef = useRef(null);
+  const filterTabsRef = useRef<View>(null);
+  const headerRef = useRef<View>(null);
+  const scrollViewRef = useRef<AnimatedScrollRef>(null);
+  const quizListRef = useRef<View>(null);
   const [filterTabsY, setFilterTabsY] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [filterTabsHeight, setFilterTabsHeight] = useState(0);
@@ -47,11 +56,11 @@ export default function AssignmentsScreen() {
   const scrollContentStyle = {
     paddingBottom: isTablet ? 150 : 100, // Tabbar için boşluk
   };
-  const normalFilterScrollRef = useRef(null);
-  const stickyFilterScrollRef = useRef(null);
-  const filterTabLayouts = useRef({});
+  const normalFilterScrollRef = useRef<ScrollView>(null);
+  const stickyFilterScrollRef = useRef<ScrollView>(null);
+  const filterTabLayouts = useRef<Partial<Record<FilterName, LayoutRectangle>>>({});
 
-  const scrollToFilter = (filterName) => {
+  const scrollToFilter = (filterName: FilterName) => {
     const layout = filterTabLayouts.current[filterName];
     if (layout) {
       const scrollRef = isFilterSticky ? stickyFilterScrollRef.current : normalFilterScrollRef.current;
@@ -61,7 +70,7 @@ export default function AssignmentsScreen() {
     }
   };
 
-  const handleFilterPress = (filterName) => {
+  const handleFilterPress = (filterName: FilterName) => {
     setSelectedFilter(filterName);
     setTimeout(() => scrollToFilter(filterName), 50);
 
@@ -100,8 +109,8 @@ export default function AssignmentsScreen() {
       // Cache varsa loading gösterme - anında yüklenecek
       if (!isFromRefresh) {
         // Cache kontrolü için store'dan bakıyoruz
-        const state = require('../store').store.getState();
-        const isCacheValid = require('../store/slices/assignmentSlice').selectIsCacheValid(state);
+        const state = store.getState();
+        const isCacheValid = selectIsCacheValid(state);
         
         // Cache geçersizse (API çağrısı yapılacaksa) loading göster
         if (!isCacheValid) {
@@ -122,8 +131,8 @@ export default function AssignmentsScreen() {
       }
     } catch (error) {
       console.error('AssignmentsScreen fetchAssignments error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
+      console.error('Error response:', isAxiosError(error) ? error.response?.data : undefined);
+      console.error('Error status:', isAxiosError(error) ? error.response?.status : undefined);
       setAllQuizzes([]);
     } finally {
       if (!isFromRefresh) {
@@ -184,7 +193,7 @@ export default function AssignmentsScreen() {
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     {
       useNativeDriver: false,
-      listener: (event) => {
+      listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const offsetY = event.nativeEvent.contentOffset.y;
         // filterTabsY, ScrollView içindeki pozisyonu gösteriyor
         // Filter tabs'ın üst boşluğunu (marginTop: 16) çıkararak threshold hesaplıyoruz
@@ -232,7 +241,7 @@ export default function AssignmentsScreen() {
   const readAloudCount = allQuizzes.filter(q => q.type === 'readAloud').length;
   const speechOnScenarioCount = allQuizzes.filter(q => q.type === 'speechOnScenario').length;
 
-  const filters = [
+  const filters: { name: FilterName; count: number | null }[] = [
     { name: 'All', count: null },
     { name: 'Speech On Topic', count: speechOnTopicCount },
     { name: 'Read Aloud', count: readAloudCount },
@@ -244,12 +253,12 @@ export default function AssignmentsScreen() {
     const filtered = selectedFilter === 'All'
       ? allQuizzes
       : allQuizzes.filter(assignment => {
-          const filterMap = {
+          const filterMap: Record<Exclude<FilterName, 'All'>, AssignmentType> = {
             'Speech On Topic': 'speechOnTopic',
             'Read Aloud': 'readAloud',
             'Speech On Scenario': 'speechOnScenario',
           };
-          return assignment.type === filterMap[selectedFilter];
+          return assignment.type === filterMap[selectedFilter as Exclude<FilterName, 'All'>];
         });
 
     // Sort the filtered assignments
@@ -257,21 +266,21 @@ export default function AssignmentsScreen() {
       if (a.isSolved !== b.isSolved) {
         return a.isSolved ? 1 : -1;
       }
-      const dateA = new Date(a.dueDate || 0).getTime();
-      const dateB = new Date(b.dueDate || 0).getTime();
+      const dateA = new Date((a as AssignmentWithDueDate).dueDate || 0).getTime();
+      const dateB = new Date((b as AssignmentWithDueDate).dueDate || 0).getTime();
       return dateA - dateB;
     });
   }, [allQuizzes, selectedFilter]);
 
   // Helper function to get filter display text
-  const getFilterDisplayText = (filter) => {
+  const getFilterDisplayText = (filter: { name: FilterName; count: number | null }) => {
     if (filter.count !== null && filter.count !== undefined) {
       return `${filter.name} (${filter.count})`;
     }
     return filter.name;
   };
 
-  const handleAssignmentPress = (assignment) => {
+  const handleAssignmentPress = (assignment: Assignment) => {
     // Eğer task completed ise rapor sayfasına git
     if (assignment.isSolved) {
       // reportId results array'inin içinde
@@ -313,7 +322,7 @@ export default function AssignmentsScreen() {
   };
 
 
-  const renderFilterTabs = (scrollRef, isSticky = false) => (
+  const renderFilterTabs = (scrollRef: React.RefObject<ScrollView | null>, isSticky = false) => (
     <ScrollView
       ref={scrollRef}
       horizontal
@@ -352,7 +361,7 @@ export default function AssignmentsScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" translucent backgroundColor="transparent" />
+      <StatusBar style="dark" />
       
       {/* Header */}
       <View 
@@ -482,7 +491,8 @@ export default function AssignmentsScreen() {
               ))
             )
           ) : !loading && (
-            selectedFilter === 'Completed' ? (
+            // Not: 'Completed' diye bir filtre artık yok, bu dal hiç çalışmıyor
+            (selectedFilter as string) === 'Completed' ? (
               // Completed filtresi ve tamamlanan assignment yoksa
               <View style={styles.emptyCompletedContainer}>
                 <ImageBackground
@@ -516,7 +526,7 @@ export default function AssignmentsScreen() {
   );
 }
 
-const createStyles = (isTablet, SCREEN_WIDTH) => StyleSheet.create({
+const createStyles = (isTablet: boolean, SCREEN_WIDTH: number) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',

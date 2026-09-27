@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useRef, useState, useEffect } from "react";
@@ -8,11 +9,13 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  View
-} from "react-native";
+  View,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ViewStyle,
+} from 'react-native';
 import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSelector } from "react-redux";
 import AssignmentCard from "../components/AssignmentCard";
 import GoalProgress from "../components/GoalProgress";
 import LoadingOverlay from "../components/LoadingOverlay";
@@ -23,12 +26,20 @@ import EmptyStateCard from "../components/EmptyStateCard";
 import Banner from "../components/Banner";
 import { fetchAssignedSpeechTasksWithCache } from "../services/speak";
 import { selectCurrentUser } from "../store/slices/authSlice";
+import { store } from '../store';
+import { selectIsCacheValid } from '../store/slices/assignmentSlice';
 import { useTheme } from "../theme/ThemeContext";
 import { buildAssignedSpeechTaskParams } from "../utils/assignmentTransform";
+import { useAppSelector } from "../store/hooks";
+import type { IconName } from "../constants/iconMap";
+import type { Assignment, AssignmentWithDueDate } from "../types/assignment";
+
+// Animated.ScrollView ref'i; eski RN sürümlerinde getNode() ile asıl ScrollView'a ulaşılıyordu
+type AnimatedScrollRef = ScrollView & { getNode?: () => ScrollView };
 
 export default function HomeScreen() {
   const router = useRouter();
-  const user = useSelector((state) => selectCurrentUser(state));
+  const user = useAppSelector(selectCurrentUser);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH, isTablet } = useResponsive();
@@ -36,8 +47,8 @@ export default function HomeScreen() {
 
   // Navigation helper - React Navigation'dan Expo Router'a geçiş için
   const navigation = {
-    navigate: (screen, params) => {
-      const routes = {
+    navigate: (screen: string, params?: Record<string, unknown>) => {
+      const routes: Record<string, string> = {
         'Assignments': '/assignments',
         'Profile': '/profile',
         'ScenarioReport': '/scenario-report',
@@ -48,24 +59,24 @@ export default function HomeScreen() {
       const pathname = routes[screen] || `/${screen.toLowerCase()}`;
       if (params) {
         // Object params'ları JSON.stringify ile gönder
-        const serializedParams = {};
+        const serializedParams: Record<string, string> = {};
         Object.keys(params).forEach(key => {
           serializedParams[key] = typeof params[key] === 'object' 
             ? JSON.stringify(params[key]) 
-            : params[key];
+            : params[key] as string;
         });
-        router.push({ pathname, params: serializedParams });
+        router.push({ pathname: pathname as never, params: serializedParams });
       } else {
-        router.push(pathname);
+        router.push(pathname as never);
       }
     }
   };
 
-  const scrollViewRef = useRef(null);
-  const activityScrollRef = useRef(null);
+  const scrollViewRef = useRef<AnimatedScrollRef>(null);
+  const activityScrollRef = useRef<ScrollView>(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [isSticky, setIsSticky] = useState(false);
-  const lastAssignmentsHeaderRef = useRef(null);
+  const lastAssignmentsHeaderRef = useRef<View>(null);
   const [lastAssignmentsHeaderY, setLastAssignmentsHeaderY] = useState(0);
   const animationPlayed = useRef(false);
 
@@ -88,7 +99,7 @@ export default function HomeScreen() {
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     {
       useNativeDriver: false,
-      listener: (event) => {
+      listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const offsetY = event.nativeEvent.contentOffset.y;
         
         // Sticky header kontrolü
@@ -104,8 +115,8 @@ export default function HomeScreen() {
   );
 
   const [progressKey, setProgressKey] = useState(0);
-  const [lastAssignments, setLastAssignments] = useState([]);
-  const [allQuizzes, setAllQuizzes] = useState([]);
+  const [lastAssignments, setLastAssignments] = useState<Assignment[]>([]);
+  const [allQuizzes, setAllQuizzes] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notificationModalVisible, setNotificationModalVisible] = useState(false);
@@ -136,8 +147,8 @@ export default function HomeScreen() {
       // Cache varsa loading gösterme - anında yüklenecek
       if (!isFromRefresh) {
         // Cache kontrolü için store'dan bakıyoruz
-        const state = require('../store').store.getState();
-        const isCacheValid = require('../store/slices/assignmentSlice').selectIsCacheValid(state);
+        const state = store.getState();
+        const isCacheValid = selectIsCacheValid(state);
         
         // Cache geçersizse (API çağrısı yapılacaksa) loading göster
         if (!isCacheValid) {
@@ -164,8 +175,8 @@ export default function HomeScreen() {
         const unsolvedAssignments = transformedAssignments
           .filter(assignment => !assignment.isSolved)
           .sort((a, b) => {
-            const dateA = new Date(a.dueDate || 0).getTime();
-            const dateB = new Date(b.dueDate || 0).getTime();
+            const dateA = new Date((a as AssignmentWithDueDate).dueDate || 0).getTime();
+            const dateB = new Date((b as AssignmentWithDueDate).dueDate || 0).getTime();
             return dateA - dateB; // Artan sıra (en eski önce)
           });
         
@@ -178,8 +189,8 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('HomeScreen fetchQuizzes error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
+      console.error('Error response:', isAxiosError(error) ? error.response?.data : undefined);
+      console.error('Error status:', isAxiosError(error) ? error.response?.status : undefined);
       setAllQuizzes([]);
       setLastAssignments([]);
       setTotalAssignments(0);
@@ -220,9 +231,9 @@ export default function HomeScreen() {
     if (lastAssignments.length > 0 && !animationPlayed.current) {
       if (activityScrollRef.current) {
         setTimeout(() => {
-          activityScrollRef.current.scrollTo({ x: 40, animated: true });
+          activityScrollRef.current?.scrollTo({ x: 40, animated: true });
           setTimeout(() => {
-            activityScrollRef.current.scrollTo({ x: 0, animated: true });
+            activityScrollRef.current?.scrollTo({ x: 0, animated: true });
           }, 150);
         }, 300);
         animationPlayed.current = true; // Mark animation as played
@@ -231,7 +242,7 @@ export default function HomeScreen() {
   }, [lastAssignments]);
 
   // Kart verilerini tanımlayalım
-  const activityCards = [
+  const activityCards: { id: string; title: string; description: string; icon: IconName; onPress: () => void }[] = [
     {
       id: 'speech',
       title: 'Speech on Topic',
@@ -261,7 +272,7 @@ export default function HomeScreen() {
   const goalProgressWidth = SCREEN_WIDTH - 32; // paddingHorizontal: 16+16
 
   // Dinamik activity card stili
-  const getActivityCardStyle = (index) => {
+  const getActivityCardStyle = (index: number): ViewStyle => {
     const cardsPerRow = isTablet ? 3 : 2;
     const isLastCard = index === totalCards - 1;
 
@@ -363,7 +374,7 @@ export default function HomeScreen() {
     // Avatar ve yazılar (en önde)
     avatarContainer: {
       flexDirection: 'row',
-      alignItems: 'top',
+      // alignItems: 'top' geçersiz bir değerdi ve yok sayılıyordu (varsayılan stretch)
       marginTop: 24,
       marginBottom: 16,
     },
@@ -481,7 +492,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <StatusBar style="light" />
 
       {/* Status bar için sabit alan */}
       <View style={styles.statusBarArea} />

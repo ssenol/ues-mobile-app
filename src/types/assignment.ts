@@ -38,6 +38,8 @@ export interface RawSpeechTask {
   };
   prevSolvedTask?: {
     totalSolvedTaskCount?: number;
+    // Çözülmüş görevin rapor kayıtları; ilk elemanın id'si rapor ekranına reportId olarak gider
+    results?: { id?: string; [key: string]: unknown }[];
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -64,6 +66,10 @@ export interface Assignment {
   speechTaskId: string | null;
   originalTask: RawSpeechTask;
 }
+
+// Not: transformTaskToAssignment dueDate üretmiyor; Home/Assignments'taki dueDate sıralaması
+// bu yüzden şu an etkisiz (her tarih 0). Davranış TS dönüşümünde korundu.
+export type AssignmentWithDueDate = Assignment & { dueDate?: string };
 
 // Completed ekranındaki çözülmüş görev kartı (CompletedScreen'de API yanıtından üretilir)
 export interface CompletedAssignment {
