@@ -66,34 +66,34 @@ export default function TabsLayout() {
       tintColor={DynamicColorIOS({ dark: '#3E4EF0', light: '#3E4EF0' })}
     >
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-home.png')} />
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-home.png')} renderingMode="template" />
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="assignments">
-        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-assignments.png')} />
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-assignments.png')} renderingMode="template" />
         <NativeTabs.Trigger.Label>Assignments</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="completed">
-        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-completed.png')} />
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-completed.png')} renderingMode="template" />
         <NativeTabs.Trigger.Label>Completed</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       {/* Notifications sekmesi şimdilik kaldırıldı, yerine başka bir ikon/sekme gelecek
       <NativeTabs.Trigger name="notifications">
-        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-notifications.png')} />
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-notifications.png')} renderingMode="template" />
         <NativeTabs.Trigger.Label>Notifications</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       */}
 
       <NativeTabs.Trigger name="my-progress">
-        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-my-progress.png')} />
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-my-progress.png')} renderingMode="template" />
         <NativeTabs.Trigger.Label>My Progress</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="profile">
-        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-profile.png')} />
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-profile.png')} renderingMode="template" />
         <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
