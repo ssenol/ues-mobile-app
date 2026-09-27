@@ -2,11 +2,11 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { AudioQuality, IOSOutputFormat, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, LayoutAnimation, Linking, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, DimensionValue, LayoutAnimation, Linking, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { isAxiosError } from 'axios';
 import useResponsive from '../hooks/useResponsive';
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSelector, useDispatch } from 'react-redux';
 import AudioPlayer from '../components/AudioPlayer';
 import ConfirmModal from '../components/ConfirmModal';
 import LoadingOverlay from '../components/LoadingOverlay';
@@ -17,22 +17,29 @@ import { selectCurrentUser } from '../store/slices/authSlice';
 import { clearCache } from '../store/slices/assignmentSlice';
 import { getMicrophoneEnabled, requestMicrophonePermission } from '../utils/helpers';
 import { useTheme } from '../theme/ThemeContext';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import type { IconName } from '../constants/iconMap';
+import type { RawSpeechTask } from '../types/assignment';
+
+type RecordingState = 'idle' | 'recording' | 'paused' | 'finished';
+
+const errorMessage = (err: unknown) => (err instanceof Error ? err.message : undefined);
 
 
 export default function AssignmentDetailScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams<{ task?: string; assignedTaskId?: string; speechTaskId?: string }>();
   
   // Parse task from JSON string - useMemo ile cache'le
-  const task = useMemo(() => {
+  const task = useMemo((): RawSpeechTask | null => {
     return params.task ? JSON.parse(params.task) : null;
   }, [params.task]);
   
   const assignedTaskId = params.assignedTaskId;
   const speechTaskId = params.speechTaskId;
   const insets = useSafeAreaInsets();
-  const dispatch = useDispatch();
-  const user = useSelector((state) => selectCurrentUser(state));
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectCurrentUser);
   const { colors, shadows } = useTheme();
   const STATUSBAR_HEIGHT = insets.top;
   
@@ -61,42 +68,39 @@ export default function AssignmentDetailScreen() {
   
   const [permissionModalVisible, setPermissionModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [recordingState, setRecordingState] = useState('idle'); // 'idle', 'recording', 'paused', 'finished'
+  const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isStartingRecording, setIsStartingRecording] = useState(false);
   const [taskText, setTaskText] = useState('');
-  const [taskType, setTaskType] = useState(null); // 'speech_on_topic' or 'read_aloud'
-  const [metadata, setMetadata] = useState([]);
-  const [maxDuration, setMaxDuration] = useState(null); // in seconds, for speech on topic
-  const [recordedUri, setRecordedUri] = useState(null);
+  const [taskType, setTaskType] = useState<string | null | undefined>(null); // 'speech_on_topic' or 'read_aloud'
+  const [metadata, setMetadata] = useState<{ icon: IconName; label: string }[]>([]);
+  const [maxDuration, setMaxDuration] = useState<number | null>(null); // in seconds, for speech on topic
+  const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [finishModalVisible, setFinishModalVisible] = useState(false);
   const [activeWaveformIndex, setActiveWaveformIndex] = useState(0);
-  const [waveformHeights, setWaveformHeights] = useState([]);
+  const [waveformHeights, setWaveformHeights] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const countdownIntervalRef = useRef(null);
-  const timerIntervalRef = useRef(null);
-  const waveformIntervalRef = useRef(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const waveformIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pausedDurationRef = useRef(0);
   const notificationSlideAnim = useRef(new Animated.Value(0)).current; // 0 = gizli (record button içinde)
   
   // expo-audio recorder hook
   const recorder = useAudioRecorder(
     {
+      // İki platformda ortak ayarlar (expo-audio platform nesnesini bunların üzerine yayar)
+      extension: '.m4a',
+      sampleRate: 44100,
+      numberOfChannels: 1,
+      bitRate: 128000,
       android: {
-        extension: '.m4a',
         outputFormat: 'mpeg4',
         audioEncoder: 'aac',
-        sampleRate: 44100,
-        numberOfChannels: 1,
-        bitRate: 128000,
       },
       ios: {
-        extension: '.m4a',
         audioQuality: AudioQuality.MAX,
-        sampleRate: 44100,
-        numberOfChannels: 1,
-        bitRate: 128000,
         outputFormat: IOSOutputFormat.MPEG4AAC,
       },
       web: {
@@ -104,14 +108,12 @@ export default function AssignmentDetailScreen() {
         bitsPerSecond: 128000,
       },
     },
-    (status) => {
-      if (status.isRecording) {
-        setRecordingDuration(status.currentTime || 0);
-      } else {
-        if (timerIntervalRef.current) {
-          clearInterval(timerIntervalRef.current);
-          timerIntervalRef.current = null;
-        }
+    () => {
+      // expo-audio bu olayı yalnızca kayıt bittiğinde/hata olduğunda gönderir ve isRecording içermez;
+      // süre setInterval ile sayılıyor, burada sadece timer durdurulur
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
       }
     }
   );
@@ -125,7 +127,7 @@ export default function AssignmentDetailScreen() {
   );
 
   // HTML'den metni temizle
-  const stripHtml = (html) => {
+  const stripHtml = (html: string | null | undefined) => {
     if (!html) return '';
     return html.replace(/<[^>]*>/g, '').trim();
   };
@@ -140,7 +142,7 @@ export default function AssignmentDetailScreen() {
         setTaskText(task.task?.data?.topic || '');
         
         // Speech on Topic metadata
-        const taskMetadata = [];
+        const taskMetadata: { icon: IconName; label: string }[] = [];
         
         // Duration (saniye cinsinden string: "30-50")
         const durationString = task.task?.data?.duration;
@@ -187,7 +189,7 @@ export default function AssignmentDetailScreen() {
         setTaskText(stripHtml(readingText));
         
         // Read Aloud metadata
-        const taskMetadata = [];
+        const taskMetadata: { icon: IconName; label: string }[] = [];
         
         // CEFR Level
         if (task.task?.setting?.cefrLevel) {
@@ -225,7 +227,7 @@ export default function AssignmentDetailScreen() {
       }
     } catch (error) {
       console.error('Error in handleRecordPress:', error);
-      Alert.alert('Error', `Failed to check permissions: ${error.message}`);
+      Alert.alert('Error', `Failed to check permissions: ${errorMessage(error)}`);
     }
   };
 
@@ -317,7 +319,7 @@ export default function AssignmentDetailScreen() {
       }, 250);
     } catch (err) {
       console.error('Failed to start recording', err);
-      Alert.alert('Error', `Failed to start recording: ${err.message || err.toString()}`);
+      Alert.alert('Error', `Failed to start recording: ${errorMessage(err) || String(err)}`);
       setRecordingState('idle');
       setIsStartingRecording(false);
       setCountdown(0);
@@ -344,7 +346,7 @@ export default function AssignmentDetailScreen() {
       }
     } catch (err) {
       console.error('Failed to pause recording', err);
-      Alert.alert('Error', `Failed to pause recording: ${err.message || err.toString()}`);
+      Alert.alert('Error', `Failed to pause recording: ${errorMessage(err) || String(err)}`);
     }
   };
 
@@ -383,7 +385,7 @@ export default function AssignmentDetailScreen() {
       }
     } catch (err) {
       console.error('Failed to resume recording', err);
-      Alert.alert('Error', `Failed to resume recording: ${err.message || err.toString()}`);
+      Alert.alert('Error', `Failed to resume recording: ${errorMessage(err) || String(err)}`);
     }
   };
 
@@ -419,7 +421,7 @@ export default function AssignmentDetailScreen() {
       }
     } catch (err) {
       console.error('Failed to finish recording', err);
-      Alert.alert('Error', `Failed to finish recording: ${err.message || err.toString()}`);
+      Alert.alert('Error', `Failed to finish recording: ${errorMessage(err) || String(err)}`);
       setRecordingState('idle');
     }
   };
@@ -507,7 +509,7 @@ export default function AssignmentDetailScreen() {
       console.error('Submit error:', error);
       Alert.alert(
         'Error',
-        error.response?.data?.message || error.message || 'Failed to submit speech task. Please try again.'
+        (isAxiosError(error) ? error.response?.data?.message : undefined) || errorMessage(error) || 'Failed to submit speech task. Please try again.'
       );
     } finally {
       setIsSubmitting(false);
@@ -526,7 +528,7 @@ export default function AssignmentDetailScreen() {
     }
   }, [finishModalVisible]);
 
-  const formatTimer = (seconds) => {
+  const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -544,7 +546,7 @@ export default function AssignmentDetailScreen() {
     return Array.from({ length: 25 }, () => Math.floor(Math.random() * 55) + 20);
   };
 
-  const getWaveformHeight = (index) => {
+  const getWaveformHeight = (index: number): DimensionValue => {
     if (waveformHeights.length === 0) return '60%';
     return `${waveformHeights[index]}%`;
   };
@@ -637,7 +639,7 @@ export default function AssignmentDetailScreen() {
   if (!task) {
     return (
       <View style={styles.container}>
-        <StatusBar style="dark" translucent backgroundColor="transparent" />
+        <StatusBar style="dark" />
         <View style={[styles.header, { paddingTop: STATUSBAR_HEIGHT }]}>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -662,7 +664,7 @@ export default function AssignmentDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" translucent backgroundColor="transparent" />
+      <StatusBar style="dark" />
       
       {/* Header */}
       <View 

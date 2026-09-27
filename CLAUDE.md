@@ -55,7 +55,7 @@ app/
 └── speech-step2.tsx
 ```
 
-`app/**/*.tsx` dosyaları **ince sarmalayıcılardır** — gerçek ekran implementasyonu `src/screens/*.js`'te yaşar ve route dosyası sadece onu import edip render eder:
+`app/**/*.tsx` dosyaları **ince sarmalayıcılardır** — gerçek ekran implementasyonu `src/screens/*.tsx`'te yaşar ve route dosyası sadece onu import edip render eder:
 
 ```tsx
 // app/(tabs)/index.tsx
@@ -63,7 +63,7 @@ import HomeScreen from '../../src/screens/HomeScreen';
 export default function Home() { return <HomeScreen />; }
 ```
 
-Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `app/` altında uygun konuma ince route dosyasını ekle. `app/` dosyaları TypeScript (`.tsx`, `@/*` path alias), `src/` dosyaları kademeli olarak JS'ten TS'e taşınıyor: `src/config/`, `src/services/`, `src/store/`, `src/utils/`, `src/types/`, `src/theme/`, `src/hooks/`, `src/constants/iconMap.tsx` ve `src/components/` altındaki tüm component'ler TypeScript (strict; JSX içerenler `.tsx`), geri kalanı henüz düz JavaScript (`.js`). Sıra: config+services → `src/store/` → `src/utils/` → temel katman → genel component'ler → `progress/` → `report/` → ekranlar. Backend yanıt tipleri `src/types/` altındadır: görevler (`RawSpeechTask`, `Assignment`, `CompletedAssignment`) `assignment.ts`, rapor ekranı verisi (`ReportData`, `ReportMistake`, `VoiceError` vb.) `report.ts`, My Progress verisi `analytics.ts`. Taşınmamış bir JS modülüne dokunurken dönüşüm yapmayın; dönüşüm ayrı commit'lerle yapılır. `tsconfig` `allowJs` (expo base) sayesinde TS dosyaları JS modüllerini import edebilir; doğrulama `npx tsc --noEmit`.
+Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `app/` altında uygun konuma ince route dosyasını ekle. Tüm kod TypeScript'tir (strict): `app/` route dosyaları `.tsx` (`@/*` path alias), `src/` altı JSX içerenler `.tsx`, diğerleri `.ts`. Yeni dosyaları JS olarak eklemeyin. Backend yanıt tipleri `src/types/` altındadır: kullanıcı ve ortak yanıt (`AuthUser`, `ApiResponse`) `api.ts`, görevler (`RawSpeechTask`, `Assignment`, `CompletedAssignment`, `CompletedExercise`) `assignment.ts`, rapor ekranı verisi (`ReportData`, `ReportMistake`, `VoiceError` vb.) `report.ts`, My Progress verisi `analytics.ts`. Doğrulama: `npx tsc --noEmit` + `npm run lint`.
 
 Gerçek navigasyon her zaman `app/_layout.tsx`'ten başlar. Expo Router migration'ından kalan eski React Navigation mimarisi (`App.js`, `src/AppContent.js`, `src/navigation/`) ve yalnızca onun kullandığı paketler SDK 55 yükseltmesi öncesinde silindi.
 
@@ -118,7 +118,7 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 
 ## Kod Kuralları (proje-özel)
 
-- **Component yazımı:** Functional + hooks, PascalCase dosya adı (`HomeScreen.js`), camelCase fonksiyon/değişken.
+- **Component yazımı:** Functional + hooks, PascalCase dosya adı (`HomeScreen.tsx`), camelCase fonksiyon/değişken.
 - **Yorumlar ve iletişim Türkçe** (mevcut kod tabanı Türkçe yorum kullanıyor).
 - Persist edilecek Redux state'leri her zaman `whitelist` ile açıkça belirtin (yukarıdaki tablo).
 - API çağrıları service layer'da (`src/services/`) toplanır, component'lerden direkt axios çağrısı yapılmaz.
@@ -128,4 +128,4 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 
 ## Notlar
 
-- [.claude/notes/ts-sonrasi-yapilacaklar.md](.claude/notes/ts-sonrasi-yapilacaklar.md) — TS dönüşümünde bulunup ertelenen işler: düz metin saklanan şifreler (güvenlik), etkisiz `dueDate` sıralaması, eksik `refresh` ikonu, ölü kod, tablet rotasyonu.
+- [.claude/notes/ts-sonrasi-yapilacaklar.md](.claude/notes/ts-sonrasi-yapilacaklar.md) — JS → TS dönüşümünde (branch `ts/sdk57`) bulunup ertelenen işler: düz metin saklanan şifreler (güvenlik), etkisiz `dueDate` sıralaması, Completed filtre Reset hatası, eksik `refresh` ikonu, ölü kod, tablet rotasyonu.
