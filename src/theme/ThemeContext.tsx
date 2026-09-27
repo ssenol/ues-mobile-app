@@ -1,6 +1,4 @@
-import React, { createContext, useContext } from 'react';
-
-const ThemeContext = createContext();
+import React, { createContext, ReactNode, useContext } from 'react';
 
 export const theme = {
   fonts: {
@@ -61,7 +59,13 @@ export const theme = {
   },
 };
 
-export const ThemeProvider = ({ children }) => {
+export type Theme = typeof theme;
+export type FontWeight = keyof Theme['fonts'];
+export type ThemeColor = keyof Theme['colors'];
+
+const ThemeContext = createContext<Theme>(theme);
+
+export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ThemeContext.Provider value={theme}>
       {children}
@@ -69,4 +73,4 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = (): Theme => useContext(ThemeContext);

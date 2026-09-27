@@ -1,7 +1,11 @@
 import React from 'react';
-import { icons } from '../constants/iconMap';
+import { IconName, IconProps, icons } from '../constants/iconMap';
 
-const ThemedIcon = ({ iconName, style, size = 24, width, height, tintColor, opacity = 1 }) => {
+export interface ThemedIconProps extends IconProps {
+  iconName: IconName;
+}
+
+const ThemedIcon = ({ iconName, style, size = 24, width, height, tintColor, opacity = 1 }: ThemedIconProps) => {
   const IconComponent = icons[iconName];
 
   if (!IconComponent) return null;

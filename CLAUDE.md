@@ -63,7 +63,7 @@ import HomeScreen from '../../src/screens/HomeScreen';
 export default function Home() { return <HomeScreen />; }
 ```
 
-Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `app/` altında uygun konuma ince route dosyasını ekle. `app/` dosyaları TypeScript (`.tsx`, `@/*` path alias), `src/` dosyaları kademeli olarak JS'ten TS'e taşınıyor: `src/config/`, `src/services/`, `src/store/`, `src/utils/` ve `src/types/` TypeScript (`.ts`, strict), geri kalanı henüz düz JavaScript (`.js`). Sıra: config+services → `src/store/` → `src/utils/` → ekranlar/component'ler. Backend görev şeması (`RawSpeechTask`) ve ekranlarda kullanılan `Assignment` tipi `src/types/assignment.ts`'tedir. Taşınmamış bir JS modülüne dokunurken dönüşüm yapmayın; dönüşüm ayrı commit'lerle yapılır. `tsconfig` `allowJs` (expo base) sayesinde TS dosyaları JS modüllerini import edebilir; doğrulama `npx tsc --noEmit`.
+Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `app/` altında uygun konuma ince route dosyasını ekle. `app/` dosyaları TypeScript (`.tsx`, `@/*` path alias), `src/` dosyaları kademeli olarak JS'ten TS'e taşınıyor: `src/config/`, `src/services/`, `src/store/`, `src/utils/`, `src/types/`, `src/theme/`, `src/hooks/`, `src/constants/iconMap.tsx` ve temel component'ler (`ThemedIcon`, `ThemedText`, `SvgIcon`) TypeScript (strict; JSX içerenler `.tsx`), geri kalanı henüz düz JavaScript (`.js`). Sıra: config+services → `src/store/` → `src/utils/` → temel katman → genel component'ler → `progress/` → `report/` → ekranlar. Backend görev şeması (`RawSpeechTask`) ve ekranlarda kullanılan `Assignment` tipi `src/types/assignment.ts`'tedir. Taşınmamış bir JS modülüne dokunurken dönüşüm yapmayın; dönüşüm ayrı commit'lerle yapılır. `tsconfig` `allowJs` (expo base) sayesinde TS dosyaları JS modüllerini import edebilir; doğrulama `npx tsc --noEmit`.
 
 Gerçek navigasyon her zaman `app/_layout.tsx`'ten başlar. Expo Router migration'ından kalan eski React Navigation mimarisi (`App.js`, `src/AppContent.js`, `src/navigation/`) ve yalnızca onun kullandığı paketler SDK 55 yükseltmesi öncesinde silindi.
 
@@ -102,13 +102,13 @@ Yeni bir endpoint eklerken `API_ENDPOINTS`'e ekleyin ve çağrıyı `src/service
 ### İkon sistemi: iki paralel sistem bir arada
 
 - **SVG ikonlar:** `SvgIcon` component + `src/constants/svgIcons.json` (path tanımları).
-- **Vector/PNG ikonlar:** `ThemedIcon` component + `@expo/vector-icons` + `src/constants/iconMap.js` (isim → ikon eşlemesi).
+- **Vector/PNG ikonlar:** `ThemedIcon` component + `@expo/vector-icons` + `src/constants/iconMap.tsx` (isim → ikon eşlemesi; geçerli isimler `IconName` tipinde).
 
-Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migration Roadmap): eski `Icon` component'i kaldırılıp her yerin `ThemedIcon` + `iconMap` üzerinden çalışması hedefleniyor. Yeni ikon eklerken önce `iconMap.js`'te karşılığı olup olmadığını kontrol edin.
+Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migration Roadmap): eski `Icon` component'i kaldırılıp her yerin `ThemedIcon` + `iconMap` üzerinden çalışması hedefleniyor. Yeni ikon eklerken önce `iconMap.tsx`'te karşılığı olup olmadığını kontrol edin.
 
 ### Tema
 
-`src/theme/ThemeContext.js` renkleri (`colors`), gölgeleri (`shadows`) ve font ailesini (Nunito ağırlıkları) tek bir `theme` objesinde tutar; `useTheme()` hook'u ile component'lerde okunur. Dark mode yok — `userInterfaceStyle: "light"` olarak sabitlenmiş (`app.config.js`).
+`src/theme/ThemeContext.tsx` renkleri (`colors`), gölgeleri (`shadows`) ve font ailesini (Nunito ağırlıkları) tek bir `theme` objesinde tutar; `useTheme()` hook'u ile component'lerde okunur. Dark mode yok — `userInterfaceStyle: "light"` olarak sabitlenmiş (`app.config.js`).
 
 ### Build konfigürasyonu
 
@@ -123,5 +123,5 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 - Persist edilecek Redux state'leri her zaman `whitelist` ile açıkça belirtin (yukarıdaki tablo).
 - API çağrıları service layer'da (`src/services/`) toplanır, component'lerden direkt axios çağrısı yapılmaz.
 - Ses işlemleri için `expo-audio` kullanılır (react-native-sound değil); recording/playback sonrası her zaman unload/cleanup yapılır.
-- **Ekran boyutu için `Dimensions.get('window')` kullanmayın**, `src/hooks/useResponsive.js`'teki `useResponsive()` hook'unu (`{ width, height, isTablet }`, eşik 744) component içinde kullanın. iPadOS 26+ pencereleri her zaman yeniden boyutlandırılabilir (`requireFullScreen` dikkate alınmıyor), modül seviyesinde okunan boyut güncellenmez. `isTablet`'e bağlı stiller modül seviyesindeyse `createStyles(isTablet)` + `useMemo` kalıbı kullanılır.
+- **Ekran boyutu için `Dimensions.get('window')` kullanmayın**, `src/hooks/useResponsive.ts`'teki `useResponsive()` hook'unu (`{ width, height, isTablet }`, eşik 744) component içinde kullanın. iPadOS 26+ pencereleri her zaman yeniden boyutlandırılabilir (`requireFullScreen` dikkate alınmıyor), modül seviyesinde okunan boyut güncellenmez. `isTablet`'e bağlı stiller modül seviyesindeyse `createStyles(isTablet)` + `useMemo` kalıbı kullanılır.
 - Yeni ekran eklerken önce `src/screens/`, sonra `app/` altında ince route wrapper — asla tersi.
