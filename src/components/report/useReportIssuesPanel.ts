@@ -1,17 +1,34 @@
 import {useCallback, useState} from 'react';
+import type {AnnotatedIssue, ReportMistake, VoiceError} from '../../types/report';
+
+export type IssueTab = 'Pronunciation' | 'Language Convention' | 'Logic';
+
+export type IssueModalState =
+  | { kind: 'error'; list: ReportMistake[]; index: number }
+  | { kind: 'pronunciation'; list: VoiceError[]; index: number };
+
+export interface IssueLists {
+  pronunciation?: VoiceError[];
+  languageConvention?: ReportMistake[];
+  logic?: ReportMistake[];
+}
+
+type OpenModalArgs =
+  | [list: ReportMistake[] | undefined, index: number, kind: 'error']
+  | [list: VoiceError[] | undefined, index: number, kind: 'pronunciation'];
 
 // Pronunciation/Language Convention/Logic bottom sheet'i ile metin üzerindeki
 // vurgulamalar (ReportAnnotatedText) arasında paylaşılan state: aktif sekme,
 // Language Convention filtresi ve açık olan detay modalı (prev/next ile gezinilir)
 export default function useReportIssuesPanel() {
-  const [activeIssueTab, setActiveIssueTab] = useState('Pronunciation');
+  const [activeIssueTab, setActiveIssueTab] = useState<IssueTab>('Pronunciation');
   const [lcFilter, setLcFilter] = useState('all');
   const [sheetExpanded, setSheetExpanded] = useState(true);
-  const [modalState, setModalState] = useState(null); // { list, index, kind: 'error' | 'pronunciation' }
+  const [modalState, setModalState] = useState<IssueModalState | null>(null);
 
-  const openModal = useCallback((list, index, kind) => {
+  const openModal = useCallback((...[list, index, kind]: OpenModalArgs) => {
     if (!list || list.length === 0) return;
-    setModalState({ list, index, kind });
+    setModalState({ list, index, kind } as IssueModalState);
   }, []);
 
   const closeModal = useCallback(() => setModalState(null), []);
@@ -26,7 +43,7 @@ export default function useReportIssuesPanel() {
 
   // Metinde vurgulanan bir kelimeye/cümleye tıklanınca doğru sekmeye geçip ilgili listeden modalı açar.
   // lists: { pronunciation: [...], languageConvention: [...], logic: [...] }
-  const handleIssuePress = useCallback((issue, lists) => {
+  const handleIssuePress = useCallback((issue: AnnotatedIssue, lists: IssueLists) => {
     if (issue.kind === 'pronunciation') {
       setActiveIssueTab('Pronunciation');
       const idx = (lists.pronunciation || []).findIndex((i) => i === issue || (i.word === issue.word && i.startTime === issue.startTime));
@@ -61,3 +78,5 @@ export default function useReportIssuesPanel() {
     handleIssuePress,
   };
 }
+
+export type ReportIssuesPanel = ReturnType<typeof useReportIssuesPanel>;

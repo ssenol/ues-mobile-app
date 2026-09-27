@@ -1,12 +1,18 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Animated } from 'react-native';
+import { Animated, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, ScrollView } from 'react-native';
+
+interface UseReportTabsOptions {
+  initialTab: string;
+  headerMarginTop?: number;
+  initialHeaderHeight?: number;
+}
 
 const TAB_BAR_STICKY_PADDING = 12;
 
 // Rapor ekranlarındaki mavi header + sticky tab bar davranışını yöneten paylaşılan hook.
 // Header/tab bar/blue background JSX'i ekranın kendisinde kalır; bu hook sadece
 // scroll takibini, sticky state'i ve tab değişince kaydırmayı sağlar.
-export default function useReportTabs({ initialTab, headerMarginTop = 16, initialHeaderHeight = 46 }) {
+export default function useReportTabs({ initialTab, headerMarginTop = 16, initialHeaderHeight = 46 }: UseReportTabsOptions) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [isTabBarSticky, setIsTabBarSticky] = useState(false);
   const [tabBarY, setTabBarY] = useState(0);
@@ -14,9 +20,10 @@ export default function useReportTabs({ initialTab, headerMarginTop = 16, initia
   const [headerHeight, setHeaderHeight] = useState(initialHeaderHeight);
   const [blueSectionActualHeight, setBlueSectionActualHeight] = useState(284);
 
-  const mainScrollRef = useRef(null);
-  const pillsScrollRef = useRef(null);
-  const pillLayoutsRef = useRef([]);
+  // Animated.ScrollView'a bağlanır; eski RN sürümlerinde getNode() ile asıl ScrollView'a ulaşılıyordu
+  const mainScrollRef = useRef<(ScrollView & { getNode?: () => ScrollView }) | null>(null);
+  const pillsScrollRef = useRef<ScrollView>(null);
+  const pillLayoutsRef = useRef<{ x: number; width: number }[]>([]);
   const pillsContainerWidthRef = useRef(0);
   const lastPillScrollXRef = useRef(0);
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -27,7 +34,7 @@ export default function useReportTabs({ initialTab, headerMarginTop = 16, initia
     return blueSectionActualHeight - (headerHeight + headerMarginTop);
   }, [blueSectionActualHeight, headerHeight, headerMarginTop]);
 
-  const handleScrollListener = useCallback((event) => {
+  const handleScrollListener = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetY = event.nativeEvent.contentOffset.y;
 
     const stickyThreshold = tabBarY > 0
@@ -99,7 +106,7 @@ export default function useReportTabs({ initialTab, headerMarginTop = 16, initia
     scrollNode?.scrollTo?.({ y: targetY, animated: true });
   }, [tabBarY]);
 
-  const handleTabPress = useCallback((key, index) => {
+  const handleTabPress = useCallback((key: string, index: number) => {
     setActiveTab(key);
 
     const layout = pillLayoutsRef.current[index];
@@ -136,25 +143,25 @@ export default function useReportTabs({ initialTab, headerMarginTop = 16, initia
     setActiveTab(initialTab);
   }, [headerTranslateYValue, initialTab]);
 
-  const onBlueBackgroundLayout = useCallback((event) => {
+  const onBlueBackgroundLayout = useCallback((event: LayoutChangeEvent) => {
     setBlueSectionActualHeight(event.nativeEvent.layout.height);
   }, []);
 
-  const onHeaderLayout = useCallback((event) => {
+  const onHeaderLayout = useCallback((event: LayoutChangeEvent) => {
     setHeaderHeight(event.nativeEvent.layout.height);
   }, []);
 
-  const onTabBarLayout = useCallback((event) => {
+  const onTabBarLayout = useCallback((event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
     setTabBarY(y);
     setTabBarHeight(height);
   }, []);
 
-  const onPillsRowLayout = useCallback((event) => {
+  const onPillsRowLayout = useCallback((event: LayoutChangeEvent) => {
     pillsContainerWidthRef.current = event.nativeEvent.layout.width;
   }, []);
 
-  const onPillLayout = useCallback((index, event) => {
+  const onPillLayout = useCallback((index: number, event: LayoutChangeEvent) => {
     const { x, width } = event.nativeEvent.layout;
     pillLayoutsRef.current[index] = { x, width };
   }, []);

@@ -218,8 +218,7 @@ export const buildAssignedSpeechTaskParams = (
   const userId = user?.id ?? user?._id ?? user?.userId ?? null;
   const institutionId = user?.institution_id ?? user?.institutionId ?? user?.schoolId ?? null;
   const institutionSubSchoolId = user?.sub_school_id ?? user?.institutionSubSchoolId ?? user?.campusId ?? null;
-  const classInfo = user?.classInfo as unknown[] | undefined;
-  const className = classInfo?.[0] ?? user?.class_name ?? user?.className ?? '';
+  const className = user?.classInfo?.[0] ?? user?.class_name ?? user?.className ?? '';
 
   const missingFields: string[] = [];
 

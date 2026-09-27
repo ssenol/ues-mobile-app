@@ -1,17 +1,23 @@
 import React, {useMemo} from 'react';
-import {Text} from 'react-native';
+import {StyleProp, Text, TextStyle} from 'react-native';
 import {ThemedText} from '../ThemedText';
 import {catForType, PRONUNCIATION_DEF} from './reportIssueCategories';
+import type {AnnotatedIssue} from '../../types/report';
 
-function escapeRegExp(str) {
+interface Span {
+  text: string;
+  issue: AnnotatedIssue | null;
+}
+
+function escapeRegExp(str: string) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // mistakes (grammar/logic) ve voiceErrors (pronunciation) dizilerine göre metin içinde
 // vurgulanacak aralıkları bulur (boostifywrite/src/screens/ReportWriting.tsx'teki
 // buildSpans ile aynı mantık; pronunciation eşleşmesi kelime bazlı eklendi)
-function buildSpans(text, issues) {
-  const marks = [];
+function buildSpans(text: string, issues: AnnotatedIssue[]): Span[] {
+  const marks: { start: number; end: number; issue: AnnotatedIssue }[] = [];
 
   for (const issue of issues) {
     if (issue.kind === 'pronunciation') {
@@ -50,7 +56,7 @@ function buildSpans(text, issues) {
 
   marks.sort((a, b) => a.start - b.start);
 
-  const spans = [];
+  const spans: Span[] = [];
   let pos = 0;
   let lastEnd = 0;
   for (const m of marks) {
@@ -66,7 +72,14 @@ function buildSpans(text, issues) {
 
 // mistakes/voiceErrors metin içinde renkli vurgulanır, tıklanınca detay modalı açılır.
 // `issues` her biri { kind: 'error' | 'pronunciation', ... } şeklinde normalize edilmiş olmalı.
-export default function ReportAnnotatedText({ text, issues, onIssuePress, style }) {
+interface ReportAnnotatedTextProps {
+  text: string | null | undefined;
+  issues: AnnotatedIssue[] | null | undefined;
+  onIssuePress: (issue: AnnotatedIssue) => void;
+  style?: StyleProp<TextStyle>;
+}
+
+export default function ReportAnnotatedText({ text, issues, onIssuePress, style }: ReportAnnotatedTextProps) {
   const spans = useMemo(() => buildSpans(text || '', issues || []), [text, issues]);
   let logicCount = 0;
 
@@ -77,9 +90,9 @@ export default function ReportAnnotatedText({ text, issues, onIssuePress, style 
           return <Text key={i}>{span.text}</Text>;
         }
 
-        const isPronunciation = span.issue.kind === 'pronunciation';
-        const cat = isPronunciation ? PRONUNCIATION_DEF : catForType(span.issue.type);
-        const isLogic = !isPronunciation && span.issue.type === 'logic-error';
+        const issue = span.issue;
+        const cat = issue.kind === 'pronunciation' ? PRONUNCIATION_DEF : catForType(issue.type);
+        const isLogic = issue.kind === 'error' && issue.type === 'logic-error';
         if (isLogic) logicCount += 1;
         const num = logicCount;
 
@@ -87,7 +100,7 @@ export default function ReportAnnotatedText({ text, issues, onIssuePress, style 
           <Text
             key={i}
             suppressHighlighting
-            onPress={() => onIssuePress(span.issue)}
+            onPress={() => onIssuePress(issue)}
             style={{
               backgroundColor: cat.bg,
               color: isLogic ? '#3A3A3A' : cat.color,

@@ -5,8 +5,13 @@ import { ThemedText } from '../ThemedText';
 import { useTheme } from '../../theme/ThemeContext';
 import reportStyles from './reportStyles';
 
+interface RowProps {
+  text: string;
+  last?: boolean;
+}
+
 // ── Achievements / Issues satırları (kriter sekmelerinde statik liste) ──
-export function AchievementRow({ text, last }) {
+export function AchievementRow({ text, last }: RowProps) {
   const { colors } = useTheme();
   return (
     <View style={[reportStyles.row, !last && reportStyles.rowDivider]}>
@@ -18,7 +23,7 @@ export function AchievementRow({ text, last }) {
   );
 }
 
-export function IssueRow({ text, last }) {
+export function IssueRow({ text, last }: RowProps) {
   const { colors } = useTheme();
   return (
     <View style={[reportStyles.row, !last && reportStyles.rowDivider]}>
@@ -32,7 +37,7 @@ export function IssueRow({ text, last }) {
 
 export const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-export function NextStepRow({ text, index, last }) {
+export function NextStepRow({ text, index, last }: RowProps & { index: number }) {
   const { colors } = useTheme();
   const letter = LETTERS[index] || String(index + 1);
   return (

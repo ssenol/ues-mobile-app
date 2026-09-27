@@ -6,9 +6,10 @@ import { ThemedText } from '../ThemedText';
 import { useTheme } from '../../theme/ThemeContext';
 import reportStyles from './reportStyles';
 import { LETTERS, NextStepRow } from './ReportRows';
+import type { FeedbackPoint, ReportFeedback } from '../../types/report';
 
 // ── Feedback sekmesi satırları (aç/kapa) ──
-function TopBreadRow({ point, last }) {
+function TopBreadRow({ point, last }: { point: FeedbackPoint; last: boolean }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
 
@@ -37,7 +38,7 @@ function TopBreadRow({ point, last }) {
   );
 }
 
-function FillingRow({ point, index, last }) {
+function FillingRow({ point, index, last }: { point: FeedbackPoint; index: number; last: boolean }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
   const letter = LETTERS[index] || String(index + 1);
@@ -97,7 +98,12 @@ function FillingRow({ point, index, last }) {
 }
 
 // ── Feedback sekmesi (sandwich: topBread / filling / bottomBread) ──
-export default function ReportFeedbackTab({ feedback, studentName }) {
+interface ReportFeedbackTabProps {
+  feedback: ReportFeedback | null;
+  studentName?: string;
+}
+
+export default function ReportFeedbackTab({ feedback, studentName }: ReportFeedbackTabProps) {
   const { colors, shadows } = useTheme();
 
   if (!feedback) {
@@ -111,6 +117,9 @@ export default function ReportFeedbackTab({ feedback, studentName }) {
   }
 
   const { topBread, filling, bottomBread } = feedback;
+  const topPoints = topBread?.points ?? [];
+  const fillingPoints = filling?.points ?? [];
+  const nextSteps = bottomBread?.nextSteps ?? [];
 
   return (
     <View>
@@ -123,7 +132,7 @@ export default function ReportFeedbackTab({ feedback, studentName }) {
         </ThemedText>
       </View>
 
-      {topBread?.points?.length > 0 && (
+      {topPoints.length > 0 && (
         <View style={{ marginTop: 20 }}>
           <View style={[reportStyles.sectionHeader, { backgroundColor: colors.goalBackgroundGreen }]}>
             <View style={[reportStyles.sectionNum, { backgroundColor: colors.goalGreen }]}>
@@ -135,15 +144,15 @@ export default function ReportFeedbackTab({ feedback, studentName }) {
           </View>
           <View style={[reportStyles.listCardShadowWrapBottom, shadows.light]}>
             <View style={[reportStyles.listCard, reportStyles.sectionCard]}>
-              {topBread.points.map((p, i) => (
-                <TopBreadRow key={i} point={p} last={i === topBread.points.length - 1} />
+              {topPoints.map((p, i) => (
+                <TopBreadRow key={i} point={p} last={i === topPoints.length - 1} />
               ))}
             </View>
           </View>
         </View>
       )}
 
-      {filling?.points?.length > 0 && (
+      {fillingPoints.length > 0 && (
         <View style={{ marginTop: 16 }}>
           <View style={[reportStyles.sectionHeader, { backgroundColor: colors.goalBackgroundOrange }]}>
             <View style={[reportStyles.sectionNum, { backgroundColor: colors.goalOrange }]}>
@@ -155,15 +164,15 @@ export default function ReportFeedbackTab({ feedback, studentName }) {
           </View>
           <View style={[reportStyles.listCardShadowWrapBottom, shadows.light]}>
             <View style={[reportStyles.listCard, reportStyles.sectionCard]}>
-              {filling.points.map((p, i) => (
-                <FillingRow key={i} point={p} index={i} last={i === filling.points.length - 1} />
+              {fillingPoints.map((p, i) => (
+                <FillingRow key={i} point={p} index={i} last={i === fillingPoints.length - 1} />
               ))}
             </View>
           </View>
         </View>
       )}
 
-      {(bottomBread?.summary || bottomBread?.nextSteps?.length > 0) && (
+      {(bottomBread?.summary || nextSteps.length > 0) && (
         <View style={{ marginTop: 16 }}>
           <View style={[reportStyles.sectionHeader, { backgroundColor: '#E7E9FF' }]}>
             <View style={[reportStyles.sectionNum, { backgroundColor: colors.primary }]}>
@@ -175,13 +184,13 @@ export default function ReportFeedbackTab({ feedback, studentName }) {
           </View>
           <View style={[reportStyles.listCardShadowWrapBottom, shadows.light]}>
             <View style={[reportStyles.listCard, reportStyles.sectionCard]}>
-              {!!bottomBread.summary && (
-                <View style={[reportStyles.row, bottomBread.nextSteps?.length > 0 && reportStyles.rowDivider]}>
-                  <ThemedText style={reportStyles.rowText}>{bottomBread.summary}</ThemedText>
+              {!!bottomBread?.summary && (
+                <View style={[reportStyles.row, nextSteps.length > 0 && reportStyles.rowDivider]}>
+                  <ThemedText style={reportStyles.rowText}>{bottomBread?.summary}</ThemedText>
                 </View>
               )}
-              {(bottomBread.nextSteps || []).map((step, i) => (
-                <NextStepRow key={i} text={step} index={i} last={i === bottomBread.nextSteps.length - 1} />
+              {nextSteps.map((step, i) => (
+                <NextStepRow key={i} text={step} index={i} last={i === nextSteps.length - 1} />
               ))}
             </View>
           </View>

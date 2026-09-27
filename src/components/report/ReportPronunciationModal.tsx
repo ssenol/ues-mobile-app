@@ -8,34 +8,45 @@ import ThemedIcon from '../ThemedIcon';
 import {ThemedText} from '../ThemedText';
 import {useTheme} from '../../theme/ThemeContext';
 import {getScoreColor} from './reportUtils';
+import type {VoiceError} from '../../types/report';
+
+interface ReportPronunciationModalProps {
+  issue: VoiceError | undefined;
+  index: number;
+  total: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onClose: () => void;
+  audioUri: string | null;
+}
 
 
 // Kelime/mesaj değişiminde eski native player zaten serbest bırakılmış olabilir
 // (expo-audio kaynak değişince kendi iç effect'iyle onu yok ediyor) — bu yarış
 // durumunda play/pause/seekTo çağrıları NativeSharedObjectNotFoundException fırlatabilir
-function safeCall(fn) {
+function safeCall(fn: () => void) {
   try {
     fn();
-  } catch (_error) {
+  } catch {
     // yok sayılır — player zaten serbest bırakılmış
   }
 }
 
 // Telaffuz hatası detayını ortada gösteren modal (prev/next ile gezinilebilir)
 // audioUri: kullanıcının tam ses kaydı (varsa) — issue.startTime/endTime aralığı bundan çalınır
-export default function ReportPronunciationModal({ issue, index, total, onPrev, onNext, onClose, audioUri }) {
+export default function ReportPronunciationModal({ issue, index, total, onPrev, onNext, onClose, audioUri }: ReportPronunciationModalProps) {
   const { colors } = useTheme();
   const { height: SCREEN_H } = useResponsive();
 
   const recordingPlayer = useAudioPlayer(audioUri || '');
-  const segmentEndRef = useRef(null);
+  const segmentEndRef = useRef<number | null>(null);
   const [isPlayingRecording, setIsPlayingRecording] = useState(false);
 
-  const [ttsUri, setTtsUri] = useState(null);
+  const [ttsUri, setTtsUri] = useState<string | null>(null);
   const [ttsLoading, setTtsLoading] = useState(false);
   const [isPlayingTts, setIsPlayingTts] = useState(false);
   const ttsPlayer = useAudioPlayer(ttsUri || '');
-  const ttsWordRef = useRef(null);
+  const ttsWordRef = useRef<string | null>(null);
 
   useEffect(() => {
     const subscription = recordingPlayer.addListener('playbackStatusUpdate', (status) => {
@@ -109,12 +120,12 @@ export default function ReportPronunciationModal({ issue, index, total, onPrev, 
   const hasRecordingSegment = !!audioUri && issue.startTime != null && issue.endTime != null;
 
   const playRecordingSegment = async () => {
-    segmentEndRef.current = issue.endTime;
+    segmentEndRef.current = issue.endTime ?? null;
     setIsPlayingRecording(true);
     try {
-      await recordingPlayer.seekTo(issue.startTime);
+      await recordingPlayer.seekTo(issue.startTime ?? 0);
       safeCall(() => recordingPlayer.play());
-    } catch (_error) {
+    } catch {
       setIsPlayingRecording(false);
     }
   };

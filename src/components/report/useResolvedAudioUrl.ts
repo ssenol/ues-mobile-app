@@ -2,8 +2,8 @@ import {useEffect, useState} from 'react';
 import {generateFileUrl} from '../../services/speak';
 
 // Ses dosyası private (gs://) ise generate-file-url ile imzalı URL alır, değilse doğrudan kullanır
-export default function useResolvedAudioUrl(rawAudioUrl) {
-  const [resolvedAudioUrl, setResolvedAudioUrl] = useState(null);
+export default function useResolvedAudioUrl(rawAudioUrl: string | null | undefined) {
+  const [resolvedAudioUrl, setResolvedAudioUrl] = useState<string | null>(null);
   const [audioResolving, setAudioResolving] = useState(false);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function useResolvedAudioUrl(rawAudioUrl) {
     generateFileUrl(rawAudioUrl)
       .then((response) => {
         if (!cancelled && response?.success && response?.data) {
-          setResolvedAudioUrl(response.data);
+          setResolvedAudioUrl(response.data as string);
         }
       })
       .catch((error) => {

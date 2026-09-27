@@ -17,6 +17,8 @@ export interface AuthUser {
   _id?: string;
   userId?: string;
   username?: string;
+  name?: string;
   avatarUrl?: string;
+  classInfo?: string[];
   [key: string]: unknown;
 }

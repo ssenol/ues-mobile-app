@@ -7,10 +7,20 @@ import {ThemedText} from '../ThemedText';
 import {useTheme} from '../../theme/ThemeContext';
 import {catForType, formatSubType} from './reportIssueCategories';
 import {getExampleSegments} from './reportUtils';
+import type {ReportMistake} from '../../types/report';
+
+interface ReportErrorModalProps {
+  issue: ReportMistake | undefined;
+  index: number;
+  total: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onClose: () => void;
+}
 
 
 // Grammar/Word Choice/Logic gibi metin hatalarının detayını ortada gösteren modal (prev/next ile gezinilebilir)
-export default function ReportErrorModal({ issue, index, total, onPrev, onNext, onClose }) {
+export default function ReportErrorModal({ issue, index, total, onPrev, onNext, onClose }: ReportErrorModalProps) {
   const { fonts, colors } = useTheme();
   const { height: SCREEN_H } = useResponsive();
 

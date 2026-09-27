@@ -6,13 +6,22 @@ import {ThemedText} from '../ThemedText';
 import {useTheme} from '../../theme/ThemeContext';
 import {CATEGORY_DEFS, LOGIC_DEF, formatSubType} from './reportIssueCategories';
 import {getScoreColor} from './reportUtils';
+import type {IssueTab, ReportIssuesPanel} from './useReportIssuesPanel';
+import type {ReportMistake, VoiceError} from '../../types/report';
 
-const TABS = ['Pronunciation', 'Language Convention', 'Logic'];
+const TABS: IssueTab[] = ['Pronunciation', 'Language Convention', 'Logic'];
 
 // "Your Dialogue"/"Your Recording" sekmesinde ekranın altına sabitlenen, sabit yükseklikli
 // Pronunciation / Language Convention / Logic panosu (boostifywrite/src/screens/ReportWriting.tsx
 // içindeki WritingBottomSheet ile aynı desen)
-export default function ReportIssuesBottomSheet({ mistakes, voiceErrors, responseText, issuesPanel }) {
+interface ReportIssuesBottomSheetProps {
+  mistakes: ReportMistake[];
+  voiceErrors: VoiceError[];
+  responseText: string;
+  issuesPanel: ReportIssuesPanel;
+}
+
+export default function ReportIssuesBottomSheet({ mistakes, voiceErrors, responseText, issuesPanel }: ReportIssuesBottomSheetProps) {
   const insets = useSafeAreaInsets();
   const { colors, shadows } = useTheme();
   const {
@@ -40,11 +49,11 @@ export default function ReportIssuesBottomSheet({ mistakes, voiceErrors, respons
     });
   }, [logicIssuesRaw, responseText]);
 
-  const counts = {};
-  for (const issue of lcIssues) counts[issue.type] = (counts[issue.type] || 0) + 1;
+  const counts: Record<string, number> = {};
+  for (const issue of lcIssues) counts[issue.type ?? ''] = (counts[issue.type ?? ''] || 0) + 1;
   const activeCats = CATEGORY_DEFS.filter((c) => c.id !== 'all' && (counts[c.key] || 0) > 0);
 
-  const badgeFor = (tab) => {
+  const badgeFor = (tab: IssueTab) => {
     if (tab === 'Pronunciation') return pronunciationIssues.length;
     if (tab === 'Language Convention') return lcIssues.length;
     return logicIssues.length;

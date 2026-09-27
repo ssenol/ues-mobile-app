@@ -1,9 +1,23 @@
 import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { LayoutChangeEvent, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '../ThemedText';
 
 // Rapor ekranlarında kullanılan yatay kaydırmalı pill tab bar (normal ve sticky render için ortak)
-export default function ReportTabBar({ tabs, activeTab, onTabPress, pillsScrollRef, onPillsRowLayout, onPillLayout }) {
+export interface ReportTab {
+  key: string;
+  label: string;
+}
+
+interface ReportTabBarProps {
+  tabs: ReportTab[];
+  activeTab: string;
+  onTabPress: (key: string, index: number) => void;
+  pillsScrollRef: React.RefObject<ScrollView | null>;
+  onPillsRowLayout: (event: LayoutChangeEvent) => void;
+  onPillLayout: (index: number, event: LayoutChangeEvent) => void;
+}
+
+export default function ReportTabBar({ tabs, activeTab, onTabPress, pillsScrollRef, onPillsRowLayout, onPillLayout }: ReportTabBarProps) {
   return (
     <ScrollView
       ref={pillsScrollRef}

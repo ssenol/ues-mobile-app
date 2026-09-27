@@ -1,5 +1,16 @@
+import type { AnnotatedIssue, ReportMistake, VoiceError } from '../../types/report';
+
+export interface IssueCategory {
+  id: string;
+  key: string;
+  label: string;
+  bg: string;
+  color: string;
+  border: string;
+}
+
 // Dil kuralı hata kategorileri — renk kodları boostifywrite/src/screens/ReportWriting.tsx'ten alındı
-export const CATEGORY_DEFS = [
+export const CATEGORY_DEFS: IssueCategory[] = [
   { id: 'all', key: 'all', label: 'All', bg: '#E7E9FF', color: '#929DFF', border: '#ABB3FF' },
   { id: 'grammar', key: 'grammar-error', label: 'Grammar', bg: '#d5d5d5', color: '#4A4A4A', border: '#808080' },
   { id: 'spelling', key: 'spelling-error', label: 'Spelling', bg: '#FFF8C4', color: '#BAAD23', border: '#DACD38' },
@@ -12,16 +23,16 @@ export const CATEGORY_DEFS = [
   { id: 'mixing', key: 'language-mixing-error', label: 'Language Mixing', bg: '#E7D9FF', color: '#A785E1', border: '#C3ABEC' },
 ];
 
-export const LOGIC_DEF = { id: 'logic', key: 'logic-error', label: 'Logic', bg: '#FFE3E3', color: '#C04A4A', border: '#F2A8A8' };
+export const LOGIC_DEF: IssueCategory = { id: 'logic', key: 'logic-error', label: 'Logic', bg: '#FFE3E3', color: '#C04A4A', border: '#F2A8A8' };
 
-export const PRONUNCIATION_DEF = { id: 'pronunciation', key: 'pronunciation-error', label: 'Pronunciation', bg: '#E7E9FF', color: '#3E4EF0', border: '#ABB3FF' };
+export const PRONUNCIATION_DEF: IssueCategory = { id: 'pronunciation', key: 'pronunciation-error', label: 'Pronunciation', bg: '#E7E9FF', color: '#3E4EF0', border: '#ABB3FF' };
 
-export function catForType(type) {
+export function catForType(type: string | null | undefined): IssueCategory {
   if (type === 'logic-error') return LOGIC_DEF;
   return CATEGORY_DEFS.find((c) => c.key === type) || CATEGORY_DEFS[0];
 }
 
-export function formatSubType(s) {
+export function formatSubType(s: string | null | undefined): string {
   if (!s) return '';
   return s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -30,13 +41,21 @@ export function formatSubType(s) {
 // Language Convention'daki kategori filtresine) göre belirler — aynı anda sadece
 // bir kategori vurgulanır, boostifywrite/src/screens/ReportWriting.tsx'teki
 // highlightIssues mantığıyla aynı
-export function getHighlightIssues(activeIssueTab, lcFilter, { pronunciationIssues = [], lcIssues = [], logicIssues = [] } = {}) {
+export function getHighlightIssues(
+  activeIssueTab: string,
+  lcFilter: string,
+  {
+    pronunciationIssues = [],
+    lcIssues = [],
+    logicIssues = [],
+  }: { pronunciationIssues?: VoiceError[]; lcIssues?: ReportMistake[]; logicIssues?: ReportMistake[] } = {}
+): AnnotatedIssue[] {
   if (activeIssueTab === 'Pronunciation') {
-    return pronunciationIssues.map((i) => ({ ...i, kind: 'pronunciation' }));
+    return pronunciationIssues.map((i) => ({ ...i, kind: 'pronunciation' as const }));
   }
   if (activeIssueTab === 'Logic') {
-    return logicIssues.map((i) => ({ ...i, kind: 'error' }));
+    return logicIssues.map((i) => ({ ...i, kind: 'error' as const }));
   }
   const filtered = lcFilter === 'all' ? lcIssues : lcIssues.filter((i) => i.type === lcFilter);
-  return filtered.map((i) => ({ ...i, kind: 'error' }));
+  return filtered.map((i) => ({ ...i, kind: 'error' as const }));
 }

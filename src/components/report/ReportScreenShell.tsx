@@ -11,7 +11,7 @@ import {
   View
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useSelector} from 'react-redux';
+import {useAppSelector} from '../../store/hooks';
 import EmptyStateCard from '../EmptyStateCard';
 import ThemedIcon from '../ThemedIcon';
 import {ThemedText} from '../ThemedText';
@@ -25,10 +25,53 @@ import ReportIssuesBottomSheet from './ReportIssuesBottomSheet';
 import ReportOverallTab from './ReportOverallTab';
 import ReportPronunciationModal from './ReportPronunciationModal';
 import ReportTabBar from './ReportTabBar';
-import useReportIssuesPanel from './useReportIssuesPanel';
+import useReportIssuesPanel, {ReportIssuesPanel} from './useReportIssuesPanel';
 import useReportTabs from './useReportTabs';
 import useResolvedAudioUrl from './useResolvedAudioUrl';
 import {getScoreBackgroundColor, getScoreColor, getScoreIcon, stripHtml} from './reportUtils';
+import type {
+  CompletenessInfo,
+  ReportCriterion,
+  ReportData,
+  ReportFeedback,
+  ReportMistake,
+  ReportResult,
+  ScoreBreakdown,
+  VoiceError,
+  VoiceResult,
+} from '../../types/report';
+
+// Ekranların reportData'dan ilgili parçayı çıkaran adapter fonksiyonları
+type ReportAdapter<T> = (firstResult: ReportResult | null, reportData: ReportData) => T;
+
+export interface ReportTabRenderArgs {
+  firstResult: ReportResult | null;
+  reportData: ReportData;
+  issuesPanel: ReportIssuesPanel;
+  mistakes: ReportMistake[];
+  voiceErrors: VoiceError[];
+  resolvedAudioUrl: string | null;
+  audioResolving: boolean;
+}
+
+interface ReportScreenShellProps {
+  taskId: string | undefined;
+  headerTitleFallback: string;
+  firstTabKey: string;
+  firstTabLabel: string;
+  renderFirstTab: (args: ReportTabRenderArgs) => React.ReactNode;
+  getCriteria: ReportAdapter<ReportCriterion[] | null | undefined>;
+  getFeedback: ReportAdapter<ReportFeedback | null | undefined>;
+  getMistakes: ReportAdapter<ReportMistake[] | null | undefined>;
+  getScoreBreakdown?: ReportAdapter<ScoreBreakdown | null | undefined>;
+  getCompletenessInfo?: (scoreBreakdown: ScoreBreakdown, reportData: ReportData) => CompletenessInfo | null | undefined;
+  getVoiceErrors?: ReportAdapter<VoiceError[] | null | undefined>;
+  getResponseTextForIssues?: ReportAdapter<string | null | undefined>;
+  getVoiceResult?: ReportAdapter<VoiceResult | null | undefined>;
+  getDurationSeconds?: ReportAdapter<number | null | undefined>;
+  getAudioUrl?: ReportAdapter<string | null | undefined>;
+  renderStatisticExtra?: (args: { firstResult: ReportResult | null; reportData: ReportData }) => React.ReactNode;
+}
 
 // Read Aloud, Speech on Topic ve Speech on Scenario raporlarının ortak iskeleti.
 // Header, mavi zemin, kullanıcı/istatistik kartı, sticky tab bar ve Feedback/Criteria
@@ -51,17 +94,17 @@ export default function ReportScreenShell({
   getDurationSeconds,
   getAudioUrl,
   renderStatisticExtra,
-}) {
+}: ReportScreenShellProps) {
   const router = useRouter();
   const { colors, shadows } = useTheme();
   const insets = useSafeAreaInsets();
-  const user = useSelector((state) => selectCurrentUser(state));
+  const user = useAppSelector(selectCurrentUser);
 
   const STATUSBAR_HEIGHT = insets.top;
   const HEADER_MARGIN_TOP = 16;
 
   const [loading, setLoading] = useState(true);
-  const [reportData, setReportData] = useState(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
 
   const {
     activeTab,
@@ -87,8 +130,8 @@ export default function ReportScreenShell({
 
   const issuesPanel = useReportIssuesPanel();
 
-  const firstResult = reportData?.result?.length > 0 ? reportData.result[0] : null;
-  const rawAudioUrl = typeof getAudioUrl === 'function' ? getAudioUrl(firstResult, reportData) : null;
+  const firstResult = reportData?.result?.[0] ?? null;
+  const rawAudioUrl = typeof getAudioUrl === 'function' && reportData ? getAudioUrl(firstResult, reportData) : null;
   const { resolvedAudioUrl, audioResolving } = useResolvedAudioUrl(rawAudioUrl);
 
   const fetchReportData = useCallback(async () => {
@@ -103,7 +146,7 @@ export default function ReportScreenShell({
       const response = await getSolvedExerciseDetail(taskId);
 
       if (response?.success || response?.status_code === 200) {
-        setReportData(response.data);
+        setReportData(response.data as ReportData);
       } else {
         Alert.alert('Error', 'Failed to load report data');
         router.back();
@@ -144,7 +187,7 @@ export default function ReportScreenShell({
     return () => clearTimeout(pollTimer);
   }, [reportData, fetchReportData]);
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -155,7 +198,7 @@ export default function ReportScreenShell({
     return `${day} ${month} ${year}`;
   };
 
-  const formatTime = (dateString) => {
+  const formatTime = (dateString: string | undefined) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     const hours = String(date.getUTCHours()).padStart(2, '0');
@@ -166,7 +209,7 @@ export default function ReportScreenShell({
   if (loading || !reportData) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar style="light" translucent backgroundColor="transparent" />
+        <StatusBar style="light" />
         <ActivityIndicator size="large" color="#3E4EF0" />
         <ThemedText style={styles.loadingText}>Loading report...</ThemedText>
         <TouchableOpacity style={styles.loadingBackButton} onPress={() => router.back()} activeOpacity={0.7}>
@@ -228,7 +271,7 @@ export default function ReportScreenShell({
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <StatusBar style="light" />
 
       {/* Mavi arka plan - scroll'a göre yukarı kayar */}
       <Animated.View
@@ -237,7 +280,6 @@ export default function ReportScreenShell({
         onLayout={onBlueBackgroundLayout}
       >
         <Image
-          pointerEvents="none"
           source={require('../../../assets/images/screenHeader.png')}
           style={styles.headerBg}
           resizeMode="cover"

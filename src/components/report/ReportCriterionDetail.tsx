@@ -6,10 +6,19 @@ import { useTheme } from '../../theme/ThemeContext';
 import reportStyles from './reportStyles';
 import { AchievementRow, IssueRow } from './ReportRows';
 import { getScoreColor, isUnmeasuredCriterion } from './reportUtils';
+import type { ReportCriterion, ReportMistake, VoiceError, VoiceResult } from '../../types/report';
+
+interface WorkOnItem {
+  red?: string;
+  green?: string | null;
+  text?: string;
+}
+
+type StatusKey = 'green' | 'orange' | 'red';
 
 // Kriterin türüne göre "WHAT TO WORK ON" listesini oluşturur:
 // pronunciation -> voiceErrors, task -> logic-error mistakes, language -> diğer mistakes
-function getWorkOnItems(criterion, mistakes, voiceErrors) {
+function getWorkOnItems(criterion: ReportCriterion, mistakes: ReportMistake[], voiceErrors: VoiceError[]): WorkOnItem[] {
   if (criterion.key === 'pronunciation') {
     return (voiceErrors || []).map((v) => ({ red: v.word, green: v.word, text: v.reason }));
   }
@@ -35,14 +44,14 @@ function getWorkOnItems(criterion, mistakes, voiceErrors) {
 }
 
 // Metnin kelime sayısı ve ses süresine göre dakikadaki kelime sayısını hesaplar
-function getReadingRate(text, durationSeconds) {
+function getReadingRate(text: string | null | undefined, durationSeconds: number | null | undefined) {
   if (!text || !durationSeconds) return null;
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
   if (wordCount === 0) return null;
 
   const wpm = Math.round(wordCount / (durationSeconds / 60));
   let status = 'IN RANGE';
-  let statusKey = 'green';
+  let statusKey: StatusKey = 'green';
   if (wpm < 100) { status = 'TOO SLOW'; statusKey = 'red'; }
   else if (wpm < 120) { status = 'A LITTLE SLOW'; statusKey = 'orange'; }
   else if (wpm <= 160) { status = 'IN RANGE'; statusKey = 'green'; }
@@ -52,7 +61,7 @@ function getReadingRate(text, durationSeconds) {
   return { wpm, status, statusKey };
 }
 
-function MetricCard({ label, value, color }) {
+function MetricCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <View style={styles.metricCard}>
       <View style={styles.metricHeader}>
@@ -67,11 +76,22 @@ function MetricCard({ label, value, color }) {
 }
 
 // Kriter detay sekmesi (Pronunciation & Intonation, Language, Task & Interaction, vb.)
-export default function ReportCriterionDetail({ criterion, mistakes, voiceErrors, voiceResult, responseText, durationSeconds }) {
+interface ReportCriterionDetailProps {
+  criterion: ReportCriterion;
+  mistakes: ReportMistake[];
+  voiceErrors: VoiceError[];
+  voiceResult: VoiceResult | null;
+  responseText: string;
+  durationSeconds: number | null;
+}
+
+export default function ReportCriterionDetail({ criterion, mistakes, voiceErrors, voiceResult, responseText, durationSeconds }: ReportCriterionDetailProps) {
   const { colors, shadows } = useTheme();
   const unmeasured = isUnmeasuredCriterion(criterion);
   const score = criterion.score || 0;
   const scoreColor = unmeasured ? colors.placeholder : getScoreColor(colors, score);
+  const achievements = criterion.achievements ?? [];
+  const criterionIssues = criterion.issues ?? [];
   const workOnItems = getWorkOnItems(criterion, mistakes, voiceErrors).filter((item) => item.red);
 
   const showCompletenessAccuracy = criterion.key === 'task'
@@ -79,7 +99,7 @@ export default function ReportCriterionDetail({ criterion, mistakes, voiceErrors
     && typeof voiceResult?.accuracy === 'number';
 
   const readingRate = criterion.key === 'fluency' ? getReadingRate(responseText, durationSeconds) : null;
-  const statusColors = {
+  const statusColors: Record<StatusKey, { fg: string; bg: string }> = {
     green: { fg: colors.goalGreen, bg: colors.goalBackgroundGreen },
     orange: { fg: colors.goalOrange, bg: colors.goalBackgroundOrange },
     red: { fg: colors.goalRed, bg: colors.goalBackgroundRed },
@@ -118,28 +138,28 @@ export default function ReportCriterionDetail({ criterion, mistakes, voiceErrors
         )}
       </View>
 
-      {(criterion.achievements?.length > 0 || criterion.issues?.length > 0) && (
+      {(achievements.length > 0 || criterionIssues.length > 0) && (
         <View style={{ marginTop: 16, gap: 16 }}>
-          {criterion.achievements?.length > 0 && (
+          {achievements.length > 0 && (
             <View>
               <ThemedText weight="bold" style={reportStyles.sectionLabel}>ACHIEVEMENTS</ThemedText>
               <View style={[reportStyles.listCardShadowWrap, shadows.light]}>
                 <View style={reportStyles.listCard}>
-                  {criterion.achievements.map((a, i) => (
-                    <AchievementRow key={i} text={a} last={i === criterion.achievements.length - 1} />
+                  {achievements.map((a, i) => (
+                    <AchievementRow key={i} text={a} last={i === achievements.length - 1} />
                   ))}
                 </View>
               </View>
             </View>
           )}
 
-          {criterion.issues?.length > 0 && (
+          {criterionIssues.length > 0 && (
             <View>
               <ThemedText weight="bold" style={reportStyles.sectionLabel}>ISSUES</ThemedText>
               <View style={[reportStyles.listCardShadowWrap, shadows.light]}>
                 <View style={reportStyles.listCard}>
-                  {criterion.issues.map((issueText, i) => (
-                    <IssueRow key={i} text={issueText} last={i === criterion.issues.length - 1} />
+                  {criterionIssues.map((issueText, i) => (
+                    <IssueRow key={i} text={issueText} last={i === criterionIssues.length - 1} />
                   ))}
                 </View>
               </View>
@@ -152,8 +172,8 @@ export default function ReportCriterionDetail({ criterion, mistakes, voiceErrors
         <View style={[reportStyles.listCardShadowWrap, styles.metricOuterWrap, shadows.light]}>
           <View style={[reportStyles.listCard, styles.metricOuterCard]}>
             <View style={styles.metricRow}>
-              <MetricCard label="COMPLETENESS" value={voiceResult.completeness} color={getScoreColor(colors, voiceResult.completeness)} />
-              <MetricCard label="ACCURACY" value={voiceResult.accuracy} color={getScoreColor(colors, voiceResult.accuracy)} />
+              <MetricCard label="COMPLETENESS" value={voiceResult?.completeness ?? 0} color={getScoreColor(colors, voiceResult?.completeness ?? 0)} />
+              <MetricCard label="ACCURACY" value={voiceResult?.accuracy ?? 0} color={getScoreColor(colors, voiceResult?.accuracy ?? 0)} />
             </View>
           </View>
         </View>

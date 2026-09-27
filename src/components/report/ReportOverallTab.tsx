@@ -1,13 +1,14 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {StyleProp, StyleSheet, View, ViewStyle} from 'react-native';
 import EmptyStateCard from '../EmptyStateCard';
 import ThemedIcon from '../ThemedIcon';
 import {ThemedText} from '../ThemedText';
 import {useTheme} from '../../theme/ThemeContext';
 import reportStyles from './reportStyles';
 import {getCriterionTagline, getScoreColor, getScoreIcon, isUnmeasuredCriterion} from './reportUtils';
+import type {ReportCriterion, ScoreBreakdown} from '../../types/report';
 
-function ProgressBar({ value, color, style }) {
+function ProgressBar({ value, color, style }: { value: number; color: string; style?: StyleProp<ViewStyle> }) {
   return (
     <View style={[reportStyles.progressTrack, style]}>
       <View style={[reportStyles.progressFill, { width: `${Math.min(100, Math.max(0, value))}%`, backgroundColor: color }]} />
@@ -15,7 +16,7 @@ function ProgressBar({ value, color, style }) {
   );
 }
 
-function CriterionRow({ criterion, subType, last }) {
+function CriterionRow({ criterion, subType, last }: { criterion: ReportCriterion; subType?: string; last: boolean }) {
   const { colors } = useTheme();
   const unmeasured = isUnmeasuredCriterion(criterion);
   const score = criterion.score || 0;
@@ -44,7 +45,15 @@ function CriterionRow({ criterion, subType, last }) {
 }
 
 // Overall Score sekmesi: scoreBreakdown'dan final skor + completeness kırılımı + kriter listesi
-export default function ReportOverallTab({ mainScore, scoreBreakdown, completenessLabel, completenessNote, subType }) {
+interface ReportOverallTabProps {
+  mainScore: number;
+  scoreBreakdown: ScoreBreakdown | null;
+  completenessLabel?: string;
+  completenessNote?: string;
+  subType?: string;
+}
+
+export default function ReportOverallTab({ mainScore, scoreBreakdown, completenessLabel, completenessNote, subType }: ReportOverallTabProps) {
   const { colors, shadows } = useTheme();
 
   if (!scoreBreakdown) {
