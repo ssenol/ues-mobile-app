@@ -1,9 +1,28 @@
+import { isAxiosError } from "axios";
 import api, { API_ENDPOINTS } from "../config/api";
+import type { ApiResponse, AuthUser } from "../types/api";
+
+interface LoginResponseData {
+  token?: string;
+  user?: AuthUser;
+  refreshToken?: string;
+}
+
+export interface LoginResult {
+  token: string;
+  user?: AuthUser;
+  refreshToken?: string;
+}
+
+export interface RefreshResult {
+  token: string;
+  user?: AuthUser;
+}
 
 class AuthService {
-  async login(username, password) {
+  async login(username: string, password: string): Promise<LoginResult> {
     try {
-      const response = await api.post(API_ENDPOINTS.auth.login, {
+      const response = await api.post<ApiResponse<LoginResponseData>>(API_ENDPOINTS.auth.login, {
         username,
         password,
       });
@@ -26,20 +45,24 @@ class AuthService {
         throw new Error("Geçersiz giriş yanıt formatı");
       }
     } catch (error) {
-      console.error('Giriş hatası:', {
-        message: error.message,
-        code: error.code,
-        config: error.config,
-        response: error.response?.data,
-        isAxiosError: error.isAxiosError,
-      });
+      if (isAxiosError(error)) {
+        console.error('Giriş hatası:', {
+          message: error.message,
+          code: error.code,
+          config: error.config,
+          response: error.response?.data,
+          isAxiosError: true,
+        });
+      } else {
+        console.error('Giriş hatası:', { message: (error as Error)?.message, isAxiosError: false });
+      }
       throw error;
     }
   }
 
-  async refreshToken(refreshToken) {
+  async refreshToken(refreshToken: string): Promise<RefreshResult> {
     try {
-      const response = await api.post(API_ENDPOINTS.auth.refresh, {
+      const response = await api.post<ApiResponse<LoginResponseData>>(API_ENDPOINTS.auth.refresh, {
         refreshToken,
       });
 
@@ -60,7 +83,7 @@ class AuthService {
         throw new Error("Geçersiz token yenileme yanıt formatı");
       }
     } catch (error) {
-      console.error('Token yenileme hatası:', error?.response?.data || error);
+      console.error('Token yenileme hatası:', (isAxiosError(error) && error.response?.data) || error);
       throw error;
     }
   }

@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import api, { API_ENDPOINTS } from '../config/api';
-import store from '../store';
+import { store } from '../store';
 import {
   selectCachedAssignments,
   selectIsCacheValid,
@@ -10,75 +10,53 @@ import {
   CACHE_DURATION_MS,
 } from '../store/slices/assignmentSlice';
 import { parseAssignedTasksResponse, transformTaskToAssignment } from '../utils/assignmentTransform';
+import type { ApiResponse } from '../types/api';
 
-export const fetchSpeechTasks = async (params) => {
-  const response = await api.post(
-    API_ENDPOINTS.assignment.fetchTasks,
-    params,
-    { headers: { 'Content-Type': 'application/json' } }
-  );
-  return response.data;
+// transformTaskToAssignment çıktısı; assignmentTransform TS'e geçince oradan türetilecek
+export type Assignment = NonNullable<ReturnType<typeof transformTaskToAssignment>>;
+
+export interface AssignmentsResult {
+  assignments: Assignment[];
+  totalAssignments: number;
+  completedAssignments: number;
+  fromCache: boolean;
+}
+
+type RequestParams = Record<string, unknown>;
+
+// React Native FormData dosya parçası (DOM tiplerinde karşılığı yok)
+interface RNFormDataFile {
+  uri: string;
+  name: string;
+  type: string;
+}
+
+const appendFile = (formData: FormData, field: string, file: RNFormDataFile) => {
+  formData.append(field, file as unknown as Blob);
 };
 
-export const saveSpeechResult = async (formData) => {
-  const response = await api.post(API_ENDPOINTS.assignment.saveSpeechResult, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  return response.data;
-};
+const jsonHeaders = { headers: { 'Content-Type': 'application/json' } };
 
-export const evaluateSpeechMobileTask = async (rawParams) => {
-  const {
-    assignedTaskId,
-    uesId,
-    speechTaskId,
-    audioFile,
-    stage,
-    username,
-    speechDuration
-  } = rawParams || {};
-
-  const formData = new FormData();
-  formData.append('assignedTaskId', assignedTaskId);
-  formData.append('uesId', uesId);
-  formData.append('speechTaskId', speechTaskId);
-  formData.append('audioFile', {
-    uri: audioFile,
-    name: audioFile.split('/').pop(),
-    type: 'audio/m4a',
-  });
-  formData.append('stage', stage);
-  formData.append('username', username);
-  formData.append('speechDuration', speechDuration);
-
-  const response = await api.post(
-    API_ENDPOINTS.speak.evaluateMobileTask,
-    formData
-  );
-  return response.data;
-};
-
-export const fetchAssignedSpeechTasks = async (params) => {
-  const response = await api.post(
+export const fetchAssignedSpeechTasks = async (params: RequestParams): Promise<ApiResponse> => {
+  const response = await api.post<ApiResponse>(
     API_ENDPOINTS.assignment.getAssignedSpeechTasks,
     params,
-    { headers: { 'Content-Type': 'application/json' } }
+    jsonHeaders
   );
   return response.data;
 };
 
 /**
  * Cache mekanizmalı assignment çekme fonksiyonu
- * @param {Object} params - API parametreleri
- * @param {boolean} forceRefresh - true ise cache'i bypass eder ve API'den yeni data çeker
- * @param {number} cacheDuration - Cache süresi (ms), varsayılan 6 saat
- * @returns {Object} - { assignments, totalAssignments, completedAssignments, fromCache }
+ * @param params - API parametreleri
+ * @param forceRefresh - true ise cache'i bypass eder ve API'den yeni data çeker
+ * @param cacheDuration - Cache süresi (ms), varsayılan CACHE_DURATION_MS
  */
 export const fetchAssignedSpeechTasksWithCache = async (
-  params,
+  params: RequestParams,
   forceRefresh = false,
-  cacheDuration = CACHE_DURATION_MS
-) => {
+  cacheDuration: number = CACHE_DURATION_MS
+): Promise<AssignmentsResult> => {
   const state = store.getState();
   
   // Cache geçerli mi kontrol et (forceRefresh false ise)
@@ -104,9 +82,11 @@ export const fetchAssignedSpeechTasksWithCache = async (
     totals: { totalAssigned, completedAssignments: completedCount },
   } = parseAssignedTasksResponse(response);
   
-  let transformedAssignments = [];
+  let transformedAssignments: Assignment[] = [];
   if (success && Array.isArray(tasks) && tasks.length > 0) {
-    transformedAssignments = tasks.map(transformTaskToAssignment).filter(Boolean);
+    transformedAssignments = tasks
+      .map(transformTaskToAssignment)
+      .filter((a: Assignment | null): a is Assignment => Boolean(a));
   }
   
   // Store'a kaydet
@@ -125,26 +105,30 @@ export const fetchAssignedSpeechTasksWithCache = async (
 };
 
 // Generate Exercise Token
-export const generateExerciseToken = async (params) => {
-  const response = await api.post(
+export const generateExerciseToken = async (params: RequestParams): Promise<ApiResponse> => {
+  const response = await api.post<ApiResponse>(
     API_ENDPOINTS.student.generateExerciseToken,
     params,
-    { headers: { 'Content-Type': 'application/json' } }
+    jsonHeaders
   );
   return response.data;
 };
 
 // Submit Speech Task
-export const submitSpeechTask = async (audioUri, duration, exerciseToken) => {
+export const submitSpeechTask = async (
+  audioUri: string,
+  duration: number,
+  exerciseToken: string
+): Promise<ApiResponse> => {
   const formData = new FormData();
-  formData.append('durationAsSeconds', Math.round(duration));
-  formData.append('file', {
+  formData.append('durationAsSeconds', String(Math.round(duration)));
+  appendFile(formData, 'file', {
     uri: audioUri,
     name: audioUri.split('/').pop() || 'recording.m4a',
     type: 'audio/m4a',
   });
 
-  const response = await api.post(
+  const response = await api.post<ApiResponse>(
     API_ENDPOINTS.student.submitSpeechTask,
     formData,
     {
@@ -159,56 +143,56 @@ export const submitSpeechTask = async (audioUri, duration, exerciseToken) => {
 };
 
 // Get Completed Exercises
-export const getCompletedExercises = async (params) => {
-  const response = await api.post(
+export const getCompletedExercises = async (params: RequestParams): Promise<ApiResponse> => {
+  const response = await api.post<ApiResponse>(
     API_ENDPOINTS.student.getCompletedExercises,
     params,
-    { headers: { 'Content-Type': 'application/json' } }
+    jsonHeaders
   );
   return response.data;
 };
 
 // Get Solved Exercise Detail
-export const getSolvedExerciseDetail = async (reportId) => {
-  const response = await api.post(
+export const getSolvedExerciseDetail = async (reportId: string): Promise<ApiResponse> => {
+  const response = await api.post<ApiResponse>(
     API_ENDPOINTS.student.getSolvedExerciseDetail,
     { reportId },
-    { headers: { 'Content-Type': 'application/json' } }
+    jsonHeaders
   );
   return response.data;
 };
 
 // Generate temporary file URL
-export const generateFileUrl = async (fileUrl) => {
-  const response = await api.post(
-    'https://quizmaker-api.onrender.com/api/v0.0.1/storage/generate-file-url',
+export const generateFileUrl = async (fileUrl: string): Promise<ApiResponse> => {
+  const response = await api.post<ApiResponse>(
+    API_ENDPOINTS.storage.generateFileUrl,
     { fileUrl },
-    { headers: { 'Content-Type': 'application/json' } }
+    jsonHeaders
   );
   return response.data;
 };
 
 // Delete Solved Task
-export const deleteSolvedTask = async (taskId, studentIds) => {
-  const response = await api.post(
+export const deleteSolvedTask = async (taskId: string, studentIds: string[]): Promise<ApiResponse> => {
+  const response = await api.post<ApiResponse>(
     API_ENDPOINTS.student.deleteSolvedTask,
     { taskId, studentIds },
-    { headers: { 'Content-Type': 'application/json' } }
+    jsonHeaders
   );
   return response.data;
 };
 
 // My Progress sekmesi için özet istatistikler (KPI, skor trendi, kriter ortalamaları vb.)
-export const getSelfAnalytics = async (userId, type = 'speaking') => {
-  const response = await api.post(
+export const getSelfAnalytics = async (userId: string, type = 'speaking'): Promise<ApiResponse> => {
+  const response = await api.post<ApiResponse>(
     API_ENDPOINTS.student.getSelfAnalytics,
     { userId, type },
-    { headers: { 'Content-Type': 'application/json' } }
+    jsonHeaders
   );
   return response.data;
 };
 
-const arrayBufferToBase64 = (buffer) => {
+const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   let binary = '';
   const bytes = new Uint8Array(buffer);
   for (let i = 0; i < bytes.byteLength; i++) {
@@ -218,8 +202,8 @@ const arrayBufferToBase64 = (buffer) => {
 };
 
 // Bir kelimenin doğru telaffuzunu TTS ile üretir, local dosyaya yazar ve oynatılabilir URI döner
-export const getWordTts = async (word, speed = 'slow', voice = 'nova') => {
-  const response = await api.post(
+export const getWordTts = async (word: string, speed = 'slow', voice = 'nova'): Promise<string> => {
+  const response = await api.post<ArrayBuffer>(
     API_ENDPOINTS.question.wordTts,
     { input: word, speed, voice },
     { responseType: 'arraybuffer' }
@@ -232,9 +216,6 @@ export const getWordTts = async (word, speed = 'slow', voice = 'nova') => {
 };
 
 export default {
-  fetchSpeechTasks,
-  saveSpeechResult,
-  evaluateSpeechMobileTask,
   fetchAssignedSpeechTasks,
   fetchAssignedSpeechTasksWithCache,
   generateExerciseToken,

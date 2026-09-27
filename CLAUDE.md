@@ -63,7 +63,7 @@ import HomeScreen from '../../src/screens/HomeScreen';
 export default function Home() { return <HomeScreen />; }
 ```
 
-Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `app/` altında uygun konuma ince route dosyasını ekle. `app/` dosyaları TypeScript (`.tsx`, `@/*` path alias), `src/` dosyaları ise düz JavaScript (`.js`) — proje bu ikisini bilinçli olarak ayırıyor, karıştırmayın.
+Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `app/` altında uygun konuma ince route dosyasını ekle. `app/` dosyaları TypeScript (`.tsx`, `@/*` path alias), `src/` dosyaları kademeli olarak JS'ten TS'e taşınıyor: `src/config/`, `src/services/` ve `src/types/` TypeScript (`.ts`, strict), geri kalanı henüz düz JavaScript (`.js`). Sıra: config+services → `src/store/` slice'ları → ekranlar/component'ler. Taşınmamış bir JS modülüne dokunurken dönüşüm yapmayın; dönüşüm ayrı commit'lerle yapılır. `tsconfig` `allowJs` (expo base) sayesinde TS dosyaları JS modüllerini import edebilir; doğrulama `npx tsc --noEmit`.
 
 Gerçek navigasyon her zaman `app/_layout.tsx`'ten başlar. Expo Router migration'ından kalan eski React Navigation mimarisi (`App.js`, `src/AppContent.js`, `src/navigation/`) ve yalnızca onun kullandığı paketler SDK 55 yükseltmesi öncesinde silindi.
 
@@ -92,12 +92,12 @@ Yeni bir slice eklerken `src/store/index.js`'e hem reducer'ı hem karşılık ge
 
 ### API katmanı ve token yönetimi
 
-`src/config/api.js` tek bir axios instance'ı ve `API_ENDPOINTS` sözlüğünü tanımlar; tüm endpoint URL'leri buradan türetilir (dağınık string literal yerine). Request/response interceptor'lar:
+`src/config/api.ts` tek bir axios instance'ı ve `API_ENDPOINTS` sözlüğünü tanımlar; tüm endpoint URL'leri buradan türetilir (dağınık string literal yerine). Request/response interceptor'lar:
 - Access token 24 saatten eskiyse (`tokenAcquiredAt`) her istekten önce refresh token ile otomatik yeniler.
 - 401 alan istekleri bir kez retry eder (`refreshToken` ile), başarısızsa Redux `logout()` dispatch eder.
 - `config.skipAuthInterceptor` ile bazı istekler auth kontrolünden muaf tutulabilir.
 
-Yeni bir endpoint eklerken `API_ENDPOINTS`'e ekleyin ve çağrıyı `src/services/` altındaki ilgili service dosyasından yapın (`auth.js`, `speak.js`, `biometricAuth.js`) — component'ler doğrudan axios/`api` çağırmaz.
+Yeni bir endpoint eklerken `API_ENDPOINTS`'e ekleyin ve çağrıyı `src/services/` altındaki ilgili service dosyasından yapın (`auth.ts`, `speak.ts`, `biometricAuth.ts`; ortak backend tipleri `src/types/api.ts`) — component'ler doğrudan axios/`api` çağırmaz.
 
 ### İkon sistemi: iki paralel sistem bir arada
 

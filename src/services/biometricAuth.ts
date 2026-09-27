@@ -5,9 +5,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const BIOMETRIC_ENABLED_KEY = 'biometric_auth_enabled';
 const USER_CREDENTIALS_KEY = 'user_credentials';
 
+export interface BiometricAvailability {
+  available: boolean;
+  error: string | null;
+}
+
+export interface StoredCredentials {
+  username: string;
+  password: string;
+}
+
 class BiometricAuthService {
   // Cihazın biyometrik kimlik doğrulamayı destekleyip desteklemediğini kontrol eder
-  async isBiometricAvailable() {
+  async isBiometricAvailable(): Promise<BiometricAvailability> {
     const compatible = await LocalAuthentication.hasHardwareAsync();
     if (!compatible) {
       return {
@@ -28,7 +38,7 @@ class BiometricAuthService {
   }
 
   // Cihaz tipine göre uygun biyometrik kimlik doğrulama yöntemini döndürür
-  async getBiometricType() {
+  async getBiometricType(): Promise<string> {
     const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
     
     if (Platform.OS === 'ios') {
@@ -67,33 +77,33 @@ class BiometricAuthService {
   }
 
   // Kimlik bilgilerini yerel depolamaya kaydeder
-  async saveCredentials(username, password) {
+  async saveCredentials(username: string, password: string): Promise<void> {
     const credentials = JSON.stringify({ username, password });
     await AsyncStorage.setItem(USER_CREDENTIALS_KEY, credentials);
   }
 
   // Biyometrik kimlik doğrulama tercihini kaydeder
-  async setBiometricEnabled(enabled) {
+  async setBiometricEnabled(enabled: boolean): Promise<void> {
     await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, JSON.stringify(enabled));
   }
 
   // Biyometrik kimlik doğrulama tercihini kontrol eder
-  async isBiometricEnabled() {
+  async isBiometricEnabled(): Promise<boolean> {
     const value = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
     return value === 'true' || JSON.parse(value || 'false');
   }
 
   // Kimlik bilgilerini yerel depolamadan alır
-  async getCredentials() {
+  async getCredentials(): Promise<StoredCredentials | null> {
     const credentials = await AsyncStorage.getItem(USER_CREDENTIALS_KEY);
     if (credentials) {
-      return JSON.parse(credentials);
+      return JSON.parse(credentials) as StoredCredentials;
     }
     return null;
   }
 
   // Biyometrik kimlik doğrulama işlemini gerçekleştirir
-  async authenticate() {
+  async authenticate(): Promise<StoredCredentials | null> {
     const biometricType = await this.getBiometricType();
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: `${biometricType} ile Giriş Yap`,

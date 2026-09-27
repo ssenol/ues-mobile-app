@@ -1,6 +1,22 @@
-import axios from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { store } from "../store/index";
 import { logout, setCredentials } from "../store/slices/authSlice";
+import type { ApiResponse, AuthUser } from "../types/api";
+
+// Uygulamaya özel axios config alanları
+declare module "axios" {
+  interface AxiosRequestConfig {
+    // true ise request interceptor Authorization header'ına dokunmaz (ör. geçici exercise token)
+    skipAuthInterceptor?: boolean;
+    // 401 sonrası tek seferlik retry işareti
+    _retry?: boolean;
+  }
+}
+
+interface RefreshResponseData {
+  accessToken: string;
+  user?: AuthUser;
+}
 
 const BASE_URL = "https://quizmaker-api.onrender.com/api/v0.0.1";
 
@@ -34,18 +50,39 @@ export const API_ENDPOINTS = {
     processAudioToText: `${BASE_URL}/question/process-audio-to-text`,
     wordTts: `${BASE_URL}/question/word-tts`,
   },
+  storage: {
+    generateFileUrl: `${BASE_URL}/storage/generate-file-url`,
+  },
   user: {
     setUserProfile: `${BASE_URL}/user/set-user-profile`,
   },
+} as const;
+
+// Refresh token ile yeni access token alır ve store'u günceller
+const refreshAccessToken = async (refreshToken: string): Promise<string> => {
+  const response = await axios.post<ApiResponse<RefreshResponseData>>(
+    API_ENDPOINTS.auth.refresh,
+    { refreshToken }
+  );
+  const { accessToken: newAccessToken, user: newUser } = response.data.data!;
+
+  store.dispatch(setCredentials({
+    token: newAccessToken,
+    // authSlice henüz JS: currentUser tipi initialState'teki null'dan çıkarılıyor
+    user: { ...(store.getState().auth.currentUser as AuthUser | null), ...newUser },
+    refreshToken: refreshToken,
+    tokenAcquiredAt: Date.now(),
+  }));
+
+  return newAccessToken;
 };
 
 // Request interceptor
 api.interceptors.request.use(
-  async (config) => {
-    const state = store.getState().auth;
-    const { accessToken, tokenAcquiredAt, refreshToken } = state;
+  async (config: InternalAxiosRequestConfig) => {
+    const { accessToken, tokenAcquiredAt, refreshToken } = store.getState().auth;
 
-    if (config.url.includes('/auth/login') || config.url.includes('/auth/refresh')) {
+    if (config.url?.includes('/auth/login') || config.url?.includes('/auth/refresh')) {
       return config;
     }
 
@@ -59,16 +96,7 @@ api.interceptors.request.use(
     if (accessToken && tokenAcquiredAt && now - tokenAcquiredAt > twentyFourHours) {
       if (refreshToken) {
         try {
-          const response = await axios.post(API_ENDPOINTS.auth.refresh, { refreshToken });
-          const { accessToken: newAccessToken, user: newUser } = response.data.data;
-          
-          store.dispatch(setCredentials({
-            token: newAccessToken,
-            user: { ...state.currentUser, ...newUser },
-            refreshToken: refreshToken,
-            tokenAcquiredAt: Date.now(),
-          }));
-
+          const newAccessToken = await refreshAccessToken(refreshToken);
           config.headers.Authorization = `Bearer ${newAccessToken}`;
           return config;
         } catch (e) {
@@ -91,24 +119,15 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
+  async (error: AxiosError) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (originalRequest && error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const { refreshToken } = store.getState().auth;
 
       if (refreshToken) {
         try {
-          const response = await axios.post(API_ENDPOINTS.auth.refresh, { refreshToken });
-          const { accessToken: newAccessToken, user: newUser } = response.data.data;
-          
-          store.dispatch(setCredentials({
-            token: newAccessToken,
-            user: { ...store.getState().auth.currentUser, ...newUser },
-            refreshToken: refreshToken,
-            tokenAcquiredAt: Date.now(),
-          }));
-
+          const newAccessToken = await refreshAccessToken(refreshToken);
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return api(originalRequest);
         } catch (refreshError) {
