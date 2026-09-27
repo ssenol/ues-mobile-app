@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
 import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSelector, useDispatch } from 'react-redux';
 import CompletedAssignmentCard from '../components/CompletedAssignmentCard';
 import { ThemedText } from '../components/ThemedText';
 import EmptyStateCard from '../components/EmptyStateCard';
@@ -16,6 +15,10 @@ import InfoModal from '../components/InfoModal';
 import ConfirmModal from '../components/ConfirmModal';
 import InlineCalendar from '../components/InlineCalendar';
 import {useTheme} from "../theme/ThemeContext";
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import type { CompletedAssignment, CompletedExercise, SpeechTaskType } from '../types/assignment';
+
+const ALL_SUB_TASK_TYPES: SpeechTaskType[] = ['speech_on_topic', 'read_aloud', 'speech_on_scenario'];
 
 
 export default function CompletedScreen() {
@@ -24,43 +27,43 @@ export default function CompletedScreen() {
 
   // Navigation helper
   const navigation = {
-    navigate: (screen, params) => {
-      const routes = {
+    navigate: (screen: string, params?: Record<string, unknown>) => {
+      const routes: Record<string, string> = {
         'ScenarioReport': '/scenario-report',
         'AssignmentReport': '/assignment-report'
       };
       const pathname = routes[screen] || `/${screen.toLowerCase()}`;
       if (params) {
-        const serializedParams = {};
+        const serializedParams: Record<string, string> = {};
         Object.keys(params).forEach(key => {
           serializedParams[key] = typeof params[key] === 'object' 
             ? JSON.stringify(params[key]) 
-            : params[key];
+            : params[key] as string;
         });
-        router.push({ pathname, params: serializedParams });
+        router.push({ pathname: pathname as never, params: serializedParams });
       } else {
-        router.push(pathname);
+        router.push(pathname as never);
       }
     }
   };
   const { height: SCREEN_HEIGHT, isTablet } = useResponsive();
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
-  const user = useSelector((state) => selectCurrentUser(state));
-  const dispatch = useDispatch();
-  const scrollViewRef = useRef(null);
-  const [completedTasks, setCompletedTasks] = useState([]);
+  const user = useAppSelector(selectCurrentUser);
+  const dispatch = useAppDispatch();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [completedTasks, setCompletedTasks] = useState<CompletedAssignment[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [nextCursor, setNextCursor] = useState(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const autoRefreshTimerRef = useRef(null);
-  const handleRefreshRef = useRef(null);
-  const fetchCompletedExercisesRef = useRef(null);
+  const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleRefreshRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchCompletedExercisesRef = useRef<((reset?: boolean, cursor?: string | null, isRefresh?: boolean) => Promise<void>) | null>(null);
   
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [selectedSubTaskTypes, setSelectedSubTaskTypes] = useState(['speech_on_topic', 'read_aloud', 'speech_on_scenario']); // Multi selection
-  const [completionDate, setCompletionDate] = useState(null);
+  const [selectedSubTaskTypes, setSelectedSubTaskTypes] = useState<string[]>(ALL_SUB_TASK_TYPES); // Multi selection
+  const [completionDate, setCompletionDate] = useState<string | null>(null); // ISO tarih
 
   // Dinamik scrollContent stili
   const scrollContentStyle = {
@@ -70,7 +73,7 @@ export default function CompletedScreen() {
   const [showMore, setShowMore] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [taskToDelete, setTaskToDelete] = useState<CompletedAssignment | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const assignmentSubTypeOptions = [
@@ -80,14 +83,14 @@ export default function CompletedScreen() {
   ];
 
   // Ay ismini al
-  const getMonthName = (monthIndex) => {
+  const getMonthName = (monthIndex: number) => {
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 
                     'July', 'August', 'September', 'October', 'November', 'December'];
     return months[monthIndex];
   };
 
   // Tarih formatla
-  const formatDate = (dateString, format = 'display') => {
+  const formatDate = (dateString: Date | string | null | undefined, format: 'display' | 'api' = 'display') => {
     if (!dateString) return format === 'api' ? null : '';
     
     const date = new Date(dateString);
@@ -110,7 +113,7 @@ export default function CompletedScreen() {
   };
 
   // Fetch completed exercises
-  const fetchCompletedExercises = useCallback(async (reset = false, cursor = null, isRefresh = false) => {
+  const fetchCompletedExercises = useCallback(async (reset = false, cursor: string | null = null, isRefresh = false) => {
     if (!user) return;
 
     try {
@@ -145,8 +148,9 @@ export default function CompletedScreen() {
       // console.log('CompletedScreen - Response:', JSON.stringify(response, null, 2));
 
       if (response?.success || response?.status_code === 200) {
-        const exercises = response?.data?.exercises || response?.data || [];
-        const newNextCursor = response?.data?.nextCursor || null;
+        const data = response?.data;
+        const exercises: CompletedExercise[] = (Array.isArray(data) ? data : data?.exercises) || [];
+        const newNextCursor = (Array.isArray(data) ? null : data?.nextCursor) || null;
         const totalCount = response.results;
 
         setCompletedCount(totalCount || 0);
@@ -154,7 +158,7 @@ export default function CompletedScreen() {
         setHasMore(!!newNextCursor);
         
         // Transform exercises to display format
-        const transformedTasks = exercises.map((exercise, index) => {
+        const transformedTasks: CompletedAssignment[] = exercises.map((exercise) => {
           const isSpeechOnTopic = exercise.subTaskType === 'speech_on_topic';
           const isReadAloud = exercise.subTaskType === 'read_aloud';
           const isSpeechOnScenario = exercise.subTaskType === 'speech_on_scenario';
@@ -178,7 +182,7 @@ export default function CompletedScreen() {
           return {
             id: exercise.assignedTaskId,
             title: exercise.taskName || taskType,
-            completionDate: formatDate(completionDate),
+            completionDate: formatDate(completionDate) ?? '',
             rawCompletionDate: completionDate, // For sorting
             type: taskType,
             score: Math.round(score),
@@ -298,7 +302,7 @@ export default function CompletedScreen() {
   );
 
   // rapor detaya gider
-  const handleReportPress = (assignment) => {
+  const handleReportPress = (assignment: CompletedAssignment) => {
     if (!assignment.solvedTaskId) {
       console.error('CompletedScreen: Missing solvedTaskId');
       return;
@@ -321,7 +325,7 @@ export default function CompletedScreen() {
     setFilterModalVisible(true);
   };
 
-  const toggleSubTaskType = (taskType) => {
+  const toggleSubTaskType = (taskType: string) => {
     setSelectedSubTaskTypes(prev => {
       if (prev.includes(taskType)) {
         return prev.filter(t => t !== taskType);
@@ -348,7 +352,7 @@ export default function CompletedScreen() {
     await fetchCompletedExercises(true, null);
   };
 
-  const handleDeletePress = (assignment) => {
+  const handleDeletePress = (assignment: CompletedAssignment) => {
     setTaskToDelete(assignment);
     setDeleteModalVisible(true);
   };
@@ -389,7 +393,7 @@ export default function CompletedScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" translucent backgroundColor="transparent" />
+      <StatusBar style="dark" />
       
       {/* Header */}
       <View style={[styles.header, { paddingTop: STATUSBAR_HEIGHT }]}>

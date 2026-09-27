@@ -12,6 +12,7 @@ import {
   Linking,
   Platform,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Switch,
   TouchableOpacity,
@@ -19,7 +20,6 @@ import {
 } from "react-native";
 import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useDispatch, useSelector } from "react-redux";
 import ConfirmModal from "../components/ConfirmModal";
 import ThemedIcon from "../components/ThemedIcon";
 import { ThemedText } from "../components/ThemedText";
@@ -36,17 +36,19 @@ import {
 } from "../utils/helpers";
 import { performLogout } from "../utils/logoutHelper";
 import {useFocusEffect} from "expo-router";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 
 
 export default function ProfileScreen() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { isTablet } = useResponsive();
-  const user = useSelector((state) => selectCurrentUser(state));
-  const refreshToken = useSelector(selectRefreshToken);
+  const user = useAppSelector(selectCurrentUser);
+  const refreshToken = useAppSelector(selectRefreshToken);
   const { colors, shadows } = useTheme();
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
-  const scrollViewRef = useRef(null);
+  // Animated.ScrollView ref'i; eski RN sürümlerinde getNode() ile asıl ScrollView'a ulaşılıyordu
+  const scrollViewRef = useRef<ScrollView & { getNode?: () => ScrollView }>(null);
 
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
   const [microphoneEnabled, setMicrophoneEnabledState] = useState(false);
@@ -181,19 +183,20 @@ export default function ProfileScreen() {
     setResetModalVisible(true);
   };
 
-  const uploadAvatar = async (imageUri) => {
+  const uploadAvatar = async (imageUri: string) => {
     try {
       setAvatarUploading(true);
       const formData = new FormData();
-      const filename = imageUri.split('/').pop();
+      const filename = imageUri.split('/').pop() ?? '';
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : 'image/jpeg';
-      formData.append('file', { uri: imageUri, name: filename, type });
-      formData.append('userId', user?.id || user?._id || user?.userId);
+      // React Native FormData dosya parçası (DOM tiplerinde karşılığı yok)
+      formData.append('file', { uri: imageUri, name: filename, type } as unknown as Blob);
+      formData.append('userId', String(user?.id || user?._id || user?.userId));
       formData.append('role', user?.role || 'student');
       formData.append('username', user?.username || '');
 
-      const response = await api.post(API_ENDPOINTS.user.setUserProfile, formData, {
+      const response = await api.post<{ result?: string }>(API_ENDPOINTS.user.setUserProfile, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -310,7 +313,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleBiometricToggle = async (value) => {
+  const handleBiometricToggle = async (value: boolean) => {
     if (!biometricEnabled && value) {
       setBiometricModalVisible(true);
     } else {
@@ -354,7 +357,7 @@ export default function ProfileScreen() {
     setBiometricEnabledState(false);
   };
 
-  const handleMicrophoneToggle = async (value) => {
+  const handleMicrophoneToggle = async (value: boolean) => {
     if (!microphoneEnabled && value) {
       setMicrophoneModalVisible(true);
     } else if (microphoneEnabled && !value) {
@@ -400,7 +403,7 @@ export default function ProfileScreen() {
   }
 
   // Format joined date
-  const formatJoinedDate = (dateString) => {
+  const formatJoinedDate = (dateString: string | undefined) => {
     if (!dateString) return 'Recently';
     const date = new Date(dateString);
     const day = date.getDate();
@@ -599,7 +602,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <StatusBar style="light" />
 
       {/* Mavi arka plan - sabit */}
       <View style={styles.headerBackground}>

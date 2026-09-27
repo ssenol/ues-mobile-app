@@ -15,6 +15,7 @@ export interface RawSpeechTask {
   startDate?: string;
   speechAssignedDate?: string;
   dueDate?: string;
+  assignmentRepeatCount?: number;
   task?: {
     speechTaskType?: SpeechTaskType | string;
     data?: {
@@ -23,11 +24,19 @@ export interface RawSpeechTask {
       minWordCount?: number;
       topic?: string;
       readingText?: string;
+      // Speech on Topic süre aralığı (saniye), ör. "30-50"
+      duration?: string;
+      aiReadingMetaData?: { subject?: string; [key: string]: unknown };
       [key: string]: unknown;
     };
     setting?: {
       cefrLevel?: string;
       taskName?: string;
+      // Speech on Scenario sohbet ayarları
+      dialogLanguage?: string;
+      userNativeLanguage?: string;
+      conversationLevel?: string;
+      username?: string;
       selectedConcept?: {
         concept: { scenario: string; concept?: string; title?: string; [key: string]: unknown };
         [key: string]: unknown;
@@ -72,9 +81,30 @@ export interface Assignment {
 export type AssignmentWithDueDate = Assignment & { dueDate?: string };
 
 // Completed ekranındaki çözülmüş görev kartı (CompletedScreen'de API yanıtından üretilir)
+// get-student-completed-exercises yanıtındaki tek egzersiz
+export interface CompletedExercise {
+  assignedTaskId?: string;
+  subTaskType?: SpeechTaskType | string;
+  taskName?: string;
+  attempts: {
+    completionDate?: string;
+    mainScore?: number;
+    solvedTaskId?: string;
+    status?: string;
+    [key: string]: unknown;
+  }[];
+  [key: string]: unknown;
+}
+
+export interface CompletedExercisesResponseData {
+  exercises?: CompletedExercise[];
+  nextCursor?: string | null;
+}
+
 export interface CompletedAssignment {
   id?: string;
-  solvedTaskId?: string;
+  solvedTaskId?: string | null;
+  rawCompletionDate?: string;
   status?: 'pending' | string;
   title: string;
   type: string;

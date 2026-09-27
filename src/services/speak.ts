@@ -15,7 +15,7 @@ import {
   transformTaskToAssignment,
 } from '../utils/assignmentTransform';
 import type { ApiResponse } from '../types/api';
-import type { Assignment } from '../types/assignment';
+import type { Assignment, CompletedExercise, CompletedExercisesResponseData } from '../types/assignment';
 import type { SelfAnalyticsResponseData } from '../types/analytics';
 
 export type { Assignment };
@@ -110,8 +110,8 @@ export const fetchAssignedSpeechTasksWithCache = async (
 };
 
 // Generate Exercise Token
-export const generateExerciseToken = async (params: RequestParams): Promise<ApiResponse> => {
-  const response = await api.post<ApiResponse>(
+export const generateExerciseToken = async (params: RequestParams): Promise<ApiResponse<{ token?: string }>> => {
+  const response = await api.post<ApiResponse<{ token?: string }>>(
     API_ENDPOINTS.student.generateExerciseToken,
     params,
     jsonHeaders
@@ -148,8 +148,11 @@ export const submitSpeechTask = async (
 };
 
 // Get Completed Exercises
-export const getCompletedExercises = async (params: RequestParams): Promise<ApiResponse> => {
-  const response = await api.post<ApiResponse>(
+// data bazı yanıtlarda { exercises, nextCursor }, bazılarında doğrudan dizi; results toplam kayıt sayısı
+export const getCompletedExercises = async (
+  params: RequestParams
+): Promise<ApiResponse<CompletedExercisesResponseData | CompletedExercise[]> & { results?: number }> => {
+  const response = await api.post<ApiResponse<CompletedExercisesResponseData | CompletedExercise[]> & { results?: number }>(
     API_ENDPOINTS.student.getCompletedExercises,
     params,
     jsonHeaders
@@ -178,8 +181,11 @@ export const generateFileUrl = async (fileUrl: string): Promise<ApiResponse> => 
 };
 
 // Delete Solved Task
-export const deleteSolvedTask = async (taskId: string, studentIds: string[]): Promise<ApiResponse> => {
-  const response = await api.post<ApiResponse>(
+export const deleteSolvedTask = async (
+  taskId: string | null | undefined,
+  studentIds: string[]
+): Promise<ApiResponse & { successed?: boolean }> => {
+  const response = await api.post<ApiResponse & { successed?: boolean }>(
     API_ENDPOINTS.student.deleteSolvedTask,
     { taskId, studentIds },
     jsonHeaders

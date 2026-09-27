@@ -17,9 +17,18 @@ export interface AuthUser {
   _id?: string;
   userId?: string;
   username?: string;
+  role?: string;
   name?: string;
+  surname?: string;
+  lastName?: string;
   avatarUrl?: string;
   classInfo?: string[];
+  class_name?: string;
+  schoolName?: string;
+  school_name?: string;
   campusName?: string;
+  campus_name?: string;
+  createdAt?: string;
+  created_at?: string;
   [key: string]: unknown;
 }

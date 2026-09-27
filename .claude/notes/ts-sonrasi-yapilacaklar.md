@@ -23,7 +23,14 @@ bilerek dokunulmayan konular. Kullanıcı 2026-09-27'de "dönüşümden sonra ba
 - Kod yorumuna göre niyet "en eski önce". Kartlarda gösterilen `startDate`'e göre sıralamak
   kullanıcıların gördüğü sırayı değiştirir, karar verilmeli. Düzeltilince `AssignmentWithDueDate` kaldırılmalı.
 
-## 3. Diğer küçük işler
+## 3. Completed filtresindeki Reset eski filtrelerle yükleniyor
+
+- `CompletedScreen` → `resetFilters` state'leri (`selectedSubTaskTypes`, `completionDate`) sıfırlıyor ama
+  hemen ardından çağırdığı `fetchCompletedExercises` eski closure'daki filtreleri kullanıyor. Liste bir sonraki
+  yenilemeye kadar eski filtrelerle kalıyor.
+- Çözüm: `fetchCompletedExercises`'e filtreleri parametre olarak geçmek (veya focus'taki gibi ref kullanmak).
+
+## 4. Diğer küçük işler
 
 - `SpeechOnScenarioStep2Screen` Retry butonu var olmayan `refresh` ikonunu kullanıyor, buton ikonsuz görünüyor.
   `src/constants/svgIcons.json`'a SVG eklenmeli.
@@ -33,7 +40,7 @@ bilerek dokunulmayan konular. Kullanıcı 2026-09-27'de "dönüşümden sonra ba
   Kaldırılabilir; AsyncStorage'daki `persist:speak` anahtarı da temizlenmeli.
 - `AssignmentsScreen`'deki `'Completed'` filtre dalı ölü kod.
 
-## 4. Tablet rotasyonu
+## 5. Tablet rotasyonu
 
 iPad ve Android tablette dönme kilidi kaldırılacak, telefonlar portre kalacak. Ekran dönüşümünden sonra
 ayrı branch'te (ör. `feature/tablet-rotation`) yapılacak. Ayrıntılar Claude hafızasında (`project_tablet_rotation`).
