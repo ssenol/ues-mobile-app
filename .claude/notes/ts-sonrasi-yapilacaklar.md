@@ -28,15 +28,13 @@ bilerek dokunulmayan konular. Kullanıcı 2026-09-27'de "dönüşümden sonra ba
   yenilemeye kadar eski filtrelerle kalıyor.
 - Çözüm: `fetchCompletedExercises`'e filtreleri parametre olarak geçmek (veya focus'taki gibi ref kullanmak).
 
-## 4. Diğer küçük işler
+## 4. Küçük temizlikler — yapıldı: `chore/cleanup`
 
-- `SpeechOnScenarioStep2Screen` Retry butonu var olmayan `refresh` ikonunu kullanıyor, buton ikonsuz görünüyor.
-  `src/constants/svgIcons.json`'a SVG eklenmeli.
-- `src/utils/` altında kullanılmayan export'lar: `handleLogout`, `cleanHtmlAndBreaks`, `clearAllAppData`,
-  `MICROPHONE_KEY`. `BIOMETRIC_PROMPT_SHOWN_KEY` `LoginScreen`'de ayrıca tanımlı.
-- `speakSlice`'ın hiçbir action'ı dispatch edilmiyor ama `speakResults`/`currentAssignment` persist ediliyor.
-  Kaldırılabilir; AsyncStorage'daki `persist:speak` anahtarı da temizlenmeli.
-- `AssignmentsScreen`'deki `'Completed'` filtre dalı ölü kod.
+- `refresh` ikonu `svgIcons.json`/`iconMap.tsx`'e eklendi, senaryo sohbetindeki Retry butonunda artık görünüyor.
+- Kullanılmayan kod silindi: `handleLogout`, `cleanHtmlAndBreaks`, `clearAllAppData`, `MICROPHONE_KEY`,
+  `helpers.ts`'teki `USER_CREDENTIALS_KEY`; `BIOMETRIC_PROMPT_SHOWN_KEY` artık tek yerde (`helpers.ts`).
+- `speakSlice` kaldırıldı; eski `persist:speak` kaydı açılışta AsyncStorage'dan siliniyor.
+- `AssignmentsScreen`'deki ölü `'Completed'` dalı, stilleri ve yalnızca onun kullandığı `banner0.png` silindi.
 
 ## 5. Tablet rotasyonu (yapılıyor: `feature/tablet-rotation`)
 

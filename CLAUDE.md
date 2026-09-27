@@ -79,12 +79,11 @@ SDK 56'dan beri expo-router react-navigation'ı kullanmıyor: `@react-navigation
 
 ### Redux store
 
-`src/store/index.ts` dört slice'ı `redux-persist` ile ayrı ayrı `persistReducer`'a sarar (her biri kendi `whitelist`'iyle, AsyncStorage backend):
+`src/store/index.ts` üç slice'ı `redux-persist` ile ayrı ayrı `persistReducer`'a sarar (her biri kendi `whitelist`'iyle, AsyncStorage backend):
 
 | Slice | Persist edilen alanlar |
 |---|---|
 | `authSlice` | `accessToken`, `refreshToken`, `currentUser`, `isAuthenticated`, `tokenAcquiredAt` |
-| `speakSlice` | `speakResults`, `currentAssignment` |
 | `assignmentSlice` | `cachedAssignments`, `cacheTimestamp`, `totalAssignments`, `completedAssignments` |
 | `settingsSlice` | `ttsSpeed` |
 
@@ -130,4 +129,4 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 
 ## Notlar
 
-- [.claude/notes/ts-sonrasi-yapilacaklar.md](.claude/notes/ts-sonrasi-yapilacaklar.md) — JS → TS dönüşümünde (branch `ts/sdk57`) bulunup ertelenen işler: düz metin saklanan şifreler (düzeltildi), persist edilen token'lar, `dueDate` sıralaması (düzeltildi), Completed filtre Reset hatası, eksik `refresh` ikonu, ölü kod, tablet rotasyonu.
+- [.claude/notes/ts-sonrasi-yapilacaklar.md](.claude/notes/ts-sonrasi-yapilacaklar.md) — JS → TS dönüşümünde (branch `ts/sdk57`) bulunup ertelenen işler: düz metin saklanan şifreler (düzeltildi), persist edilen token'lar, `dueDate` sıralaması (düzeltildi), Completed filtre Reset hatası, eksik `refresh` ikonu ve ölü kod (temizlendi), tablet rotasyonu (yapıldı).

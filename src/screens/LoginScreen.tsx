@@ -28,9 +28,8 @@ import { CredentialsPayload, setCredentials } from "../store/slices/authSlice";
 import { useAppDispatch } from "../store/hooks";
 import { useTheme } from "../theme/ThemeContext";
 import ThemedIcon from "../components/ThemedIcon";
+import { BIOMETRIC_PROMPT_SHOWN_KEY } from "../utils/helpers";
 
-// Biyometrik hatırlatma Alert'inin daha önce gösterilip gösterilmediğini tutan anahtar.
-const BIOMETRIC_PROMPT_SHOWN_KEY = "biometric_prompt_shown";
 
 export default function LoginScreen() {
   // iPhone 6s/SE gibi küçük ekranlarda (veya kısa iPad penceresinde) header ve boşlukları küçültüp içeriğin sığmasını kolaylaştırır

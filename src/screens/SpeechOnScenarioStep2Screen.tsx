@@ -798,7 +798,7 @@ const SpeechOnScenarioStep2Screen = () => {
                 onPress={handleRetry}
                 activeOpacity={0.8}
               >
-                {/* 'refresh' ikonu svgIcons.json'da yok, ThemedIcon hiçbir şey çizmiyordu; eklenince buraya konmalı (bkz. .claude/notes/ts-sonrasi-yapilacaklar.md) */}
+                <ThemedIcon iconName="refresh" size={20} tintColor="#fff" />
                 <ThemedText weight="semiBold" style={styles.retryButtonText}>Retry</ThemedText>
               </TouchableOpacity>
             </View>

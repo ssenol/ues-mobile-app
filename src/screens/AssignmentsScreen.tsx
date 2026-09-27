@@ -2,7 +2,7 @@ import { isAxiosError } from 'axios';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, ImageBackground, LayoutRectangle, NativeScrollEvent, NativeSyntheticEvent, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, LayoutRectangle, NativeScrollEvent, NativeSyntheticEvent, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AssignmentCard from '../components/AssignmentCard';
@@ -491,31 +491,12 @@ export default function AssignmentsScreen() {
               ))
             )
           ) : !loading && (
-            // Not: 'Completed' diye bir filtre artık yok, bu dal hiç çalışmıyor
-            (selectedFilter as string) === 'Completed' ? (
-              // Completed filtresi ve tamamlanan assignment yoksa
-              <View style={styles.emptyCompletedContainer}>
-                <ImageBackground
-                  source={require('../../assets/images/banner0.png')}
-                  style={styles.emptyCompletedBanner}
-                  resizeMode="cover"
-                >
-                  <View style={styles.emptyCompletedContent}>
-                    <ThemedText style={styles.emptyCompletedText}>
-                      Learn, test, and see your progress with quizzes.
-                    </ThemedText>
-                  </View>
-                </ImageBackground>
-              </View>
-            ) : (
-              // Diğer durumlar için EmptyStateCard
-              <EmptyStateCard
-                iconName={'noassignment'}
-                title={'Nothing Assigned Yet'}
-                subtitle={"You do not have a task assigned yet."}
-                onLinkPress={() => router.push('/assignments')}
-              />
-            )
+            <EmptyStateCard
+              iconName={'noassignment'}
+              title={'Nothing Assigned Yet'}
+              subtitle={"You do not have a task assigned yet."}
+              onLinkPress={() => router.push('/assignments')}
+            />
           )}
         </View>
       </Animated.ScrollView>
@@ -651,28 +632,6 @@ const createStyles = (isTablet: boolean, SCREEN_WIDTH: number) => StyleSheet.cre
   },
   quizList: {
     paddingHorizontal: 16,
-  },
-  emptyCompletedContainer: {
-    marginHorizontal: -16,
-  },
-  emptyCompletedBanner: {
-    width: SCREEN_WIDTH,
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyCompletedContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyCompletedText: {
-    fontSize: isTablet ? 24 : 18,
-    lineHeight: isTablet ? 32 : 24,
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '600',
   },
 });
 

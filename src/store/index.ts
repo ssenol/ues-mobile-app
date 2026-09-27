@@ -2,7 +2,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { configureStore } from '@reduxjs/toolkit';
 import { persistReducer, persistStore, PersistConfig } from 'redux-persist';
 import authReducer, { AuthState } from './slices/authSlice';
-import speakReducer, { SpeakState } from './slices/speakSlice';
 import assignmentReducer, { AssignmentState } from './slices/assignmentSlice';
 import settingsReducer, { SettingsState } from './slices/settingsSlice';
 
@@ -10,12 +9,6 @@ const authPersistConfig: PersistConfig<AuthState> = {
   key: 'auth',
   storage: AsyncStorage,
   whitelist: ['accessToken', 'currentUser', 'refreshToken', 'isAuthenticated', 'tokenAcquiredAt']
-};
-
-const speakPersistConfig: PersistConfig<SpeakState> = {
-  key: 'speak',
-  storage: AsyncStorage,
-  whitelist: ['speakResults', 'currentAssignment']
 };
 
 const assignmentPersistConfig: PersistConfig<AssignmentState> = {
@@ -32,7 +25,6 @@ const settingsPersistConfig: PersistConfig<SettingsState> = {
 
 const rootReducer = {
   auth: persistReducer(authPersistConfig, authReducer),
-  speak: persistReducer(speakPersistConfig, speakReducer),
   assignment: persistReducer(assignmentPersistConfig, assignmentReducer),
   settings: persistReducer(settingsPersistConfig, settingsReducer)
 };
@@ -48,6 +40,9 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
+
+// Kaldırılan speakSlice'ın eski sürümlerden kalan persist kaydı (redux-persist bilinmeyen anahtarı kendisi silmez)
+AsyncStorage.removeItem('persist:speak').catch(() => {});
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

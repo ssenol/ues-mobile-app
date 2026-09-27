@@ -70,6 +70,7 @@ export const icons = {
   rightArrow: (props: IconProps) => <SvgIcon name="rightArrow" {...props} />,
   textToSpeech: (props: IconProps) => <SvgIcon name="textToSpeech" {...props} />,
   microphone: (props: IconProps) => <SvgIcon name="microphone" {...props} />,
+  refresh: (props: IconProps) => <SvgIcon name="refresh" {...props} />,
 } satisfies Record<string, IconComponent>;
 
 export type IconName = keyof typeof icons;
