@@ -115,6 +115,7 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 - `app.config.js` tek config dosyasıdır (`app.json` yok, eklemeyin: `app.config.js` düz obje export ettiği için yok sayılır) — `APP_VARIANT=development` env değişkenine göre dev/prod arasında icon, bundle identifier (`com.ues.boostifyspeak[.dev]`) ve isim değiştirir.
 - `eas.json` build profilleri: `development` (internal, dev client, APK), `preview` (internal, APK), `production` (store, app-bundle/ios).
 - iOS `buildNumber` her production build'de manuel artırılıyor (`app.config.js` içinde).
+- **Ekran yönü:** iPhone ve Android telefonlar portre kilitli; iPad ve Android tablet (en kısa kenar ≥ 600dp) her yöne döner. iOS'ta bu `app.config.js` → `infoPlist` içindeki `UISupportedInterfaceOrientations` (iPhone) / `~ipad` listeleriyle, Android'de manifest portre + `app/_layout.tsx`'te tablette `ScreenOrientation.lockAsync(OrientationLock.DEFAULT)` ile yapılır. Yerleşimler yatay ve kısa pencereye `useResponsive()` üzerinden uyum sağlamalı.
 
 ## Kod Kuralları (proje-özel)
 

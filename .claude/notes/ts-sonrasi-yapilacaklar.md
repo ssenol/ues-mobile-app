@@ -40,7 +40,7 @@ bilerek dokunulmayan konular. Kullanıcı 2026-09-27'de "dönüşümden sonra ba
   Kaldırılabilir; AsyncStorage'daki `persist:speak` anahtarı da temizlenmeli.
 - `AssignmentsScreen`'deki `'Completed'` filtre dalı ölü kod.
 
-## 5. Tablet rotasyonu
+## 5. Tablet rotasyonu (yapılıyor: `feature/tablet-rotation`)
 
 iPad ve Android tablette dönme kilidi kaldırılacak, telefonlar portre kalacak. Ekran dönüşümünden sonra
 ayrı branch'te (ör. `feature/tablet-rotation`) yapılacak. Ayrıntılar Claude hafızasında (`project_tablet_rotation`).

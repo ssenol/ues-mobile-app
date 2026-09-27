@@ -16,7 +16,8 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      requireFullScreen: true,
+      // iPad'de Split View / Slide Over açık (iPadOS 26+ bunu zaten dikkate almıyor, pencereler hep boyutlandırılabilir)
+      requireFullScreen: false,
       icon: IS_DEV 
         ? {
             light: "./assets/images/icon-dev.png",
@@ -27,11 +28,15 @@ module.exports = {
             dark: "./assets/images/icon-dark.png"
           },
       infoPlist: {
+        // iPhone portre kalır; iPad her yöne döner (expo-screen-orientation varsayılan maskeyi buradan okur)
         UISupportedInterfaceOrientations: [
           "UIInterfaceOrientationPortrait"
         ],
         "UISupportedInterfaceOrientations~ipad": [
-          "UIInterfaceOrientationPortrait"
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
         ],
         NSFaceIDUsageDescription: "BoostifySpeak uses Face ID to provide secure and convenient login for student accounts.",
         NSMicrophoneUsageDescription: "BoostifySpeak uses microphone access to record speaking assignments and provide pronunciation, fluency, and speaking assessment feedback.",
@@ -52,6 +57,7 @@ module.exports = {
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
+      // Manifest portre: telefonlar açılışta hiç yan dönmez. Tabletlerde kilit app/_layout.tsx'te çalışma anında açılır.
       screenOrientation: "portrait"
     },
     web: {
@@ -67,7 +73,6 @@ module.exports = {
       "expo-screen-orientation",
       "expo-status-bar",
       "./plugins/withPodsDeploymentTarget",
-      "./plugins/withAllowRestrictedResizability",
       [
         "expo-build-properties",
         {
