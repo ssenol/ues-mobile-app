@@ -66,7 +66,16 @@ module.exports = {
       "expo-web-browser",
       "expo-screen-orientation",
       "expo-status-bar",
-      "./plugins/withPodsDeploymentTarget"
+      "./plugins/withPodsDeploymentTarget",
+      [
+        "expo-build-properties",
+        {
+          ios: {
+            // Xcode 27 / iOS 27 SDK UIScene yaşam döngüsünü zorunlu kılıyor (SDK 58'de varsayılan olacak)
+            enableSceneSupport: true
+          }
+        }
+      ]
     ],
     extra: {
       router: {},

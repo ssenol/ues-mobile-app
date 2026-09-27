@@ -10,8 +10,6 @@ import {
   Keyboard,
   ActivityIndicator,
   TextInput,
-  LayoutAnimation,
-  UIManager
 } from 'react-native';
 import { useAudioRecorder, setAudioModeAsync, AudioQuality, IOSOutputFormat, useAudioPlayer } from 'expo-audio';
 import axios from 'axios';
@@ -32,11 +30,6 @@ import ConfirmModal from '../components/ConfirmModal';
 import ScenarioTaskDetails from '../components/ScenarioTaskDetails';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// Android için LayoutAnimation'ı etkinleştir
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 const SpeechOnScenarioStep2Screen = () => {
   const router = useRouter();

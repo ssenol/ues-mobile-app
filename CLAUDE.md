@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 BoostifySpeak (iç adı: UES Mobile App), öğrencilerin konuşma görevlerini (speech tasks) yönetmesini sağlayan bir React Native + Expo mobil uygulamasıdır. Öğrenciler atanan görevleri görüntüler, konuşma senaryolarını tamamlar, ses kaydı yapar ve ilerlemesini takip eder.
 
-- **Versiyon:** 1.0.0 · **Expo SDK:** ~54 · **React Native:** 0.81.5 · **React:** 19.1.0
+- **Versiyon:** 1.1.0 · **Expo SDK:** ~57 · **React Native:** 0.86.3 · **React:** 19.2.3 · **Minimum iOS:** 16.4
 - **Test cihazı:** iPhone 16 (fiziksel cihaz, `npm run ios` bunu hedefler)
 - **Backend:** `https://quizmaker-api.onrender.com/api/v0.0.1`
 
@@ -21,6 +21,8 @@ npm run lint                           # expo lint (eslint-config-expo/flat)
 npx expo start --clear                 # Metro cache temizleyerek başlat
 npx expo prebuild --clean              # Native projeleri (ios/android) yeniden üret
 ```
+
+**Xcode 27 notu:** Xcode 27'de Simulator.app yerine Device Hub geldi. @expo/cli bunu tanımadığı için `npm run ios` (`expo run:ios`) "Can't determine id of Simulator app" hatası verebilir. Geçici çözüm: `npx expo start` + `ios/BoostifySpeak.xcworkspace`'i Xcode'da açıp cihazı seçerek Run. Her `prebuild --clean` sonrası Signing Team yeniden seçilmeli ve `xattr -w com.dropbox.ignored 1 ios android` tekrarlanmalı (proje Dropbox'ta).
 
 Bu projede birim/entegrasyon test altyapısı (Jest vb.) **yok** — `npm run lint` ve manuel/fiziksel cihaz testi mevcut doğrulama yoludur.
 
@@ -68,10 +70,12 @@ Gerçek navigasyon her zaman `app/_layout.tsx`'ten başlar. Expo Router migratio
 ### Tab bar: platforma göre iki farklı implementasyon
 
 `app/(tabs)/_layout.tsx`, ekran genişliğine (`Dimensions`) VE iOS sürümüne (`Platform.Version`) bakıp karar verir:
-- **iPad** (`SCREEN_WIDTH >= 744`) **veya iOS 26'dan eski iPhone**: React Navigation'ın `Tabs` bileşeni + özel `tabBar={(props) => <CustomTabBar {...props} />}` (`src/components/CustomTabBar.js`) — mavi zeminli, floating custom tab bar. NativeTabs'ın custom PNG ikonları eski (Liquid Glass öncesi) iOS'ta ikonun arkasında istenmeyen gri bir kapsül gösteriyor, bu yüzden o sürümlerde de CustomTabBar kullanılıyor.
+- **iPad** (`SCREEN_WIDTH >= 744`) **veya iOS 26'dan eski iPhone**: expo-router'ın `Tabs` bileşeni + özel `tabBar={(props) => <CustomTabBar {...props} />}` (`src/components/CustomTabBar.js`) — mavi zeminli, floating custom tab bar. NativeTabs'ın custom PNG ikonları eski (Liquid Glass öncesi) iOS'ta ikonun arkasında istenmeyen gri bir kapsül gösteriyor, bu yüzden o sürümlerde de CustomTabBar kullanılıyor.
 - **iPhone, iOS 26+**: `expo-router/unstable-native-tabs`'tan `NativeTabs` — iOS 26 Liquid Glass native tab bar, ikonlar `assets/icons/tab-*.png`'den.
 
 Tab bar davranışını değiştirirken hangi platform dalını etkilediğinizi netleştirin; ikisi tamamen ayrı componentlerdir.
+
+SDK 56'dan beri expo-router react-navigation'ı kullanmıyor: `@react-navigation/*` paketlerini **eklemeyin**, `useFocusEffect` vb. hook'ları `expo-router`'dan import edin. NativeTabs'ta ikon/etiket `NativeTabs.Trigger.Icon` / `NativeTabs.Trigger.Label` olarak yazılır (SDK 55+).
 
 ### Redux store
 
