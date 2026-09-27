@@ -189,7 +189,7 @@ export const deleteSolvedTask = async (taskId: string, studentIds: string[]): Pr
 
 // My Progress sekmesi için özet istatistikler (KPI, skor trendi, kriter ortalamaları vb.)
 export const getSelfAnalytics = async (
-  userId: string,
+  userId: string | undefined,
   type = 'speaking'
 ): Promise<ApiResponse<SelfAnalyticsResponseData>> => {
   const response = await api.post<ApiResponse<SelfAnalyticsResponseData>>(

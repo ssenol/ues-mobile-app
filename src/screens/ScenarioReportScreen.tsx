@@ -3,16 +3,17 @@ import React from 'react';
 import {StyleSheet, View} from 'react-native';
 import ReportAnnotatedText from '../components/report/ReportAnnotatedText';
 import {getHighlightIssues} from '../components/report/reportIssueCategories';
-import ReportScreenShell from '../components/report/ReportScreenShell';
+import ReportScreenShell, {ReportTabRenderArgs} from '../components/report/ReportScreenShell';
 import reportStyles from '../components/report/reportStyles';
 import {stripHtml} from '../components/report/reportUtils';
 import {ThemedText} from '../components/ThemedText';
-import {useTheme} from '../theme/ThemeContext';
+import {Theme, useTheme} from '../theme/ThemeContext';
+import type {ScenarioMessage} from '../types/report';
 
 // User mesajlarındaki correction HTML'ini parse edip styled Text bileşenleri döndürür (sohbet balonuna özgü, eski span sistemi)
 const PUNCTUATION = /^[,.\-!?;:'")\]]/;
 
-const parseCorrection = (html, fonts) => {
+const parseCorrection = (html: string | undefined, fonts: Theme['fonts']) => {
   if (!html) return null;
 
   const normalized = html
@@ -74,14 +75,16 @@ const parseCorrection = (html, fonts) => {
   return parts.length > 0 ? parts : null;
 };
 
-function DialogueTab({ firstResult, issuesPanel, mistakes, voiceErrors }) {
+type DialogueTabProps = Pick<ReportTabRenderArgs, 'firstResult' | 'issuesPanel' | 'mistakes' | 'voiceErrors'>;
+
+function DialogueTab({ firstResult, issuesPanel, mistakes, voiceErrors }: DialogueTabProps) {
   const { fonts, shadows } = useTheme();
   const messages = firstResult?.messages || [];
 
   const languageConventionIssues = (mistakes || []).filter((m) => m.type !== 'logic-error');
   const logicIssues = (mistakes || []).filter((m) => m.type === 'logic-error');
 
-  const renderMessage = (msg, index) => {
+  const renderMessage = (msg: ScenarioMessage, index: number) => {
     if (msg.role === 'assistant') {
       return (
         <View key={index} style={[styles.messageBubble, styles.botBubble]}>
@@ -158,8 +161,7 @@ function DialogueTab({ firstResult, issuesPanel, mistakes, voiceErrors }) {
 }
 
 export default function ScenarioReportScreen() {
-  const params = useLocalSearchParams();
-  const { solvedTaskId, reportId } = params || {};
+  const { solvedTaskId, reportId } = useLocalSearchParams<{ solvedTaskId?: string; reportId?: string }>();
   const taskId = reportId || solvedTaskId;
 
   return (

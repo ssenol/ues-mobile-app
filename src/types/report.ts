@@ -23,6 +23,8 @@ export interface VoiceError {
   reason?: string;
   startTime?: number;
   endTime?: number;
+  // Senaryo raporunda hatanın ait olduğu mesajın sırası (ScenarioReportScreen ekler)
+  __messageIndex?: number;
   [key: string]: unknown;
 }
 
@@ -82,9 +84,46 @@ export interface VoiceResult {
   [key: string]: unknown;
 }
 
-// reportData.result[0]
+// Read Aloud / Speech on Topic değerlendirmesi (reportData.result[0].result)
+export interface SpeechResultDetail {
+  criteria?: ReportCriterion[];
+  feedback?: ReportFeedback;
+  mistakes?: ReportMistake[];
+  voiceErrors?: VoiceError[];
+  transcription?: string;
+  voiceResult?: VoiceResult & {
+    prosody?: number;
+    pronunciation?: number;
+    fluency?: number;
+  };
+  durationAsSeconds?: number;
+  scoreBreakdown?: ScoreBreakdown;
+  [key: string]: unknown;
+}
+
+// Speech on Scenario sohbet mesajı
+export interface ScenarioMessage {
+  role: 'user' | 'assistant' | string;
+  content?: string;
+  // Eski kayıtlarda hazır HTML düzeltme
+  correction?: string;
+  speechScore?: { voiceErrors?: VoiceError[]; [key: string]: unknown };
+  [key: string]: unknown;
+}
+
+// reportData.result[0]: görev tipine göre alanların yeri değişir
 export interface ReportResult {
   status?: string;
+  // Read Aloud / Speech on Topic
+  result?: SpeechResultDetail;
+  durationAsSeconds?: number;
+  audioUrl?: string;
+  // Speech on Scenario
+  criteria?: ReportCriterion[];
+  feedback?: ReportFeedback;
+  mistakes?: ReportMistake[];
+  messages?: ScenarioMessage[];
+  scoreBreakdown?: ScoreBreakdown;
   [key: string]: unknown;
 }
 

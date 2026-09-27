@@ -6,11 +6,12 @@ import CircularProgress from '../components/CircularProgress';
 import InfoModal from '../components/InfoModal';
 import ReportAnnotatedText from '../components/report/ReportAnnotatedText';
 import {getHighlightIssues} from '../components/report/reportIssueCategories';
-import ReportScreenShell from '../components/report/ReportScreenShell';
+import ReportScreenShell, {ReportTabRenderArgs} from '../components/report/ReportScreenShell';
 import reportStyles from '../components/report/reportStyles';
 import ThemedIcon from '../components/ThemedIcon';
 import {ThemedText} from '../components/ThemedText';
 import {useTheme} from '../theme/ThemeContext';
+import type {ReportResult} from '../types/report';
 
 const VOICE_METRIC_INFO = [
   { key: 'prosody', label: 'Prosody', description: 'Stress, rhythm and intonation of your speech.' },
@@ -20,7 +21,7 @@ const VOICE_METRIC_INFO = [
   { key: 'accuracy', label: 'Accuracy', description: 'Correctness of the words you produced.' },
 ];
 
-function RecordingTab({ firstResult, reportData, issuesPanel, mistakes, voiceErrors, resolvedAudioUrl, audioResolving }) {
+function RecordingTab({ firstResult, reportData, issuesPanel, mistakes, voiceErrors, resolvedAudioUrl, audioResolving }: ReportTabRenderArgs) {
   const { shadows } = useTheme();
   const isReadAloud = reportData.subType === 'read_aloud';
   const resultDetail = firstResult?.result || {};
@@ -94,7 +95,7 @@ function RecordingTab({ firstResult, reportData, issuesPanel, mistakes, voiceErr
   );
 }
 
-function VoiceResultCharts({ firstResult }) {
+function VoiceResultCharts({ firstResult }: { firstResult: ReportResult | null }) {
   const [showMoreCharts, setShowMoreCharts] = useState(false);
   const [infoModalVisible, setInfoModalVisible] = useState(false);
   const voiceResult = firstResult?.result?.voiceResult || {};
@@ -157,8 +158,7 @@ function VoiceResultCharts({ firstResult }) {
 }
 
 export default function AssignmentReportScreen() {
-  const params = useLocalSearchParams();
-  const { solvedTaskId, reportId } = params || {};
+  const { solvedTaskId, reportId } = useLocalSearchParams<{ solvedTaskId?: string; reportId?: string }>();
   const taskId = reportId || solvedTaskId;
 
   return (

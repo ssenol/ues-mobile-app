@@ -76,7 +76,7 @@ function SectionHeader({ title, meta, onInfoPress }: SectionHeaderProps) {
 // boostifywrite/src/components/AnalyticsPanel.tsx'in konuşma verisine uyarlanmış hali.
 // Backend /student/get-self-analytics'i type:'speaking' ile çağırır.
 interface MyProgressPanelProps {
-  userId: string;
+  userId: string | undefined;
 }
 
 export default function MyProgressPanel({ userId }: MyProgressPanelProps) {

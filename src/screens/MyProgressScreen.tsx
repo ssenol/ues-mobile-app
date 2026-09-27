@@ -3,14 +3,14 @@ import {StatusBar, setStatusBarStyle} from 'expo-status-bar';
 import React, {useCallback} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useSelector} from 'react-redux';
 import MyProgressPanel from '../components/progress/MyProgressPanel';
 import {ThemedText} from '../components/ThemedText';
 import {selectCurrentUser} from '../store/slices/authSlice';
+import {useAppSelector} from '../store/hooks';
 
 export default function MyProgressScreen() {
   const insets = useSafeAreaInsets();
-  const user = useSelector((state) => selectCurrentUser(state));
+  const user = useAppSelector(selectCurrentUser);
 
   // Diğer sekmelerdeki gibi: sekmeler arası geçişte status bar stilinin başka
   // bir ekrandan kalıp yanlış görünmesini önlemek için her focus'ta zorla ayarla
@@ -24,7 +24,7 @@ export default function MyProgressScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" translucent backgroundColor="transparent" />
+      <StatusBar style="dark" />
 
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.headerLeft} />

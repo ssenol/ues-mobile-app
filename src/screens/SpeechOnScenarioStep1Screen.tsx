@@ -7,15 +7,16 @@ import { setStatusBarStyle } from 'expo-status-bar';
 import { ThemedText } from '../components/ThemedText';
 import ThemedIcon from '../components/ThemedIcon';
 import ScenarioTaskDetails from '../components/ScenarioTaskDetails';
+import type { RawSpeechTask } from '../types/assignment';
 
 
 const SpeechOnScenarioStep1Screen = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams<{ task?: string }>();
   const insets = useSafeAreaInsets();
   
   // Parse task from JSON string
-  const task = params.task ? JSON.parse(params.task) : null;
+  const task: RawSpeechTask | null = params.task ? JSON.parse(params.task) : null;
 
   // Tablet ve mobil kontrolü
   const { isTablet } = useResponsive();
@@ -57,9 +58,9 @@ const SpeechOnScenarioStep1Screen = () => {
     );
   }
 
-  const { taskName } = task.task.setting;
+  const taskName = task.task?.setting?.taskName;
 
-  const stripHtml = (html) => {
+  const stripHtml = (html: string | null | undefined) => {
     if (!html) return '';
     return html.replace(/<[^>]*>/g, '').trim();
   };

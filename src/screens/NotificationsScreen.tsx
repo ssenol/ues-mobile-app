@@ -24,7 +24,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" translucent backgroundColor="transparent" />
+      <StatusBar style="dark" />
 
       <NotificationModal
         mode="screen"
