@@ -129,4 +129,4 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 
 ## Notlar
 
-- [.claude/notes/ts-sonrasi-yapilacaklar.md](.claude/notes/ts-sonrasi-yapilacaklar.md) — JS → TS dönüşümünde (branch `ts/sdk57`) bulunup ertelenen işler: düz metin saklanan şifreler (güvenlik), etkisiz `dueDate` sıralaması, Completed filtre Reset hatası, eksik `refresh` ikonu, ölü kod, tablet rotasyonu.
+- [.claude/notes/ts-sonrasi-yapilacaklar.md](.claude/notes/ts-sonrasi-yapilacaklar.md) — JS → TS dönüşümünde (branch `ts/sdk57`) bulunup ertelenen işler: düz metin saklanan şifreler (düzeltildi), persist edilen token'lar, etkisiz `dueDate` sıralaması, Completed filtre Reset hatası, eksik `refresh` ikonu, ölü kod, tablet rotasyonu.

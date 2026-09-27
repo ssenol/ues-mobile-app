@@ -3,16 +3,15 @@
 JS → TS dönüşümü (`ts/sdk57` branch'i) sırasında bulunan, dönüşümü davranış değiştirmeden bitirmek için
 bilerek dokunulmayan konular. Kullanıcı 2026-09-27'de "dönüşümden sonra bakalım" dedi.
 
-## 1. Şifreler düz metin saklanıyor (güvenlik, öncelikli)
+## 1. Şifreler düz metin saklanıyordu (güvenlik) — düzeltildi: `fix/secure-credentials`
 
-- `src/screens/LoginScreen.tsx` her başarılı girişte `{ username, password }` bilgisini
-  `last_login_credentials` anahtarıyla **AsyncStorage'a düz metin** yazıyor. Bu anahtarı okuyan kod yok.
-- `src/services/biometricAuth.ts` biyometrik giriş için kimlik bilgilerini (`user_credentials`) yine
-  AsyncStorage'da tutuyor. AsyncStorage şifrelenmez.
-- Çözüm: kimlik bilgileri `expo-secure-store`'a (Keychain/Keystore) taşınmalı, paket zaten kurulu.
-  - `last_login_credentials` yazımı tamamen kaldırılmalı, mevcut kayıt silinmeli.
-  - Canlı kullanıcılar var: ilk açılışta AsyncStorage'daki `user_credentials` SecureStore'a aktarılıp
-    AsyncStorage'dan silinmeli (migration). Aksi halde biyometrik giriş kullananlar yeniden giriş yapmak zorunda kalır.
+- Eskiden `user_credentials` (biyometrik giriş) ve `last_login_credentials` (son giriş; Profil'den biyometrik
+  sonradan açılınca kullanılıyor) AsyncStorage'a düz metin yazılıyordu.
+- Artık ikisi de `BiometricAuthService` üzerinden `expo-secure-store`'da (Keychain/Keystore) tutuluyor.
+  `ensureCredentialStorageReady()` açılışta eski kayıtları taşıyor; iOS Keychain yeniden kurulumda silinmediği için
+  `secure_credentials_ready` işareti yoksa ve eski kayıt da yoksa Keychain artığı temizleniyor.
+- Kalan: Redux `authSlice` `accessToken`/`refreshToken`'ı redux-persist ile AsyncStorage'da tutuyor (düz metin).
+  Şifre kadar kritik değil ama refresh token uzun ömürlü; SecureStore tabanlı bir persist storage'a taşınabilir.
 
 ## 2. Görev sıralaması çalışmıyor
 

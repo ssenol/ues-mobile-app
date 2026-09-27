@@ -289,8 +289,11 @@ export default function ProfileScreen() {
     try {
       // AsyncStorage'ı temizle (tüm persist verileri)
       await AsyncStorage.clear();
+
+      // Kayıtlı kimlik bilgilerini (SecureStore) sil; clear() sildiği kurulum işaretini de yeniden yazar
+      await BiometricAuthService.clearStoredCredentials();
       
-      // SecureStore'daki hassas verileri temizle
+      // SecureStore'daki diğer hassas verileri temizle
       const possibleKeys = ['accessToken', 'refreshToken', 'userCredentials', 'biometricToken'];
       for (const key of possibleKeys) {
         try {
@@ -320,15 +323,9 @@ export default function ProfileScreen() {
       await setBiometricEnabled(value);
       setBiometricEnabledState(value);
       if (value) {
-        const credsStr = await AsyncStorage.getItem("last_login_credentials");
-        if (credsStr) {
-          const creds = JSON.parse(credsStr);
-          if (creds.username && creds.password) {
-            await BiometricAuthService.saveCredentials(
-              creds.username,
-              creds.password
-            );
-          }
+        const creds = await BiometricAuthService.getLastLoginCredentials();
+        if (creds?.username && creds?.password) {
+          await BiometricAuthService.saveCredentials(creds.username, creds.password);
         }
       }
     }
@@ -338,17 +335,9 @@ export default function ProfileScreen() {
     setBiometricModalVisible(false);
     await setBiometricEnabled(true);
     setBiometricEnabledState(true);
-    const credsStr = await AsyncStorage.getItem(
-      "last_login_credentials"
-    );
-    if (credsStr) {
-      const creds = JSON.parse(credsStr);
-      if (creds.username && creds.password) {
-        await BiometricAuthService.saveCredentials(
-          creds.username,
-          creds.password
-        );
-      }
+    const creds = await BiometricAuthService.getLastLoginCredentials();
+    if (creds?.username && creds?.password) {
+      await BiometricAuthService.saveCredentials(creds.username, creds.password);
     }
   };
 

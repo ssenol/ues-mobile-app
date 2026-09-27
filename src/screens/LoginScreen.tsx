@@ -195,11 +195,8 @@ export default function LoginScreen() {
         }
       }, 100);
 
-      // Login işlemi sonrası username ve password'u AsyncStorage'a kaydet
-      await AsyncStorage.setItem(
-        "last_login_credentials",
-        JSON.stringify({ username, password })
-      );
+      // Son giriş bilgilerini SecureStore'a kaydet (Profil'den biyometrik sonradan açılırsa kullanılır)
+      await BiometricAuthService.saveLastLoginCredentials(username, password);
       // <--- TOKEN'I SECURESTORE'A KAYDET --->
       try {
         await SecureStore.setItemAsync('accessToken', response.token);

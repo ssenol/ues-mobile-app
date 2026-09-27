@@ -10,11 +10,15 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { ThemeProvider } from '@/src/theme/ThemeContext';
 import { persistor, store } from '@/src/store';
+import { ensureCredentialStorageReady } from '@/src/services/biometricAuth';
 
 // Splash screen'i font yüklenene kadar göster
 // Native splash o view controller için henüz kayıtlı değilse (dev client'ın kendi splash
 // döngüsüyle çakışma) reddedebilir — bu zararsız, sadece unhandled rejection'ı önlüyoruz
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Eski sürümlerin AsyncStorage'a düz metin yazdığı kimlik bilgilerini SecureStore'a taşı
+ensureCredentialStorageReady();
 
 // Android'de manifest portre kilitli (telefonlar açılışta yan dönmesin diye). Tablette kilit açılır:
 // Android'in büyük ekran tanımı en kısa kenarın 600dp ve üzeri olması. Cihaz sınıfı sabit olduğu için
