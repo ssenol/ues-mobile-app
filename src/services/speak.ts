@@ -11,9 +11,9 @@ import {
 } from '../store/slices/assignmentSlice';
 import { parseAssignedTasksResponse, transformTaskToAssignment } from '../utils/assignmentTransform';
 import type { ApiResponse } from '../types/api';
+import type { Assignment } from '../types/assignment';
 
-// transformTaskToAssignment çıktısı; assignmentTransform TS'e geçince oradan türetilecek
-export type Assignment = NonNullable<ReturnType<typeof transformTaskToAssignment>>;
+export type { Assignment };
 
 export interface AssignmentsResult {
   assignments: Assignment[];

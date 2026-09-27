@@ -63,7 +63,7 @@ import HomeScreen from '../../src/screens/HomeScreen';
 export default function Home() { return <HomeScreen />; }
 ```
 
-Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `app/` altında uygun konuma ince route dosyasını ekle. `app/` dosyaları TypeScript (`.tsx`, `@/*` path alias), `src/` dosyaları kademeli olarak JS'ten TS'e taşınıyor: `src/config/`, `src/services/` ve `src/types/` TypeScript (`.ts`, strict), geri kalanı henüz düz JavaScript (`.js`). Sıra: config+services → `src/store/` slice'ları → ekranlar/component'ler. Taşınmamış bir JS modülüne dokunurken dönüşüm yapmayın; dönüşüm ayrı commit'lerle yapılır. `tsconfig` `allowJs` (expo base) sayesinde TS dosyaları JS modüllerini import edebilir; doğrulama `npx tsc --noEmit`.
+Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `app/` altında uygun konuma ince route dosyasını ekle. `app/` dosyaları TypeScript (`.tsx`, `@/*` path alias), `src/` dosyaları kademeli olarak JS'ten TS'e taşınıyor: `src/config/`, `src/services/`, `src/store/` ve `src/types/` TypeScript (`.ts`, strict), geri kalanı henüz düz JavaScript (`.js`). Sıra: config+services → `src/store/` slice'ları → ekranlar/component'ler. Taşınmamış bir JS modülüne dokunurken dönüşüm yapmayın; dönüşüm ayrı commit'lerle yapılır. `tsconfig` `allowJs` (expo base) sayesinde TS dosyaları JS modüllerini import edebilir; doğrulama `npx tsc --noEmit`.
 
 Gerçek navigasyon her zaman `app/_layout.tsx`'ten başlar. Expo Router migration'ından kalan eski React Navigation mimarisi (`App.js`, `src/AppContent.js`, `src/navigation/`) ve yalnızca onun kullandığı paketler SDK 55 yükseltmesi öncesinde silindi.
 
@@ -79,7 +79,7 @@ SDK 56'dan beri expo-router react-navigation'ı kullanmıyor: `@react-navigation
 
 ### Redux store
 
-`src/store/index.js` dört slice'ı `redux-persist` ile ayrı ayrı `persistReducer`'a sarar (her biri kendi `whitelist`'iyle, AsyncStorage backend):
+`src/store/index.ts` dört slice'ı `redux-persist` ile ayrı ayrı `persistReducer`'a sarar (her biri kendi `whitelist`'iyle, AsyncStorage backend):
 
 | Slice | Persist edilen alanlar |
 |---|---|
@@ -88,7 +88,7 @@ SDK 56'dan beri expo-router react-navigation'ı kullanmıyor: `@react-navigation
 | `assignmentSlice` | `cachedAssignments`, `cacheTimestamp`, `totalAssignments`, `completedAssignments` |
 | `settingsSlice` | `ttsSpeed` |
 
-Yeni bir slice eklerken `src/store/index.js`'e hem reducer'ı hem karşılık gelen `persistConfig`'i (whitelist ile) eklemeyi unutmayın.
+Yeni bir slice eklerken `src/store/index.ts`'e hem reducer'ı hem karşılık gelen `persistConfig`'i (whitelist ile) eklemeyi unutmayın. `RootState`/`AppDispatch` tipleri `src/store/index.ts`'ten gelir; TS dosyalarında `useSelector`/`useDispatch` yerine `src/store/hooks.ts`'teki `useAppSelector`/`useAppDispatch` kullanılır.
 
 ### API katmanı ve token yönetimi
 

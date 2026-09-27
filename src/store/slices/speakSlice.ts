@@ -1,6 +1,25 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { Assignment } from "../../types/assignment";
 
-const initialState = {
+// Not: bu slice'ın action'ları şu an hiçbir yerden dispatch edilmiyor
+export interface SpeakState {
+  evaluationResult: unknown;
+  topicScoreResult: unknown;
+  aiEvaluationResult: unknown;
+  speakResults: unknown;
+  assignedAssignments: Assignment[];
+  totalAssignmentCount: number;
+  currentAssignment: Assignment | null;
+  assignmentSettings: unknown;
+  loading: boolean;
+  error: unknown;
+}
+
+type AssignedAssignmentsPayload =
+  | Assignment[]
+  | { assignments?: Assignment[]; totalCount?: number };
+
+const initialState: SpeakState = {
   // Speech değerlendirme sonuçları
   evaluationResult: null,
   topicScoreResult: null,
@@ -23,7 +42,7 @@ const speakSlice = createSlice({
   initialState,
   reducers: {
     // Görev listesi işlemleri
-    setAssignedAssignments: (state, action) => {
+    setAssignedAssignments: (state, action: PayloadAction<AssignedAssignmentsPayload>) => {
       if (Array.isArray(action.payload)) {
         // Eski format: doğrudan dizi
         state.assignedAssignments = action.payload;
@@ -37,7 +56,7 @@ const speakSlice = createSlice({
     },
 
     // Mevcut görev işlemleri
-    setCurrentAssignment: (state, action) => {
+    setCurrentAssignment: (state, action: PayloadAction<Assignment | null>) => {
       const { payload } = action;
       state.currentAssignment = payload;
       state.assignmentSettings = null;
@@ -45,22 +64,22 @@ const speakSlice = createSlice({
     },
 
     // Değerlendirme sonuçları işlemleri
-    setSpeechResults: (state, action) => {
+    setSpeechResults: (state, action: PayloadAction<unknown>) => {
       state.speakResults = action.payload;
     },
 
     // Durum işlemleri
-    setLoading: (state, action) => {
+    setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
 
-    setError: (state, action) => {
+    setError: (state, action: PayloadAction<unknown>) => {
       state.error = action.payload;
       state.loading = false;
     },
 
     // Temizleme işlemi
-    clearSpeechState: (state) => {
+    clearSpeechState: () => {
       return initialState;
     },
   },

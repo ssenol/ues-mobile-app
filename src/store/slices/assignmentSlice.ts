@@ -1,9 +1,26 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { Assignment } from "../../types/assignment";
+import type { RootState } from "../index";
 
 // Cache süresi (milisaniye cinsinden)
 export const CACHE_DURATION_MS = 12 * 60 * 60 * 1000; // 12 saat
 
-const initialState = {
+export interface AssignmentState {
+  cachedAssignments: Assignment[];
+  cacheTimestamp: number | null;
+  totalAssignments: number;
+  completedAssignments: number;
+  loading: boolean;
+  error: unknown;
+}
+
+export interface SetCachedAssignmentsPayload {
+  assignments?: Assignment[] | null;
+  totalAssignments?: number;
+  completedAssignments?: number;
+}
+
+const initialState: AssignmentState = {
   // Cache edilen assignment verileri
   cachedAssignments: [],
   
@@ -24,7 +41,7 @@ const assignmentSlice = createSlice({
   initialState,
   reducers: {
     // Cache'i güncelle
-    setCachedAssignments: (state, action) => {
+    setCachedAssignments: (state, action: PayloadAction<SetCachedAssignmentsPayload>) => {
       const { assignments, totalAssignments, completedAssignments } = action.payload;
       // Deep copy ile array'i kaydet - mutation hatasını önlemek için
       state.cachedAssignments = assignments ? JSON.parse(JSON.stringify(assignments)) : [];
@@ -43,18 +60,18 @@ const assignmentSlice = createSlice({
     },
 
     // Loading durumu
-    setLoading: (state, action) => {
+    setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
 
     // Error durumu
-    setError: (state, action) => {
+    setError: (state, action: PayloadAction<unknown>) => {
       state.error = action.payload;
       state.loading = false;
     },
 
     // Tüm state'i temizle (logout için)
-    clearAssignmentState: (state) => {
+    clearAssignmentState: () => {
       return initialState;
     },
   },
@@ -69,19 +86,19 @@ export const {
 } = assignmentSlice.actions;
 
 // Selectors
-export const selectCachedAssignments = (state) => {
+export const selectCachedAssignments = (state: RootState): Assignment[] => {
   const cached = state.assignment?.cachedAssignments || [];
   // Deep copy ile döndür - mutation hatasını önlemek için
   return cached.length > 0 ? JSON.parse(JSON.stringify(cached)) : [];
 };
-export const selectCacheTimestamp = (state) => state.assignment?.cacheTimestamp;
-export const selectTotalAssignments = (state) => state.assignment?.totalAssignments || 0;
-export const selectCompletedAssignments = (state) => state.assignment?.completedAssignments || 0;
-export const selectAssignmentLoading = (state) => state.assignment?.loading || false;
-export const selectAssignmentError = (state) => state.assignment?.error;
+export const selectCacheTimestamp = (state: RootState) => state.assignment?.cacheTimestamp;
+export const selectTotalAssignments = (state: RootState) => state.assignment?.totalAssignments || 0;
+export const selectCompletedAssignments = (state: RootState) => state.assignment?.completedAssignments || 0;
+export const selectAssignmentLoading = (state: RootState) => state.assignment?.loading || false;
+export const selectAssignmentError = (state: RootState) => state.assignment?.error;
 
 // Cache geçerli mi kontrol et
-export const selectIsCacheValid = (state, cacheDuration = CACHE_DURATION_MS) => {
+export const selectIsCacheValid = (state: RootState, cacheDuration: number = CACHE_DURATION_MS): boolean => {
   const timestamp = selectCacheTimestamp(state);
   if (!timestamp) return false;
   

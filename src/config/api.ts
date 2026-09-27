@@ -68,8 +68,7 @@ const refreshAccessToken = async (refreshToken: string): Promise<string> => {
 
   store.dispatch(setCredentials({
     token: newAccessToken,
-    // authSlice henüz JS: currentUser tipi initialState'teki null'dan çıkarılıyor
-    user: { ...(store.getState().auth.currentUser as AuthUser | null), ...newUser },
+    user: { ...store.getState().auth.currentUser, ...newUser },
     refreshToken: refreshToken,
     tokenAcquiredAt: Date.now(),
   }));

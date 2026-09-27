@@ -1,30 +1,30 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { configureStore } from '@reduxjs/toolkit';
-import { persistReducer, persistStore } from 'redux-persist';
-import authReducer from './slices/authSlice';
-import speakReducer from './slices/speakSlice';
-import assignmentReducer from './slices/assignmentSlice';
-import settingsReducer from './slices/settingsSlice';
+import { persistReducer, persistStore, PersistConfig } from 'redux-persist';
+import authReducer, { AuthState } from './slices/authSlice';
+import speakReducer, { SpeakState } from './slices/speakSlice';
+import assignmentReducer, { AssignmentState } from './slices/assignmentSlice';
+import settingsReducer, { SettingsState } from './slices/settingsSlice';
 
-const authPersistConfig = {
+const authPersistConfig: PersistConfig<AuthState> = {
   key: 'auth',
   storage: AsyncStorage,
   whitelist: ['accessToken', 'currentUser', 'refreshToken', 'isAuthenticated', 'tokenAcquiredAt']
 };
 
-const speakPersistConfig = {
+const speakPersistConfig: PersistConfig<SpeakState> = {
   key: 'speak',
   storage: AsyncStorage,
   whitelist: ['speakResults', 'currentAssignment']
 };
 
-const assignmentPersistConfig = {
+const assignmentPersistConfig: PersistConfig<AssignmentState> = {
   key: 'assignment',
   storage: AsyncStorage,
   whitelist: ['cachedAssignments', 'cacheTimestamp', 'totalAssignments', 'completedAssignments']
 };
 
-const settingsPersistConfig = {
+const settingsPersistConfig: PersistConfig<SettingsState> = {
   key: 'settings',
   storage: AsyncStorage,
   whitelist: ['ttsSpeed']
@@ -48,5 +48,8 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
 
 export default store;
