@@ -46,20 +46,20 @@ export default function useReportIssuesPanel() {
   const handleIssuePress = useCallback((issue: AnnotatedIssue, lists: IssueLists) => {
     if (issue.kind === 'pronunciation') {
       setActiveIssueTab('Pronunciation');
-      const idx = (lists.pronunciation || []).findIndex((i) => i === issue || (i.word === issue.word && i.startTime === issue.startTime));
+      const idx = (lists.pronunciation || []).findIndex((i) => i === issue.source || (i.word === issue.word && i.startTime === issue.startTime));
       openModal(lists.pronunciation, idx >= 0 ? idx : 0, 'pronunciation');
       return;
     }
 
     if (issue.type === 'logic-error') {
       setActiveIssueTab('Logic');
-      const idx = (lists.logic || []).findIndex((i) => i === issue);
+      const idx = (lists.logic || []).findIndex((i) => i === issue.source);
       openModal(lists.logic, idx >= 0 ? idx : 0, 'error');
       return;
     }
 
     setActiveIssueTab('Language Convention');
-    const idx = (lists.languageConvention || []).findIndex((i) => i === issue);
+    const idx = (lists.languageConvention || []).findIndex((i) => i === issue.source);
     openModal(lists.languageConvention, idx >= 0 ? idx : 0, 'error');
   }, [openModal]);
 

@@ -51,11 +51,11 @@ export function getHighlightIssues(
   }: { pronunciationIssues?: VoiceError[]; lcIssues?: ReportMistake[]; logicIssues?: ReportMistake[] } = {}
 ): AnnotatedIssue[] {
   if (activeIssueTab === 'Pronunciation') {
-    return pronunciationIssues.map((i) => ({ ...i, kind: 'pronunciation' as const }));
+    return pronunciationIssues.map((i) => ({ ...i, kind: 'pronunciation' as const, source: i }));
   }
   if (activeIssueTab === 'Logic') {
-    return logicIssues.map((i) => ({ ...i, kind: 'error' as const }));
+    return logicIssues.map((i) => ({ ...i, kind: 'error' as const, source: i }));
   }
   const filtered = lcFilter === 'all' ? lcIssues : lcIssues.filter((i) => i.type === lcFilter);
-  return filtered.map((i) => ({ ...i, kind: 'error' as const }));
+  return filtered.map((i) => ({ ...i, kind: 'error' as const, source: i }));
 }

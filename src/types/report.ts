@@ -26,10 +26,11 @@ export interface VoiceError {
   [key: string]: unknown;
 }
 
-// Metin üzerinde vurgulanan, türüne göre normalize edilmiş hata (getHighlightIssues çıktısı)
+// Metin üzerinde vurgulanan, türüne göre normalize edilmiş hata (getHighlightIssues çıktısı).
+// Kopya obje olduğu için listedeki asıl hatayı bulmak `source` referansıyla yapılır.
 export type AnnotatedIssue =
-  | (ReportMistake & { kind: 'error' })
-  | (VoiceError & { kind: 'pronunciation' });
+  | (ReportMistake & { kind: 'error'; source: ReportMistake })
+  | (VoiceError & { kind: 'pronunciation'; source: VoiceError });
 
 export interface ReportCriterion {
   key: string;
