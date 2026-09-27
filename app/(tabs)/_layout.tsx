@@ -1,5 +1,5 @@
 import { Redirect, Tabs } from 'expo-router';
-import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { Dimensions, DynamicColorIOS, Platform } from 'react-native';
 import { useSelector } from 'react-redux';
 import { selectIsAuthenticated } from '@/src/store/slices/authSlice';
@@ -66,35 +66,35 @@ export default function TabsLayout() {
       tintColor={DynamicColorIOS({ dark: '#3E4EF0', light: '#3E4EF0' })}
     >
       <NativeTabs.Trigger name="index">
-        <Icon src={require('../../assets/icons/tab-home.png')} />
-        <Label>Home</Label>
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-home.png')} />
+        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="assignments">
-        <Icon src={require('../../assets/icons/tab-assignments.png')} />
-        <Label>Assignments</Label>
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-assignments.png')} />
+        <NativeTabs.Trigger.Label>Assignments</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="completed">
-        <Icon src={require('../../assets/icons/tab-completed.png')} />
-        <Label>Completed</Label>
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-completed.png')} />
+        <NativeTabs.Trigger.Label>Completed</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       {/* Notifications sekmesi şimdilik kaldırıldı, yerine başka bir ikon/sekme gelecek
       <NativeTabs.Trigger name="notifications">
-        <Icon src={require('../../assets/icons/tab-notifications.png')} />
-        <Label>Notifications</Label>
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-notifications.png')} />
+        <NativeTabs.Trigger.Label>Notifications</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       */}
 
       <NativeTabs.Trigger name="my-progress">
-        <Icon src={require('../../assets/icons/tab-my-progress.png')} />
-        <Label>My Progress</Label>
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-my-progress.png')} />
+        <NativeTabs.Trigger.Label>My Progress</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="profile">
-        <Icon src={require('../../assets/icons/tab-profile.png')} />
-        <Label>Profile</Label>
+        <NativeTabs.Trigger.Icon src={require('../../assets/icons/tab-profile.png')} />
+        <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );

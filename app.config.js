@@ -9,7 +9,6 @@ module.exports = {
     orientation: "portrait",
     icon: IS_DEV ? "./assets/images/icon-dev.png" : "./assets/images/icon.png",
     userInterfaceStyle: "light",
-    newArchEnabled: true,
     splash: {
       image: "./assets/images/splash.png",
       resizeMode: "cover",
@@ -65,7 +64,8 @@ module.exports = {
       "expo-font",
       "expo-audio",
       "expo-web-browser",
-      "expo-screen-orientation"
+      "expo-screen-orientation",
+      "./plugins/withPodsDeploymentTarget"
     ],
     extra: {
       router: {},
