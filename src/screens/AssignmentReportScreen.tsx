@@ -11,6 +11,7 @@ import reportStyles from '../components/report/reportStyles';
 import ThemedIcon from '../components/ThemedIcon';
 import {ThemedText} from '../components/ThemedText';
 import {useTheme} from '../theme/ThemeContext';
+import useResponsive from '../hooks/useResponsive';
 import type {ReportResult} from '../types/report';
 
 const VOICE_METRIC_INFO = [
@@ -98,7 +99,25 @@ function RecordingTab({ firstResult, reportData, issuesPanel, mistakes, voiceErr
 function VoiceResultCharts({ firstResult }: { firstResult: ReportResult | null }) {
   const [showMoreCharts, setShowMoreCharts] = useState(false);
   const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const { isTablet } = useResponsive();
   const voiceResult = firstResult?.result?.voiceResult || {};
+
+  // Telefonda ilk 3'ü görünür, kalanlar More ile açılır; tablette 5'i tek satırda
+  const charts = [
+    { key: 'prosody', label: 'Prosody', value: voiceResult.prosody },
+    { key: 'pronunciation', label: 'Pronunciation', value: voiceResult.pronunciation },
+    { key: 'completeness', label: 'Completeness', value: voiceResult.completeness },
+    { key: 'fluency', label: 'Fluency', value: voiceResult.fluency },
+    { key: 'accuracy', label: 'Accuracy', value: voiceResult.accuracy },
+  ];
+  const PHONE_VISIBLE_COUNT = 3;
+
+  // Her grafik aynı genişlikte hücrede durur; böylece More ile açılan satır üst satırla aynı ızgaraya oturur
+  const renderChart = (chart: (typeof charts)[number], animate: boolean) => (
+    <View key={chart.key} style={isTablet ? styles.chartCellTablet : styles.chartCellPhone}>
+      <CircularProgress value={chart.value || 0} label={chart.label} size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate={animate} />
+    </View>
+  );
 
   return (
     <View>
@@ -114,27 +133,32 @@ function VoiceResultCharts({ firstResult }: { firstResult: ReportResult | null }
         </TouchableOpacity>
       </View>
 
-      <View style={styles.circularProgressContainer}>
-        <CircularProgress value={voiceResult.prosody || 0} label="Prosody" size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate />
-        <CircularProgress value={voiceResult.pronunciation || 0} label="Pronunciation" size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate />
-        <CircularProgress value={voiceResult.completeness || 0} label="Completeness" size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate />
-      </View>
-
-      {showMoreCharts && (
-        <View style={styles.moreChartsContainer}>
-          <CircularProgress value={voiceResult.fluency || 0} label="Fluency" size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate={showMoreCharts} />
-          <CircularProgress value={voiceResult.accuracy || 0} label="Accuracy" size={80} strokeWidth={8} color="#3E4EF0" shouldAnimate={showMoreCharts} />
+      {isTablet ? (
+        <View style={styles.chartsRow}>
+          {charts.map((chart) => renderChart(chart, true))}
         </View>
-      )}
+      ) : (
+        <>
+          <View style={styles.chartsRow}>
+            {charts.slice(0, PHONE_VISIBLE_COUNT).map((chart) => renderChart(chart, true))}
+          </View>
 
-      <View style={styles.divider} />
-      <View style={styles.moreLinkContainer}>
-        <TouchableOpacity style={styles.moreLink} onPress={() => setShowMoreCharts((v) => !v)} activeOpacity={0.7}>
-          <ThemedText weight="bold" style={styles.moreLinkText}>
-            {showMoreCharts ? 'Less' : 'More'}
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
+          {showMoreCharts && (
+            <View style={[styles.chartsRow, styles.moreChartsRow]}>
+              {charts.slice(PHONE_VISIBLE_COUNT).map((chart) => renderChart(chart, showMoreCharts))}
+            </View>
+          )}
+
+          <View style={styles.divider} />
+          <View style={styles.moreLinkContainer}>
+            <TouchableOpacity style={styles.moreLink} onPress={() => setShowMoreCharts((v) => !v)} activeOpacity={0.7}>
+              <ThemedText weight="bold" style={styles.moreLinkText}>
+                {showMoreCharts ? 'Less' : 'More'}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
 
       <InfoModal
         visible={infoModalVisible}
@@ -262,15 +286,21 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: '#727272',
   },
-  circularProgressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  moreChartsContainer: {
+  chartsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 32,
-    marginTop: 8,
+  },
+  moreChartsRow: {
+    marginTop: 16,
+  },
+  // Telefonda satır başına 3 eşit hücre; 2'li satır ortalanıp aynı hücre genişliğini kullanır
+  chartCellPhone: {
+    width: '33.33%',
+    alignItems: 'center',
+  },
+  chartCellTablet: {
+    flex: 1,
+    alignItems: 'center',
   },
   moreLinkContainer: {
     alignItems: 'center',
