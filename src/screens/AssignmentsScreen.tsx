@@ -6,6 +6,7 @@ import { Animated, ImageBackground, LayoutRectangle, NativeScrollEvent, NativeSy
 import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AssignmentCard from '../components/AssignmentCard';
+import { useTabBarClearance } from '../components/CustomTabBar';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { ThemedText } from '../components/ThemedText';
 import EmptyStateCard from '../components/EmptyStateCard';
@@ -54,7 +55,7 @@ export default function AssignmentsScreen() {
 
   // Dinamik scrollContent stili
   const scrollContentStyle = {
-    paddingBottom: isTablet ? 150 : 100, // Tabbar için boşluk
+    paddingBottom: useTabBarClearance(isTablet ? 150 : 100), // Tabbar için boşluk
   };
   const normalFilterScrollRef = useRef<ScrollView>(null);
   const stickyFilterScrollRef = useRef<ScrollView>(null);

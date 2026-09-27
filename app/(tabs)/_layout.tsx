@@ -1,18 +1,13 @@
 import { Redirect, Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { DynamicColorIOS, Platform } from 'react-native';
+import { DynamicColorIOS } from 'react-native';
 import { useSelector } from 'react-redux';
 import { selectIsAuthenticated } from '@/src/store/slices/authSlice';
-import CustomTabBar from '@/src/components/CustomTabBar';
+import CustomTabBar, { USES_CUSTOM_TAB_BAR } from '@/src/components/CustomTabBar';
 
-// Genişliğe değil cihaz tipine bakılır: iPad penceresi yeniden boyutlandırılınca tab bar sistemi
-// değişirse navigator baştan kurulur. Pencere küçülünce CustomTabBar kendi içinde telefon ölçülerine geçer.
-const isIPad = Platform.OS === 'ios' && Platform.isPad;
-// NativeTabs (Liquid Glass) sadece iOS 26+ üzerinde düzgün çalışıyor; eski iPhone'larda
-// custom PNG sekme ikonlarının arkasında istenmeyen gri bir kapsül görünüyor.
-// Bu yüzden iOS 26 altındaki iPhone'larda da iPad'deki floating CustomTabBar'a düşülüyor.
-const iosMajorVersion = Platform.OS === 'ios' ? parseInt(String(Platform.Version), 10) : 0;
-const supportsLiquidGlassTabs = Platform.OS === 'ios' && iosMajorVersion >= 26;
+// Hangi tab bar'ın kullanılacağı CustomTabBar.tsx'teki USES_CUSTOM_TAB_BAR'da (sekme ekranlarının alt boşluğu da
+// aynı karara göre hesaplanıyor). NativeTabs (Liquid Glass) sadece iOS 26+ iPhone'da; eski iPhone'larda custom PNG
+// sekme ikonlarının arkasında istenmeyen gri bir kapsül göründüğü için onlar da floating CustomTabBar'a düşüyor.
 
 export default function TabsLayout() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -22,7 +17,7 @@ export default function TabsLayout() {
   }
 
   // iPad veya iOS 26 altındaki iPhone: Custom TabBar (mavi zemin, altta)
-  if (isIPad || !supportsLiquidGlassTabs) {
+  if (USES_CUSTOM_TAB_BAR) {
     return (
       <Tabs
         tabBar={(props) => <CustomTabBar {...props} />}

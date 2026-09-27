@@ -17,6 +17,7 @@ import {
 import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AssignmentCard from "../components/AssignmentCard";
+import { useTabBarClearance } from "../components/CustomTabBar";
 import GoalProgress from "../components/GoalProgress";
 import LoadingOverlay from "../components/LoadingOverlay";
 import NotificationModal from "../components/NotificationModal";
@@ -44,6 +45,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH, isTablet } = useResponsive();
   const STATUSBAR_HEIGHT = insets.top;
+  const scrollPaddingBottom = useTabBarClearance(isTablet ? 120 : 100);
 
   // Navigation helper - React Navigation'dan Expo Router'a geçiş için
   const navigation = {
@@ -352,7 +354,7 @@ export default function HomeScreen() {
       marginTop: STATUSBAR_HEIGHT,
     },
     scrollContent: {
-      paddingBottom: isTablet ? 120 : 100,
+      paddingBottom: scrollPaddingBottom,
       flexGrow: 1,
       backgroundColor: '#fff',
     },

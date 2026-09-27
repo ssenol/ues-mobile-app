@@ -126,6 +126,7 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 - Ses işlemleri için `expo-audio` kullanılır (react-native-sound değil); recording/playback sonrası her zaman unload/cleanup yapılır.
 - **Ekran boyutu için `Dimensions.get('window')` kullanmayın**, `src/hooks/useResponsive.ts`'teki `useResponsive()` hook'unu (`{ width, height, isTablet }`, eşik 744) component içinde kullanın. iPadOS 26+ pencereleri her zaman yeniden boyutlandırılabilir (`requireFullScreen` dikkate alınmıyor), modül seviyesinde okunan boyut güncellenmez. `isTablet`'e bağlı stiller modül seviyesindeyse `createStyles(isTablet)` + `useMemo` kalıbı kullanılır.
 - Yeni ekran eklerken önce `src/screens/`, sonra `app/` altında ince route wrapper — asla tersi.
+- **Alt kenar boşlukları sabit sayı olmaz.** Uygulama edge-to-edge çizilir (Android'de modal'lar dahil); alttaki sistem alanı (home indicator, nav bar, Android tablet dock'u) `useSafeAreaInsets().bottom` ile hesaba katılır. Sekme ekranlarının kaydırılan içeriği `useTabBarClearance(minPadding)` (`src/components/CustomTabBar.tsx`) ile floating tab bar'ın gerçek yüksekliğini aşar; hangi tab bar'ın kullanıldığı `USES_CUSTOM_TAB_BAR`'dadır.
 
 ## Notlar
 

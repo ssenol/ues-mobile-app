@@ -426,7 +426,7 @@ export default function ReportScreenShell({
           ))}
         </View>
 
-        <View style={{ height: 32 }} />
+        <View style={{ height: 32 + insets.bottom }} />
       </Animated.ScrollView>
 
       {/* Sticky Tab Pills - Header'ın altında */}

@@ -5,6 +5,7 @@ import {Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View
 import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CompletedAssignmentCard from '../components/CompletedAssignmentCard';
+import { useTabBarClearance } from '../components/CustomTabBar';
 import { ThemedText } from '../components/ThemedText';
 import EmptyStateCard from '../components/EmptyStateCard';
 import { getCompletedExercises, deleteSolvedTask } from '../services/speak';
@@ -68,7 +69,7 @@ export default function CompletedScreen() {
   // Dinamik scrollContent stili
   const scrollContentStyle = {
     padding: 16,
-    paddingBottom: isTablet ? 150 : 100,
+    paddingBottom: useTabBarClearance(isTablet ? 150 : 100),
   };
   const [showMore, setShowMore] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);

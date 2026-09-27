@@ -21,6 +21,7 @@ import {
 import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ConfirmModal from "../components/ConfirmModal";
+import { useTabBarClearance } from "../components/CustomTabBar";
 import ThemedIcon from "../components/ThemedIcon";
 import { ThemedText } from "../components/ThemedText";
 import BiometricAuthService from "../services/biometricAuth";
@@ -68,7 +69,7 @@ export default function ProfileScreen() {
   const scrollContentStyle = {
     paddingTop: 16,
     paddingHorizontal: 16,
-    paddingBottom: isTablet ? 180 : 130, // Tablet için daha fazla boşluk
+    paddingBottom: useTabBarClearance(isTablet ? 180 : 130), // Tablet için daha fazla boşluk
   };
   const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);

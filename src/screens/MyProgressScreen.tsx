@@ -4,6 +4,7 @@ import React, {useCallback} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import MyProgressPanel from '../components/progress/MyProgressPanel';
+import {useTabBarClearance} from '../components/CustomTabBar';
 import {ThemedText} from '../components/ThemedText';
 import {selectCurrentUser} from '../store/slices/authSlice';
 import {useAppSelector} from '../store/hooks';
@@ -11,6 +12,7 @@ import {useAppSelector} from '../store/hooks';
 export default function MyProgressScreen() {
   const insets = useSafeAreaInsets();
   const user = useAppSelector(selectCurrentUser);
+  const scrollPaddingBottom = useTabBarClearance(130);
 
   // Diğer sekmelerdeki gibi: sekmeler arası geçişte status bar stilinin başka
   // bir ekrandan kalıp yanlış görünmesini önlemek için her focus'ta zorla ayarla
@@ -34,7 +36,7 @@ export default function MyProgressScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
         showsVerticalScrollIndicator={false}
       >
         <MyProgressPanel userId={user.userId} />

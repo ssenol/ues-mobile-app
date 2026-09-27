@@ -10,7 +10,7 @@ import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
 import type { IconName } from '../constants/iconMap';
 import { theme } from '../theme/ThemeContext';
-import useResponsive from '../hooks/useResponsive';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface ConfirmModalAction {
   text: string;
@@ -47,7 +47,7 @@ export default function ConfirmModal({
   singleButton = false,
   actions = null,
 }: ConfirmModalProps) {
-  const { bottomDockOffset } = useResponsive();
+  const insets = useSafeAreaInsets();
   const styles = StyleSheet.create({
     modal: {
       margin: 0,
@@ -66,7 +66,8 @@ export default function ConfirmModal({
       borderRadius: 12,
       padding: 24,
       marginHorizontal: 16,
-      marginBottom: (Platform.OS === "ios" ? 32 : 16) + bottomDockOffset,
+      // Android edge-to-edge: modal alttaki sistem alanının (nav bar / dock) altına uzanır, inset kadar yukarı alınır
+      marginBottom: Platform.OS === "ios" ? 32 : insets.bottom + 16,
     },
     iconContainer: {
       backgroundColor: '#F3F4FF',
