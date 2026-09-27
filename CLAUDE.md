@@ -63,7 +63,7 @@ export default function Home() { return <HomeScreen />; }
 
 Yeni bir ekran eklerken: (1) `src/screens/` altına implementasyonu yaz, (2) `app/` altında uygun konuma ince route dosyasını ekle. `app/` dosyaları TypeScript (`.tsx`, `@/*` path alias), `src/` dosyaları ise düz JavaScript (`.js`) — proje bu ikisini bilinçli olarak ayırıyor, karıştırmayın.
 
-**Ölü kod uyarısı:** `App.js`, `src/AppContent.js` ve `src/navigation/AppNavigator.js` (React Navigation Stack+BottomTabs tabanlı eski mimari) hâlâ repoda duruyor ama **hiçbir yerden import edilmiyor** — Expo Router migration'ından kalan artık. Bunları örnek/referans olarak kullanmayın; gerçek navigasyon her zaman `app/_layout.tsx`'ten başlar.
+Gerçek navigasyon her zaman `app/_layout.tsx`'ten başlar. Expo Router migration'ından kalan eski React Navigation mimarisi (`App.js`, `src/AppContent.js`, `src/navigation/`) ve yalnızca onun kullandığı paketler SDK 55 yükseltmesi öncesinde silindi.
 
 ### Tab bar: platforma göre iki farklı implementasyon
 
@@ -108,7 +108,7 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 
 ### Build konfigürasyonu
 
-- `app.config.js` (statik `app.json` değil) — `APP_VARIANT=development` env değişkenine göre dev/prod arasında icon, bundle identifier (`com.ues.boostifyspeak[.dev]`) ve isim değiştirir.
+- `app.config.js` tek config dosyasıdır (`app.json` yok, eklemeyin: `app.config.js` düz obje export ettiği için yok sayılır) — `APP_VARIANT=development` env değişkenine göre dev/prod arasında icon, bundle identifier (`com.ues.boostifyspeak[.dev]`) ve isim değiştirir.
 - `eas.json` build profilleri: `development` (internal, dev client, APK), `preview` (internal, APK), `production` (store, app-bundle/ios).
 - iOS `buildNumber` her production build'de manuel artırılıyor (`app.config.js` içinde).
 
