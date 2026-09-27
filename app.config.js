@@ -67,6 +67,7 @@ module.exports = {
       "expo-screen-orientation",
       "expo-status-bar",
       "./plugins/withPodsDeploymentTarget",
+      "./plugins/withAllowRestrictedResizability",
       [
         "expo-build-properties",
         {

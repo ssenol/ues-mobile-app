@@ -11,8 +11,10 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
   const { colors, shadows } = theme;
   
   // Tablet kontrolü (iPad ve Android tablet dahil, ekran genişliğine göre)
-  const { isTablet } = useResponsive();
-  const horizontalPadding = isTablet ? 240 : 24; // Yatay padding
+  const { width, isTablet } = useResponsive();
+  // Tablette 240px yan boşluk, ama bar en fazla 400px: yatay tablette sekmeler birbirinden çok açılmasın
+  const barWidth = isTablet ? Math.min(width - 480, 400) : width - 48;
+  const horizontalPadding = (width - barWidth) / 2;
   const verticalPadding = isTablet ? 10 : 20; // Dikey padding (telefonlarda alta yapışmasın)
   
   // Tab icon mapping
