@@ -740,7 +740,7 @@ const SpeechOnScenarioStep2Screen = () => {
         <TouchableOpacity onPress={handleBackPress} style={styles.headerButton} activeOpacity={0.7}>
           <ThemedIcon iconName="back" size={24} tintColor="#3A3A3A" />
         </TouchableOpacity>
-        <ThemedText weight="semibold" style={styles.headerTitle}>{stripHtml(taskName) || 'Speech On Scenario'}</ThemedText>
+        <ThemedText weight="semiBold" style={styles.headerTitle}>{stripHtml(taskName) || 'Speech On Scenario'}</ThemedText>
         <View style={styles.headerRight} />
       </View>
 
@@ -796,7 +796,7 @@ const SpeechOnScenarioStep2Screen = () => {
                   style={[styles.messageBubble, msg.role === 'user' ? styles.userBubble : styles.botBubble]}>
                   {msg.role === 'assistant' && (
                     <View style={styles.messageHeader}>
-                      <ThemedText weight="semibold" style={styles.messageHeaderText}>TalkBuddy</ThemedText>
+                      <ThemedText weight="semiBold" style={styles.messageHeaderText}>TalkBuddy</ThemedText>
                       <TouchableOpacity
                         style={styles.textToSpeechButton}
                         activeOpacity={0.7}

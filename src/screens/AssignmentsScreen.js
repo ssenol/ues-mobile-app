@@ -364,7 +364,7 @@ export default function AssignmentsScreen() {
         }}
       >
         <View style={styles.headerLeft} />
-        <ThemedText weight="semibold" style={styles.headerTitle}>Assignments</ThemedText>
+        <ThemedText weight="semiBold" style={styles.headerTitle}>Assignments</ThemedText>
         <View style={styles.headerRight} />
       </View>
 

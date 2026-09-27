@@ -650,7 +650,7 @@ export default function AssignmentDetailScreen() {
               tintColor="#3A3A3A"
             />
           </TouchableOpacity>
-          <ThemedText weight="semibold" style={styles.headerTitle}>Error</ThemedText>
+          <ThemedText weight="semiBold" style={styles.headerTitle}>Error</ThemedText>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.loadingContainer}>
@@ -683,7 +683,7 @@ export default function AssignmentDetailScreen() {
         ) : (
           <View style={styles.headerBackButton} />
         )}
-        <ThemedText weight="semibold" style={styles.headerTitle}>{getHeaderTitle()}</ThemedText>
+        <ThemedText weight="semiBold" style={styles.headerTitle}>{getHeaderTitle()}</ThemedText>
         <View style={styles.headerRight} />
       </View>
 
@@ -774,7 +774,7 @@ export default function AssignmentDetailScreen() {
             tintColor="#fff"
             style={{ marginRight: 8 }}
           />
-          <ThemedText weight="semibold" style={styles.notificationText}>
+          <ThemedText weight="semiBold" style={styles.notificationText}>
             You can continue or end audio recording.
           </ThemedText>
         </View>
@@ -852,7 +852,7 @@ export default function AssignmentDetailScreen() {
                   })}
                 </View>
               )}
-              <ThemedText weight="semibold" style={styles.timerText}>
+              <ThemedText weight="semiBold" style={styles.timerText}>
                 {formatTimer(recordingDuration)}
               </ThemedText>
             </View>

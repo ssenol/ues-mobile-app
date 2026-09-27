@@ -79,7 +79,7 @@ const SpeechOnScenarioStep1Screen = () => {
             tintColor="#3A3A3A"
           />
         </TouchableOpacity>
-        <ThemedText weight="semibold" style={styles.headerTitle}>{stripHtml(taskName) || 'Speech On Scenario'}</ThemedText>
+        <ThemedText weight="semiBold" style={styles.headerTitle}>{stripHtml(taskName) || 'Speech On Scenario'}</ThemedText>
         <View style={styles.headerRight} />
       </View>
 

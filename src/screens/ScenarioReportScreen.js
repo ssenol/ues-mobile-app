@@ -86,7 +86,7 @@ function DialogueTab({ firstResult, issuesPanel, mistakes, voiceErrors }) {
       return (
         <View key={index} style={[styles.messageBubble, styles.botBubble]}>
           <View style={styles.messageHeader}>
-            <ThemedText weight="semibold" style={styles.messageHeaderText}>TalkBuddy</ThemedText>
+            <ThemedText weight="semiBold" style={styles.messageHeaderText}>TalkBuddy</ThemedText>
           </View>
           <ThemedText weight="semiBold" style={styles.messageText}>
             {stripHtml(msg.content)}

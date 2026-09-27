@@ -612,7 +612,7 @@ export default function ProfileScreen() {
 
       {/* Header - Mavi zemin üzerinde */}
       <View style={styles.header}>
-        <ThemedText weight="semibold" style={styles.headerTitle}>
+        <ThemedText weight="semiBold" style={styles.headerTitle}>
           Profile
         </ThemedText>
       </View>

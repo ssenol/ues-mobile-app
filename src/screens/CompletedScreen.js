@@ -394,7 +394,7 @@ export default function CompletedScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: STATUSBAR_HEIGHT }]}>
         <View style={styles.headerLeft} />
-        <ThemedText weight="semibold" style={styles.headerTitle}>
+        <ThemedText weight="semiBold" style={styles.headerTitle}>
           Completed {completedCount > 0 ? `(${completedCount})` : ''}
         </ThemedText>
         <View style={styles.headerRight}>
@@ -478,7 +478,7 @@ export default function CompletedScreen() {
         <ScrollView style={styles.filterContent} showsVerticalScrollIndicator={false}>
           {/* Type Section */}
           <View style={styles.filterSection}>
-            <ThemedText weight="semibold" style={styles.filterSectionTitle}>Type</ThemedText>
+            <ThemedText weight="semiBold" style={styles.filterSectionTitle}>Type</ThemedText>
             
             {assignmentSubTypeOptions.slice(0, showMore ? assignmentSubTypeOptions.length : 3).map((option) => (
               <TouchableOpacity 
@@ -502,7 +502,7 @@ export default function CompletedScreen() {
                 activeOpacity={0.7}
                 style={styles.moreButton}
               >
-                <ThemedText weight="semibold" style={styles.moreButtonText}>
+                <ThemedText weight="semiBold" style={styles.moreButtonText}>
                   {showMore ? 'Less' : 'More'}
                 </ThemedText>
               </TouchableOpacity>
@@ -511,7 +511,7 @@ export default function CompletedScreen() {
 
           {/* Completion Date Section */}
           <View style={styles.filterSection}>
-            <ThemedText weight="semibold" style={styles.filterSectionTitle}>Completion Date</ThemedText>
+            <ThemedText weight="semiBold" style={styles.filterSectionTitle}>Completion Date</ThemedText>
             
             <InlineCalendar
               selectedDate={completionDate}
@@ -537,7 +537,7 @@ export default function CompletedScreen() {
             onPress={resetFilters}
             activeOpacity={0.8}
           >
-            <ThemedText weight="semibold" style={styles.resetButtonText}>
+            <ThemedText weight="semiBold" style={styles.resetButtonText}>
               Reset Filter
             </ThemedText>
           </TouchableOpacity>

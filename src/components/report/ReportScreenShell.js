@@ -260,7 +260,7 @@ export default function ReportScreenShell({
             tintColor="#fff"
           />
         </TouchableOpacity>
-        <ThemedText weight="semibold" style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+        <ThemedText weight="semiBold" style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
           {stripHtml(reportData.taskName) || headerTitleFallback}
         </ThemedText>
         <View style={styles.headerRight} />
