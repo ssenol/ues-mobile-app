@@ -12,6 +12,7 @@ import {useTheme} from '../../theme/ThemeContext';
 import useResponsive from '../../hooks/useResponsive';
 import {getSelfAnalytics} from '../../services/speak';
 import {BarRow, LineTrend, StatTile} from './ProgressCharts';
+import type {SpeakingAnalytics} from '../../types/analytics';
 import {
   formatDuration,
   formatErrorTypeLabel,
@@ -22,7 +23,9 @@ import {
 
 const VOICE_PROFILE_KEYS = ['pronunciation', 'fluency', 'prosody', 'accuracy', 'completeness', 'clarity'];
 
-const SECTION_INFO = {
+type SectionInfoKey = 'voiceProfile' | 'scoreTrend' | 'subTypeBreakdown' | 'criteria' | 'errors' | 'pronunciation';
+
+const SECTION_INFO: Record<SectionInfoKey, { title: string; text: string }> = {
   voiceProfile: {
     title: 'Voice Profile',
     text: 'Acoustic measures taken from your audio — Pronunciation, Fluency, Prosody (rhythm & intonation), Accuracy, Completeness, Clarity. Each is 0–100, averaged across your submissions.',
@@ -50,7 +53,13 @@ const SECTION_INFO = {
 };
 
 // Bölüm başlığı + info ikonu + (opsiyonel) sağdaki meta metni
-function SectionHeader({ title, meta, onInfoPress }) {
+interface SectionHeaderProps {
+  title: string;
+  meta?: string;
+  onInfoPress: () => void;
+}
+
+function SectionHeader({ title, meta, onInfoPress }: SectionHeaderProps) {
   return (
     <View style={reportStyles.headerRow}>
       <View style={styles.sectionTitleRow}>
@@ -66,13 +75,17 @@ function SectionHeader({ title, meta, onInfoPress }) {
 
 // boostifywrite/src/components/AnalyticsPanel.tsx'in konuşma verisine uyarlanmış hali.
 // Backend /student/get-self-analytics'i type:'speaking' ile çağırır.
-export default function MyProgressPanel({ userId }) {
+interface MyProgressPanelProps {
+  userId: string;
+}
+
+export default function MyProgressPanel({ userId }: MyProgressPanelProps) {
   const { colors } = useTheme();
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, isTablet } = useResponsive();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<SpeakingAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [infoKey, setInfoKey] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [infoKey, setInfoKey] = useState<SectionInfoKey | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);

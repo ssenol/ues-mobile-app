@@ -1,17 +1,26 @@
-import React, {useState} from 'react';
-import {StyleSheet, View} from 'react-native';
+import React, {ReactNode, useState} from 'react';
+import {StyleProp, StyleSheet, View, ViewStyle} from 'react-native';
 import Svg, {Circle, G, Line, Path} from 'react-native-svg';
 import {ThemedText} from '../ThemedText';
 
 // boostifywrite/src/components/AnalyticsCharts.tsx'teki grafik primitive'lerinin
 // (3rd-party kütüphane kullanmadan, react-native-svg ile) bu projenin tema diline uyarlanmış hali
 
-export function StatTile({ label, value, unit, caption, valueColor, style }) {
+interface StatTileProps {
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  caption?: string;
+  valueColor?: string;
+  style?: StyleProp<ViewStyle>;
+}
+
+export function StatTile({ label, value, unit, caption, valueColor, style }: StatTileProps) {
   return (
     <View style={[styles.tile, style]}>
       <ThemedText weight="bold" style={styles.tileLabel}>{label}</ThemedText>
       <View style={styles.tileValueRow}>
-        <ThemedText weight="extraBold" style={[styles.tileValue, valueColor && { color: valueColor }]}>
+        <ThemedText weight="extraBold" style={[styles.tileValue, !!valueColor && { color: valueColor }]}>
           {value}
         </ThemedText>
         {!!unit && <ThemedText style={styles.tileUnit}>{unit}</ThemedText>}
@@ -27,7 +36,14 @@ const LINE_PAD = { l: 28, r: 10, t: 22, b: 28 };
 // width verilmezse container genişliğini ölçüp kullanır; çok noktalı serilerde
 // (ör. 50 görev) çağıran taraf sabit bir genişlik verip yatay ScrollView içine alabilir.
 // xLabels verilirse (data ile aynı uzunlukta, boş string'ler atlanır) noktaların altına yazılır.
-export function LineTrend({ data, color = '#3E4EF0', width: fixedWidth, xLabels }) {
+interface LineTrendProps {
+  data: { value: number }[];
+  color?: string;
+  width?: number;
+  xLabels?: string[];
+}
+
+export function LineTrend({ data, color = '#3E4EF0', width: fixedWidth, xLabels }: LineTrendProps) {
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const width = fixedWidth ?? measuredWidth;
 
@@ -99,7 +115,15 @@ export function LineTrend({ data, color = '#3E4EF0', width: fixedWidth, xLabels 
   );
 }
 
-export function DonutChart({ segments, centerValue, centerLabel, size = 120, thickness = 16 }) {
+interface DonutChartProps {
+  segments: { value: number; color: string }[];
+  centerValue: ReactNode;
+  centerLabel: string;
+  size?: number;
+  thickness?: number;
+}
+
+export function DonutChart({ segments, centerValue, centerLabel, size = 120, thickness = 16 }: DonutChartProps) {
   const total = segments.reduce((sum, s) => sum + s.value, 0);
   const r = (size - thickness) / 2;
   const circumference = 2 * Math.PI * r;
@@ -143,7 +167,12 @@ export function DonutChart({ segments, centerValue, centerLabel, size = 120, thi
   );
 }
 
-export function ColumnBarChart({ items, max = 100 }) {
+interface ColumnBarChartProps {
+  items: { value: number; color: string; label: string }[];
+  max?: number;
+}
+
+export function ColumnBarChart({ items, max = 100 }: ColumnBarChartProps) {
   return (
     <View style={styles.columnRow}>
       {items.map((item, i) => {
@@ -162,7 +191,14 @@ export function ColumnBarChart({ items, max = 100 }) {
   );
 }
 
-export function BarRow({ label, value, max = 100, color = '#3E4EF0' }) {
+interface BarRowProps {
+  label: string;
+  value: number;
+  max?: number;
+  color?: string;
+}
+
+export function BarRow({ label, value, max = 100, color = '#3E4EF0' }: BarRowProps) {
   const width = Math.min(100, Math.max(0, (value / max) * 100));
   return (
     <View style={styles.barRow}>

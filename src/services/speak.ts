@@ -16,6 +16,7 @@ import {
 } from '../utils/assignmentTransform';
 import type { ApiResponse } from '../types/api';
 import type { Assignment } from '../types/assignment';
+import type { SelfAnalyticsResponseData } from '../types/analytics';
 
 export type { Assignment };
 
@@ -187,8 +188,11 @@ export const deleteSolvedTask = async (taskId: string, studentIds: string[]): Pr
 };
 
 // My Progress sekmesi için özet istatistikler (KPI, skor trendi, kriter ortalamaları vb.)
-export const getSelfAnalytics = async (userId: string, type = 'speaking'): Promise<ApiResponse> => {
-  const response = await api.post<ApiResponse>(
+export const getSelfAnalytics = async (
+  userId: string,
+  type = 'speaking'
+): Promise<ApiResponse<SelfAnalyticsResponseData>> => {
+  const response = await api.post<ApiResponse<SelfAnalyticsResponseData>>(
     API_ENDPOINTS.student.getSelfAnalytics,
     { userId, type },
     jsonHeaders

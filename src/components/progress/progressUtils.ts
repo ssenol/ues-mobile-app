@@ -2,20 +2,20 @@
 // /student/get-self-analytics (type:'speaking') gerçek cevap şekline uyarlanmış hali
 
 // scoreTrend[].subType / criteriaWeights anahtarları -> kısa/uzun görünen ad
-export const SUBTYPE_SHORT_LABELS = {
+export const SUBTYPE_SHORT_LABELS: Record<string, string> = {
   read_aloud: 'Read aloud',
   speech_on_topic: 'Topic',
   speech_on_scenario: 'Scenario',
 };
 
-export const SUBTYPE_LABELS = {
+export const SUBTYPE_LABELS: Record<string, string> = {
   read_aloud: 'Read Aloud',
   speech_on_topic: 'Speech on Topic',
   speech_on_scenario: 'Speech on Scenario',
 };
 
 // 2013 -> "33m 33s", 3725 -> "1h 2m"
-export const formatDuration = (totalSeconds) => {
+export const formatDuration = (totalSeconds: number | null | undefined): string => {
   const seconds = Math.round(totalSeconds || 0);
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -25,9 +25,9 @@ export const formatDuration = (totalSeconds) => {
 };
 
 // "grammar-error" -> "Grammar Error"
-export const titleCase = (str) => (str || '')
+export const titleCase = (str: string | null | undefined): string => (str || '')
   .replace(/[-_]/g, ' ')
   .replace(/\b\w/g, (c) => c.toUpperCase());
 
 // "grammar-error" -> "Grammar", "language-mixing-error" -> "Language Mixing"
-export const formatErrorTypeLabel = (type) => titleCase((type || '').replace(/-error$/, ''));
+export const formatErrorTypeLabel = (type: string | null | undefined): string => titleCase((type || '').replace(/-error$/, ''));
