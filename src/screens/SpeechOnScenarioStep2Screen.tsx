@@ -9,13 +9,13 @@ import {
   Keyboard,
   ActivityIndicator,
   TextInput,
+  ViewStyle,
 } from 'react-native';
 import useResponsive from '../hooks/useResponsive';
 import { useAudioRecorder, setAudioModeAsync, AudioQuality, IOSOutputFormat, useAudioPlayer } from 'expo-audio';
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import api, { API_ENDPOINTS } from '../config/api';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../store/slices/authSlice';
 import { selectTtsSpeed } from '../store/slices/settingsSlice';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,24 +28,44 @@ import ThemedIcon from '../components/ThemedIcon';
 import InfoModal from '../components/InfoModal';
 import ConfirmModal from '../components/ConfirmModal';
 import ScenarioTaskDetails from '../components/ScenarioTaskDetails';
+import { useAppSelector } from '../store/hooks';
+import type { RawSpeechTask } from '../types/assignment';
+
+// Sohbet mesajı; save-speech-on-scenario-progress'e bu şekilde gönderilir
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  translation: string;
+  voiceRecord: null;
+  correction?: string;
+  // score-scenario-turn-audio sonucu (yalnızca kullanıcı mesajlarında)
+  speechScore?: unknown;
+  id: string;
+  isError?: boolean;
+}
+
+// React Native FormData dosya parçası (DOM tiplerinde karşılığı yok)
+const rnFile = (file: { uri: string; name: string; type: string }) => file as unknown as Blob;
+
+const errorResponseData = (error: unknown) => (isAxiosError(error) ? error.response?.data : undefined);
 
 
 const SpeechOnScenarioStep2Screen = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams<{ task?: string }>();
   
   // Parse task from JSON string
-  const task = params.task ? JSON.parse(params.task) : null;
+  const task: RawSpeechTask | null = params.task ? JSON.parse(params.task) : null;
   const insets = useSafeAreaInsets();
-  const user = useSelector((state) => selectCurrentUser(state));
-  const ttsSpeed = useSelector(selectTtsSpeed);
+  const user = useAppSelector(selectCurrentUser);
+  const ttsSpeed = useAppSelector(selectTtsSpeed);
 
   // Dinamik padding değerleri
   const { height: SCREEN_HEIGHT, isTablet } = useResponsive();
   const basePadding = isTablet ? 10 : 10;
   
   // Dinamik taskOptionsBar stili
-  const taskOptionsBarStyle = {
+  const taskOptionsBarStyle: ViewStyle = {
     backgroundColor: '#3E4EF0',
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -56,10 +76,10 @@ const SpeechOnScenarioStep2Screen = () => {
   };
   
   const [inputText, setInputText] = useState('');
-  const [messagesHistory, setMessagesHistory] = useState([]);
+  const [messagesHistory, setMessagesHistory] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [exerciseToken, setExerciseToken] = useState(null);
+  const [exerciseToken, setExerciseToken] = useState<string | null>(null);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
 
   // Back butonu kontrolü
@@ -85,14 +105,14 @@ const SpeechOnScenarioStep2Screen = () => {
   const [offTopicModalVisible, setOffTopicModalVisible] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [recordingUri, setRecordingUri] = useState(null);
+  const [recordingUri, setRecordingUri] = useState<string | null>(null);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
-  const [lastRecordingUri, setLastRecordingUri] = useState(null);
-  const [currentTTSAudio, setCurrentTTSAudio] = useState(null);
-  const [loadingTTSMessages, setLoadingTTSMessages] = useState(new Map()); // Her mesaj için ayrı loading
+  const [lastRecordingUri, setLastRecordingUri] = useState<string | null>(null);
+  const [currentTTSAudio, setCurrentTTSAudio] = useState<string | null>(null);
+  const [loadingTTSMessages, setLoadingTTSMessages] = useState(new Map<string, boolean>()); // Her mesaj için ayrı loading
 
   // En son kaydedilen turun score-scenario-turn-audio sonucu; mesaj gönderilince ilgili mesaja aktarılır
-  const pendingSpeechScoreRef = useRef(null);
+  const pendingSpeechScoreRef = useRef<unknown>(null);
 
   // Platform ve klavye durumuna göre padding hesapla
   const effectiveBottomPadding = useMemo(() => {
@@ -114,7 +134,7 @@ const SpeechOnScenarioStep2Screen = () => {
     }
   }, [keyboardVisible, insets.bottom, isTablet, basePadding]);
 
-  const scrollViewRef = useRef(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // TTS Audio player hook
   const ttsPlayer = useAudioPlayer(currentTTSAudio || '');
@@ -122,20 +142,17 @@ const SpeechOnScenarioStep2Screen = () => {
   // Audio recorder hook
   const recorder = useAudioRecorder(
     {
+      // İki platformda ortak ayarlar (expo-audio platform nesnesini bunların üzerine yayar)
+      extension: '.m4a',
+      sampleRate: 44100,
+      numberOfChannels: 1,
+      bitRate: 128000,
       android: {
-        extension: '.m4a',
         outputFormat: 'mpeg4',
         audioEncoder: 'aac',
-        sampleRate: 44100,
-        numberOfChannels: 1,
-        bitRate: 128000,
       },
       ios: {
-        extension: '.m4a',
         audioQuality: AudioQuality.MAX,
-        sampleRate: 44100,
-        numberOfChannels: 1,
-        bitRate: 128000,
         outputFormat: IOSOutputFormat.MPEG4AAC,
       },
       web: {
@@ -163,7 +180,7 @@ const SpeechOnScenarioStep2Screen = () => {
   const MAX_MESSAGES = 5;
 
   // ArrayBuffer'dan Base64'e çevirme fonksiyonu
-  const arrayBufferToBase64 = (buffer) => {
+  const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
     let binary = '';
     const bytes = new Uint8Array(buffer);
     const len = bytes.byteLength;
@@ -269,7 +286,7 @@ const SpeechOnScenarioStep2Screen = () => {
       }
     } catch (error) {
       console.error('Token oluşturulurken hata:', error);
-      console.error('Hata detayı:', error.response?.data);
+      console.error('Hata detayı:', errorResponseData(error));
       setTokenError(true);
     } finally {
       setIsLoading(false);
@@ -313,15 +330,15 @@ const SpeechOnScenarioStep2Screen = () => {
       }
     } catch (error) {
       console.error('Token oluşturulurken hata:', error);
-      console.error('Hata detayı:', error.response?.data);
+      console.error('Hata detayı:', errorResponseData(error));
     }
     return null;
   };
 
-  const sendInitialMessage = async (token) => {
+  const sendInitialMessage = async (token: string) => {
     try {
-      const { concept, scenario } = task.task.setting.selectedConcept.concept;
-      const { dialogLanguage, userNativeLanguage, conversationLevel } = task.task.setting;
+      const { concept, scenario } = task!.task!.setting!.selectedConcept!.concept;
+      const { dialogLanguage, userNativeLanguage, conversationLevel } = task!.task!.setting!;
 
       const messageData = {
         messagesHistory: [],
@@ -331,7 +348,7 @@ const SpeechOnScenarioStep2Screen = () => {
         concept: concept?.replace(/<[^>]*>/g, '').trim() || '',
         scenario: scenario?.replace(/<[^>]*>/g, '').trim() || '',
         conversationLevel: conversationLevel || 'A1',
-        username: user.username || 'Student'
+        username: user?.username || 'Student'
       };
 
       const payload = {
@@ -349,7 +366,7 @@ const SpeechOnScenarioStep2Screen = () => {
       );
 
       if (response.data?.status === 'success' && response.data?.data?.aiResponse) {
-        const assistantMessage = {
+        const assistantMessage: ChatMessage = {
           role: 'assistant',
           content: response.data.data.aiResponse,
           translation: '',
@@ -361,7 +378,7 @@ const SpeechOnScenarioStep2Screen = () => {
       }
     } catch (error) {
       console.error('İlk mesaj alınırken hata:', error);
-      console.error('Hata detayı:', error.response?.data);
+      console.error('Hata detayı:', errorResponseData(error));
     }
   };
 
@@ -403,13 +420,13 @@ const SpeechOnScenarioStep2Screen = () => {
       }
     } catch (error) {
       console.error('Progress kaydedilirken hata:', error);
-      console.error('Hata detayı:', error.response?.data);
+      console.error('Hata detayı:', errorResponseData(error));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleTextToSpeech = async (messageContent) => {
+  const handleTextToSpeech = async (messageContent: string) => {
     if (!messageContent) {
       return;
     }
@@ -487,7 +504,7 @@ const SpeechOnScenarioStep2Screen = () => {
       }
     } catch (error) {
       console.error('Text-to-speech hatası:', error);
-      console.error('Hata detayı:', error.response?.data);
+      console.error('Hata detayı:', errorResponseData(error));
       setLoadingTTSMessages(prev => {
         const newMap = new Map(prev);
         newMap.delete(messageContent);
@@ -525,7 +542,7 @@ const SpeechOnScenarioStep2Screen = () => {
     }
   };
 
-  const processAudioToText = async (audioUri) => {
+  const processAudioToText = async (audioUri: string) => {
     if (!audioUri) {
       return;
     }
@@ -547,11 +564,11 @@ const SpeechOnScenarioStep2Screen = () => {
       const mimeType = Platform.OS === 'ios' ? 'audio/m4a' : 'audio/m4a';
       const fileName = Platform.OS === 'ios' ? 'recording.m4a' : 'recording.m4a';
 
-      formData.append('audioFile', {
+      formData.append('audioFile', rnFile({
         uri: audioUri,
         type: mimeType,
         name: fileName,
-      });
+      }));
       formData.append('language', 'en');
 
       const response = await axios.post(
@@ -577,14 +594,14 @@ const SpeechOnScenarioStep2Screen = () => {
       }
     } catch (error) {
       console.error('Audio-to-text hatası:', error);
-      console.error('Hata detayı:', error.response?.data);
+      console.error('Hata detayı:', errorResponseData(error));
     } finally {
       setIsProcessingAudio(false);
     }
   };
 
   // Turun ses kaydını Microsoft tabanlı puanlamaya gönderir; sonuç bir sonraki sendMessage'da mesaja eklenir
-  const scoreTurnAudio = async (audioUri) => {
+  const scoreTurnAudio = async (audioUri: string) => {
     if (!audioUri) {
       return;
     }
@@ -601,11 +618,11 @@ const SpeechOnScenarioStep2Screen = () => {
 
     try {
       const formData = new FormData();
-      formData.append('file', {
+      formData.append('file', rnFile({
         uri: audioUri,
         type: 'audio/m4a',
         name: 'recording.m4a',
-      });
+      }));
 
       const response = await axios.post(
         API_ENDPOINTS.student.scoreScenarioTurnAudio,
@@ -623,7 +640,7 @@ const SpeechOnScenarioStep2Screen = () => {
       }
     } catch (error) {
       console.error('Tur puanlama hatası:', error);
-      console.error('Hata detayı:', error.response?.data);
+      console.error('Hata detayı:', errorResponseData(error));
     }
   };
 
@@ -636,7 +653,7 @@ const SpeechOnScenarioStep2Screen = () => {
 
     setInputText('');
 
-    const userMessage = {
+    const userMessage: ChatMessage = {
       role: 'user',
       content: messageText,
       translation: '',
@@ -652,9 +669,9 @@ const SpeechOnScenarioStep2Screen = () => {
     setIsSending(true);
 
     try {
-      const { concept, scenario } = task.task.setting.selectedConcept.concept;
-      const { dialogLanguage, userNativeLanguage, conversationLevel } = task.task.setting;
-      const username = task.task.setting.username || 'Student';
+      const { concept, scenario } = task!.task!.setting!.selectedConcept!.concept;
+      const { dialogLanguage, userNativeLanguage, conversationLevel } = task!.task!.setting!;
+      const username = task!.task!.setting!.username || 'Student';
 
       const messageData = {
         messagesHistory: updatedHistory,
@@ -684,7 +701,7 @@ const SpeechOnScenarioStep2Screen = () => {
       if (response.data?.status === 'success' && response.data?.data?.aiResponse) {
         const offTopic = !!response.data.data.offTopic;
 
-        const assistantMessage = {
+        const assistantMessage: ChatMessage = {
           role: 'assistant',
           content: response.data.data.aiResponse,
           translation: '',
@@ -703,8 +720,8 @@ const SpeechOnScenarioStep2Screen = () => {
       }
     } catch (error) {
       console.error('Mesaj gönderilirken hata:', error);
-      console.error('Hata detayı:', error.response?.data);
-      const errorMessage = {
+      console.error('Hata detayı:', errorResponseData(error));
+      const errorMessage: ChatMessage = {
         role: 'assistant',
         content: 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.',
         translation: '',
@@ -726,9 +743,9 @@ const SpeechOnScenarioStep2Screen = () => {
     );
   }
 
-  const { taskName } = task.task.setting;
+  const taskName = task.task?.setting?.taskName;
 
-  const stripHtml = (html) => {
+  const stripHtml = (html: string | null | undefined) => {
     if (!html) return '';
     return html.replace(/<[^>]*>/g, '').trim();
   };
@@ -781,7 +798,7 @@ const SpeechOnScenarioStep2Screen = () => {
                 onPress={handleRetry}
                 activeOpacity={0.8}
               >
-                <ThemedIcon iconName="refresh" size={20} tintColor="#fff" />
+                {/* 'refresh' ikonu svgIcons.json'da yok, ThemedIcon hiçbir şey çizmiyordu; eklenince buraya konmalı (bkz. .claude/notes/ts-sonrasi-yapilacaklar.md) */}
                 <ThemedText weight="semiBold" style={styles.retryButtonText}>Retry</ThemedText>
               </TouchableOpacity>
             </View>
