@@ -10,6 +10,7 @@ import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from './ThemedText';
 import useResponsive from '../hooks/useResponsive';
+import { theme } from '../theme/ThemeContext';
 
 interface InfoModalButton {
   text: string;
@@ -113,6 +114,9 @@ export default function InfoModal({
     },
     contentContainer: {
       flex: 1,
+      width: '100%',
+      maxWidth: theme.layout.maxActionWidth,
+      alignSelf: 'center',
     },
     buttonContainer: {
       paddingHorizontal: 16,
@@ -120,6 +124,9 @@ export default function InfoModal({
       paddingBottom: 32,
       backgroundColor: '#fff',
       gap: 12,
+      width: '100%',
+      maxWidth: theme.layout.maxActionWidth,
+      alignSelf: 'center',
     },
     primaryButton: {
       paddingVertical: 16,

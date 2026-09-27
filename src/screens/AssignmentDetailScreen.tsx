@@ -16,7 +16,7 @@ import { generateExerciseToken, submitSpeechTask } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
 import { clearCache } from '../store/slices/assignmentSlice';
 import { getMicrophoneEnabled, requestMicrophonePermission } from '../utils/helpers';
-import { useTheme } from '../theme/ThemeContext';
+import { theme, useTheme } from '../theme/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import type { IconName } from '../constants/iconMap';
 import type { RawSpeechTask } from '../types/assignment';
@@ -917,6 +917,7 @@ export default function AssignmentDetailScreen() {
         animationOut="slideOutDown"
       >
         <View style={[styles.finishModalContent, { paddingBottom: bottomPadding }]}>
+          <View style={styles.finishModalInner}>
           {/* Success Icon */}
           <View style={styles.successIconContainer}>
             <ThemedIcon
@@ -963,6 +964,7 @@ export default function AssignmentDetailScreen() {
                 {isSubmitting ? 'Submitting...' : 'Submit'}
               </ThemedText>
             </TouchableOpacity>
+          </View>
           </View>
         </View>
       </Modal>
@@ -1270,6 +1272,12 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     alignItems: 'center',
     width: '100%',
+  },
+  finishModalInner: {
+    width: '100%',
+    maxWidth: theme.layout.maxActionWidth,
+    alignSelf: 'center',
+    alignItems: 'center',
   },
   successIconContainer: {
     marginBottom: 12,

@@ -9,6 +9,7 @@ import Modal from 'react-native-modal';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
 import type { IconName } from '../constants/iconMap';
+import { theme } from '../theme/ThemeContext';
 
 export interface ConfirmModalAction {
   text: string;
@@ -50,6 +51,12 @@ export default function ConfirmModal({
       margin: 0,
       justifyContent: 'flex-end',
       alignItems: 'stretch',
+    },
+    contentWrap: {
+      width: '100%',
+      maxWidth: theme.layout.maxActionWidth,
+      alignSelf: 'center',
+      alignItems: 'center',
     },
     modalContent: {
       backgroundColor: '#fff',
@@ -118,6 +125,7 @@ export default function ConfirmModal({
       style={styles.modal}
     >
       <View style={styles.modalContent}>
+        <View style={styles.contentWrap}>
         <View style={styles.iconContainer}>
           <ThemedIcon iconName={iconName} size={56} tintColor="#3E4EF0" />
         </View>
@@ -180,6 +188,7 @@ export default function ConfirmModal({
             </TouchableOpacity>
           </>
         )}
+        </View>
       </View>
     </Modal>
   );

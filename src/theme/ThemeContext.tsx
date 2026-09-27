@@ -34,6 +34,11 @@ export const theme = {
     scoreBorderOrange: '#FFE5C0',
     scoreBorderRed: '#FFD3D0',
   },
+  layout: {
+    // Tablette modal içeriği ve CTA butonlarının en fazla genişliği; zemin tam genişlikte kalır,
+    // içerik ortalanır (boostifywrite ile aynı değer)
+    maxActionWidth: 480,
+  },
   shadows: {
     dark: {
       shadowColor: '#3E4EF0',
