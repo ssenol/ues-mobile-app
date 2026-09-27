@@ -125,3 +125,7 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 - Ses işlemleri için `expo-audio` kullanılır (react-native-sound değil); recording/playback sonrası her zaman unload/cleanup yapılır.
 - **Ekran boyutu için `Dimensions.get('window')` kullanmayın**, `src/hooks/useResponsive.ts`'teki `useResponsive()` hook'unu (`{ width, height, isTablet }`, eşik 744) component içinde kullanın. iPadOS 26+ pencereleri her zaman yeniden boyutlandırılabilir (`requireFullScreen` dikkate alınmıyor), modül seviyesinde okunan boyut güncellenmez. `isTablet`'e bağlı stiller modül seviyesindeyse `createStyles(isTablet)` + `useMemo` kalıbı kullanılır.
 - Yeni ekran eklerken önce `src/screens/`, sonra `app/` altında ince route wrapper — asla tersi.
+
+## Notlar
+
+- [.claude/notes/ts-sonrasi-yapilacaklar.md](.claude/notes/ts-sonrasi-yapilacaklar.md) — TS dönüşümünde bulunup ertelenen işler: düz metin saklanan şifreler (güvenlik), etkisiz `dueDate` sıralaması, eksik `refresh` ikonu, ölü kod, tablet rotasyonu.
