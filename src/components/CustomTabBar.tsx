@@ -16,7 +16,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: CustomT
   const { colors, shadows } = theme;
   
   // Tablet kontrolü (iPad ve Android tablet dahil, ekran genişliğine göre)
-  const { width, isTablet } = useResponsive();
+  const { width, isTablet, bottomDockOffset } = useResponsive();
   // Tablette 240px yan boşluk, ama bar en fazla 400px: yatay tablette sekmeler birbirinden çok açılmasın
   const barWidth = isTablet ? Math.min(width - 480, 400) : width - 48;
   const horizontalPadding = (width - barWidth) / 2;
@@ -38,7 +38,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: CustomT
   const tabBarStyles = StyleSheet.create({
     tabBarContainer: {
       position: "absolute",
-      bottom: insets.bottom + verticalPadding,
+      bottom: insets.bottom + verticalPadding + bottomDockOffset,
       left: horizontalPadding,
       right: horizontalPadding,
       height: 56,

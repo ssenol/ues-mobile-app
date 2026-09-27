@@ -10,6 +10,7 @@ import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
 import type { IconName } from '../constants/iconMap';
 import { theme } from '../theme/ThemeContext';
+import useResponsive from '../hooks/useResponsive';
 
 export interface ConfirmModalAction {
   text: string;
@@ -46,6 +47,7 @@ export default function ConfirmModal({
   singleButton = false,
   actions = null,
 }: ConfirmModalProps) {
+  const { bottomDockOffset } = useResponsive();
   const styles = StyleSheet.create({
     modal: {
       margin: 0,
@@ -64,7 +66,7 @@ export default function ConfirmModal({
       borderRadius: 12,
       padding: 24,
       marginHorizontal: 16,
-      marginBottom: Platform.OS === "ios" ? 32 : 16,
+      marginBottom: (Platform.OS === "ios" ? 32 : 16) + bottomDockOffset,
     },
     iconContainer: {
       backgroundColor: '#F3F4FF',

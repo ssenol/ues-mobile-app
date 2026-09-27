@@ -37,7 +37,7 @@ export default function InfoModal({
   secondaryButton = null,
 }: InfoModalProps) {
   const insets = useSafeAreaInsets();
-  const { height: SCREEN_HEIGHT } = useResponsive();
+  const { height: SCREEN_HEIGHT, bottomDockOffset } = useResponsive();
   height = height ?? SCREEN_HEIGHT * 0.85;
   const translateY = useRef(new Animated.Value(0)).current;
   const isClosing = useRef(false);
@@ -88,6 +88,8 @@ export default function InfoModal({
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       paddingTop: 12,
+      // Buton alanı yoksa içeriğin altı dock'un altında kalmasın
+      paddingBottom: primaryButton || secondaryButton ? 0 : bottomDockOffset,
       flexDirection: 'column',
       overflow: 'hidden',
     },
@@ -121,7 +123,7 @@ export default function InfoModal({
     buttonContainer: {
       paddingHorizontal: 16,
       paddingTop: 16,
-      paddingBottom: 32,
+      paddingBottom: 32 + bottomDockOffset,
       backgroundColor: '#fff',
       gap: 12,
       width: '100%',

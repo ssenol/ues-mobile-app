@@ -1,4 +1,5 @@
-import { useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
+import { theme } from '../theme/ThemeContext';
 
 // iPad mini (744pt) ve üzeri genişlik tablet yerleşimi kullanır
 export const TABLET_BREAKPOINT = 744;
@@ -10,9 +11,13 @@ export interface ResponsiveInfo {
   width: number;
   height: number;
   isTablet: boolean;
+  // Alt kenara yakın öğelere (tab bar, modal butonları) eklenecek ek boşluk; yalnızca Android tablette > 0
+  bottomDockOffset: number;
 }
 
 export default function useResponsive(): ResponsiveInfo {
   const { width, height } = useWindowDimensions();
-  return { width, height, isTablet: width >= TABLET_BREAKPOINT };
+  const isTablet = width >= TABLET_BREAKPOINT;
+  const bottomDockOffset = Platform.OS === 'android' && isTablet ? theme.layout.androidTabletDockOffset : 0;
+  return { width, height, isTablet, bottomDockOffset };
 }

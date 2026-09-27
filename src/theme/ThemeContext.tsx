@@ -38,6 +38,8 @@ export const theme = {
     // Tablette modal içeriği ve CTA butonlarının en fazla genişliği; zemin tam genişlikte kalır,
     // içerik ortalanır (boostifywrite ile aynı değer)
     maxActionWidth: 480,
+    // Android tabletlerdeki kalıcı alt görev çubuğu (dock) için tab bar ve modal altlarına eklenen ek boşluk
+    androidTabletDockOffset: 18,
   },
   shadows: {
     dark: {
