@@ -30,10 +30,10 @@ import { selectCurrentUser } from "../store/slices/authSlice";
 import { store } from '../store';
 import { selectIsCacheValid } from '../store/slices/assignmentSlice';
 import { useTheme } from "../theme/ThemeContext";
-import { buildAssignedSpeechTaskParams } from "../utils/assignmentTransform";
+import { buildAssignedSpeechTaskParams, compareAssignmentsByDueDate } from "../utils/assignmentTransform";
 import { useAppSelector } from "../store/hooks";
 import type { IconName } from "../constants/iconMap";
-import type { Assignment, AssignmentWithDueDate } from "../types/assignment";
+import type { Assignment } from "../types/assignment";
 
 // Animated.ScrollView ref'i; eski RN sürümlerinde getNode() ile asıl ScrollView'a ulaşılıyordu
 type AnimatedScrollRef = ScrollView & { getNode?: () => ScrollView };
@@ -173,14 +173,10 @@ export default function HomeScreen() {
         // Tüm assignment'ları sakla (GoalProgress için)
         setAllQuizzes(transformedAssignments);
         
-        // Çözülmeyenleri filtrele ve dueDate'e göre artan sırada sırala
+        // Çözülmeyenleri filtrele, teslim tarihi en yakın olan önce gelecek şekilde sırala
         const unsolvedAssignments = transformedAssignments
           .filter(assignment => !assignment.isSolved)
-          .sort((a, b) => {
-            const dateA = new Date((a as AssignmentWithDueDate).dueDate || 0).getTime();
-            const dateB = new Date((b as AssignmentWithDueDate).dueDate || 0).getTime();
-            return dateA - dateB; // Artan sıra (en eski önce)
-          });
+          .sort(compareAssignmentsByDueDate);
         
         // Son 5 assignment'ı al (tablet'te 8)
         const assignmentCount = isTablet ? 8 : 5;

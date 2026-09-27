@@ -13,14 +13,13 @@ bilerek dokunulmayan konular. Kullanıcı 2026-09-27'de "dönüşümden sonra ba
 - Kalan: Redux `authSlice` `accessToken`/`refreshToken`'ı redux-persist ile AsyncStorage'da tutuyor (düz metin).
   Şifre kadar kritik değil ama refresh token uzun ömürlü; SecureStore tabanlı bir persist storage'a taşınabilir.
 
-## 2. Görev sıralaması çalışmıyor
+## 2. Görev sıralaması çalışmıyordu — düzeltildi: `fix/assignment-sorting`
 
-- `HomeScreen` ("Last Assignments") ve `AssignmentsScreen` görevleri `dueDate`'e göre sıralıyor.
-  `transformTaskToAssignment` bu alanı üretmediği için tüm tarihler 0 çıkıyor ve sıralama etkisiz;
-  liste API sırasında kalıyor.
-- TS'te geçici olarak `AssignmentWithDueDate` tipiyle (`src/types/assignment.ts`) mevcut davranış korundu.
-- Kod yorumuna göre niyet "en eski önce". Kartlarda gösterilen `startDate`'e göre sıralamak
-  kullanıcıların gördüğü sırayı değiştirir, karar verilmeli. Düzeltilince `AssignmentWithDueDate` kaldırılmalı.
+- Home ("Last Assignments") ve Assignments `dueDate`'e göre sıralıyordu ama `transformTaskToAssignment` bu alanı
+  karta taşımıyordu; sıralama etkisizdi (API sırası).
+- Kullanıcı kararı (2026-09-27): teslim tarihi en yakın önce; teslim tarihi olmayanlar sonda, kendi aralarında
+  başlangıç tarihi en yeni önce. `Assignment.dueDate` eklendi, karşılaştırma `compareAssignmentsByDueDate`
+  (`src/utils/assignmentTransform.ts`). Önbellekteki eski kartlar için `originalTask.dueDate`'e düşülür.
 
 ## 3. Completed filtresindeki Reset eski filtrelerle yükleniyor
 

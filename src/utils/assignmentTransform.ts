@@ -141,6 +141,7 @@ export const transformTaskToAssignment = (task: RawSpeechTask | null | undefined
     metadata: buildMetadata(task),
     date: formatDate(startDate),
     startDate,
+    dueDate: task.dueDate || '',
     isSolved: (task?.prevSolvedTask?.totalSolvedTaskCount ?? 0) > 0,
     assignedTaskId: task?.assignedTaskId ?? null,
     speechTaskId: task?.speechTaskId ?? null,
@@ -170,6 +171,30 @@ export interface ParsedAssignedTasks {
     completedAssignments: number;
   };
 }
+
+// Tarih string'ini zamana çevirir; boş veya geçersizse null
+const toTime = (value: string | null | undefined): number | null => {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
+};
+
+// Önbellekten gelen eski kart objelerinde dueDate alanı yok; o durumda ham görevdeki değer kullanılır
+const getDueTime = (assignment: Assignment) =>
+  toTime(assignment.dueDate || assignment.originalTask?.dueDate);
+
+// Görev sıralaması: teslim tarihi en yakın olan önce; teslim tarihi olmayanlar sonda,
+// kendi aralarında başlangıç tarihi en yeni olan önce
+export const compareAssignmentsByDueDate = (a: Assignment, b: Assignment): number => {
+  const dueA = getDueTime(a);
+  const dueB = getDueTime(b);
+
+  if (dueA !== null && dueB !== null) return dueA - dueB;
+  if (dueA !== null) return -1;
+  if (dueB !== null) return 1;
+
+  return (toTime(b.startDate) ?? 0) - (toTime(a.startDate) ?? 0);
+};
 
 export const parseAssignedTasksResponse = (
   response: AssignedTasksResponse | null | undefined

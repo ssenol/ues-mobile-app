@@ -16,9 +16,9 @@ import { fetchAssignedSpeechTasksWithCache } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
 import { store } from '../store';
 import { selectIsCacheValid } from '../store/slices/assignmentSlice';
-import { buildAssignedSpeechTaskParams } from '../utils/assignmentTransform';
+import { buildAssignedSpeechTaskParams, compareAssignmentsByDueDate } from '../utils/assignmentTransform';
 import { useAppSelector } from '../store/hooks';
-import type { Assignment, AssignmentType, AssignmentWithDueDate } from '../types/assignment';
+import type { Assignment, AssignmentType } from '../types/assignment';
 
 type FilterName = 'All' | 'Speech On Topic' | 'Read Aloud' | 'Speech On Scenario';
 
@@ -262,14 +262,13 @@ export default function AssignmentsScreen() {
           return assignment.type === filterMap[selectedFilter as Exclude<FilterName, 'All'>];
         });
 
-    // Sort the filtered assignments
-    return filtered.sort((a, b) => {
+    // Çözülmeyenler önce; kendi içlerinde teslim tarihi en yakın olan önce.
+    // Kopya üzerinde sıralanır: 'All' filtresinde filtered doğrudan allQuizzes state'idir
+    return [...filtered].sort((a, b) => {
       if (a.isSolved !== b.isSolved) {
         return a.isSolved ? 1 : -1;
       }
-      const dateA = new Date((a as AssignmentWithDueDate).dueDate || 0).getTime();
-      const dateB = new Date((b as AssignmentWithDueDate).dueDate || 0).getTime();
-      return dateA - dateB;
+      return compareAssignmentsByDueDate(a, b);
     });
   }, [allQuizzes, selectedFilter]);
 

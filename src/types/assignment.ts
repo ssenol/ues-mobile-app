@@ -70,15 +70,13 @@ export interface Assignment {
   metadata: AssignmentMetadataItem[];
   date: string;
   startDate: string;
+  // Teslim tarihi (ham ISO string); yoksa ''
+  dueDate: string;
   isSolved: boolean;
   assignedTaskId: string | null;
   speechTaskId: string | null;
   originalTask: RawSpeechTask;
 }
-
-// Not: transformTaskToAssignment dueDate üretmiyor; Home/Assignments'taki dueDate sıralaması
-// bu yüzden şu an etkisiz (her tarih 0). Davranış TS dönüşümünde korundu.
-export type AssignmentWithDueDate = Assignment & { dueDate?: string };
 
 // Completed ekranındaki çözülmüş görev kartı (CompletedScreen'de API yanıtından üretilir)
 // get-student-completed-exercises yanıtındaki tek egzersiz
