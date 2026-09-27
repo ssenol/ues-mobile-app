@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SecureStore from 'expo-secure-store';
 import { isAxiosError } from "axios";
 import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -196,12 +195,6 @@ export default function LoginScreen() {
 
       // Son giriş bilgilerini SecureStore'a kaydet (Profil'den biyometrik sonradan açılırsa kullanılır)
       await BiometricAuthService.saveLastLoginCredentials(username, password);
-      // <--- TOKEN'I SECURESTORE'A KAYDET --->
-      try {
-        await SecureStore.setItemAsync('accessToken', response.token);
-      } catch (err) {
-        console.error('Token SecureStore kaydetme hatası:', err);
-      }
       
       // --- Biyometrik özellik aktifse, son giriş yapan kullanıcının bilgilerini güncelle ---
       const biometricEnabled = await BiometricAuthService.isBiometricEnabled();

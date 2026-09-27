@@ -87,6 +87,8 @@ SDK 56'dan beri expo-router react-navigation'ı kullanmıyor: `@react-navigation
 | `assignmentSlice` | `cachedAssignments`, `cacheTimestamp`, `totalAssignments`, `completedAssignments` |
 | `settingsSlice` | `ttsSpeed` |
 
+`auth` slice'ı AsyncStorage yerine `src/store/secureAuthStorage.ts` ile persist edilir: `accessToken`/`refreshToken` SecureStore'da, kalan alanlar AsyncStorage'da. Kimlik bilgileri (kullanıcı adı/şifre) de `src/services/biometricAuth.ts` üzerinden SecureStore'dadır; hassas veri AsyncStorage'a yazılmaz.
+
 Yeni bir slice eklerken `src/store/index.ts`'e hem reducer'ı hem karşılık gelen `persistConfig`'i (whitelist ile) eklemeyi unutmayın. `RootState`/`AppDispatch` tipleri `src/store/index.ts`'ten gelir; TS dosyalarında `useSelector`/`useDispatch` yerine `src/store/hooks.ts`'teki `useAppSelector`/`useAppDispatch` kullanılır.
 
 ### API katmanı ve token yönetimi

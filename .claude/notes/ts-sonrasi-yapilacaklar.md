@@ -10,8 +10,18 @@ bilerek dokunulmayan konular. Kullanıcı 2026-09-27'de "dönüşümden sonra ba
 - Artık ikisi de `BiometricAuthService` üzerinden `expo-secure-store`'da (Keychain/Keystore) tutuluyor.
   `ensureCredentialStorageReady()` açılışta eski kayıtları taşıyor; iOS Keychain yeniden kurulumda silinmediği için
   `secure_credentials_ready` işareti yoksa ve eski kayıt da yoksa Keychain artığı temizleniyor.
-- Kalan: Redux `authSlice` `accessToken`/`refreshToken`'ı redux-persist ile AsyncStorage'da tutuyor (düz metin).
-  Şifre kadar kritik değil ama refresh token uzun ömürlü; SecureStore tabanlı bir persist storage'a taşınabilir.
+- Redux `authSlice` token'ları da taşındı (`fix/secure-auth-tokens`): `src/store/secureAuthStorage.ts` redux-persist
+  kaydını ayırıyor, `accessToken`/`refreshToken` SecureStore'a (`persist_auth_*`), kalan alanlar AsyncStorage'a gidiyor.
+  Eski düz metin token'lar ilk yazımda taşınıyor (oturum kapanmıyor); AsyncStorage kaydı yoksa Keychain artığı siliniyor.
+  LoginScreen'in hiç okunmayan `accessToken` SecureStore kopyası kaldırıldı, eski kayıt açılışta siliniyor.
+
+### boostifywrite'ta da aynı sorunlar var (2026-09-27, yalnızca okundu, değiştirilmedi)
+
+- `src/store/auth.ts`: access/refresh token ve kullanıcı AsyncStorage'da düz metin (`@auth/*` anahtarları).
+- `src/utils/biometric.ts`: biyometrik giriş için kullanıcı adı ve **şifre** AsyncStorage'da düz metin.
+- Speak'teki çözüm uyarlanabilir: `src/services/biometricAuth.ts` (taşıma + kurulum işareti) ve
+  `src/store/secureAuthStorage.ts` mantığı. write redux-persist kullanmıyor; `auth.ts` doğrudan SecureStore'a
+  geçirilip aynı taşıma/yeniden kurulum kuralları uygulanabilir.
 
 ## 2. Görev sıralaması çalışmıyordu — düzeltildi: `fix/assignment-sorting`
 

@@ -4,10 +4,12 @@ import { persistReducer, persistStore, PersistConfig } from 'redux-persist';
 import authReducer, { AuthState } from './slices/authSlice';
 import assignmentReducer, { AssignmentState } from './slices/assignmentSlice';
 import settingsReducer, { SettingsState } from './slices/settingsSlice';
+import secureAuthStorage from './secureAuthStorage';
 
+// Token'lar SecureStore'da, kalan alanlar AsyncStorage'da (bkz. secureAuthStorage.ts)
 const authPersistConfig: PersistConfig<AuthState> = {
   key: 'auth',
-  storage: AsyncStorage,
+  storage: secureAuthStorage,
   whitelist: ['accessToken', 'currentUser', 'refreshToken', 'isAuthenticated', 'tokenAcquiredAt']
 };
 
