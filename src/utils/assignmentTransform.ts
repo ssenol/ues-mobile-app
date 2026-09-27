@@ -1,6 +1,21 @@
+import type { ImageSourcePropType } from 'react-native';
 import { getOptimizedImageUrl } from './helpers';
+import type { AuthUser } from '../types/api';
+import type {
+  Assignment,
+  AssignmentMetadataItem,
+  AssignmentType,
+  RawSpeechTask,
+  SpeechTaskType,
+} from '../types/assignment';
 
-const TASK_PRESENTATIONS = {
+interface TaskPresentation {
+  type: AssignmentType;
+  title?: string;
+  image?: ImageSourcePropType;
+}
+
+const TASK_PRESENTATIONS: Record<SpeechTaskType, TaskPresentation> = {
   speech_on_topic: {
     type: 'speechOnTopic',
     title: 'Speech On Topic',
@@ -17,23 +32,23 @@ const TASK_PRESENTATIONS = {
   },
 };
 
-export const DEFAULT_ACTIVITY_TYPES = Object.keys(TASK_PRESENTATIONS);
+export const DEFAULT_ACTIVITY_TYPES = Object.keys(TASK_PRESENTATIONS) as SpeechTaskType[];
 
-const DEFAULT_ASSIGNMENT_IMAGE = TASK_PRESENTATIONS.speech_on_topic.image;
+const DEFAULT_ASSIGNMENT_IMAGE = TASK_PRESENTATIONS.speech_on_topic.image!;
 
-const START_DATE_FALLBACK_KEYS = ['startDate', 'speechAssignedDate', 'dueDate'];
+const START_DATE_FALLBACK_KEYS = ['startDate', 'speechAssignedDate', 'dueDate'] as const;
 
-const stripHtml = (html) => {
+const stripHtml = (html: unknown): string => {
   if (!html) return '';
   return String(html).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 };
 
-const toNumberOrZero = (value) => {
+const toNumberOrZero = (value: unknown): number => {
   const asNumber = Number(value);
   return Number.isFinite(asNumber) ? asNumber : 0;
 };
 
-const formatDate = (dateString) => {
+const formatDate = (dateString: string): string => {
   if (!dateString) return '';
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return '';
@@ -44,7 +59,7 @@ const formatDate = (dateString) => {
   return `${day}.${month}.${year}`;
 };
 
-const pickStartDate = (task) => {
+const pickStartDate = (task: RawSpeechTask): string => {
   for (const key of START_DATE_FALLBACK_KEYS) {
     const candidate = task?.[key];
     if (candidate) {
@@ -54,8 +69,8 @@ const pickStartDate = (task) => {
   return '';
 };
 
-const buildMetadata = (task) => {
-  const metadata = [];
+const buildMetadata = (task: RawSpeechTask): AssignmentMetadataItem[] => {
+  const metadata: AssignmentMetadataItem[] = [];
   const { speechTaskType } = task || {};
   const taskData = task?.task?.data;
   const taskSetting = task?.task?.setting;
@@ -84,7 +99,7 @@ const buildMetadata = (task) => {
   return metadata;
 };
 
-const buildDescription = (task) => {
+const buildDescription = (task: RawSpeechTask): string => {
   const { speechTaskType } = task || {};
   const taskData = task?.task?.data;
   const taskSetting = task?.task?.setting;
@@ -104,10 +119,10 @@ const buildDescription = (task) => {
   return '';
 };
 
-export const transformTaskToAssignment = (task) => {
+export const transformTaskToAssignment = (task: RawSpeechTask | null | undefined): Assignment | null => {
   if (!task) return null;
 
-  const presentation = TASK_PRESENTATIONS[task.speechTaskType] || {
+  const presentation: TaskPresentation = TASK_PRESENTATIONS[task.speechTaskType as SpeechTaskType] || {
     type: 'assignment',
     // title: task?.task?.title || 'Assignment',
     image: DEFAULT_ASSIGNMENT_IMAGE,
@@ -126,14 +141,39 @@ export const transformTaskToAssignment = (task) => {
     metadata: buildMetadata(task),
     date: formatDate(startDate),
     startDate,
-    isSolved: task?.prevSolvedTask?.totalSolvedTaskCount > 0,
+    isSolved: (task?.prevSolvedTask?.totalSolvedTaskCount ?? 0) > 0,
     assignedTaskId: task?.assignedTaskId ?? null,
     speechTaskId: task?.speechTaskId ?? null,
     originalTask: task,
   };
 };
 
-export const parseAssignedTasksResponse = (response) => {
+// get-assigned-speech-tasks yanıtının bu fonksiyonun okuduğu alanları
+interface AssignedTasksPayload {
+  assigned_tasks?: RawSpeechTask[];
+  assigned_all_task_count?: number | string;
+  assigned_tasks_active_total_count?: number | string;
+}
+
+export interface AssignedTasksResponse extends AssignedTasksPayload {
+  success?: boolean;
+  status_code?: number;
+  data?: AssignedTasksPayload;
+}
+
+export interface ParsedAssignedTasks {
+  success: boolean;
+  tasks: RawSpeechTask[];
+  totals: {
+    totalAssigned: number;
+    activeAssignments: number;
+    completedAssignments: number;
+  };
+}
+
+export const parseAssignedTasksResponse = (
+  response: AssignedTasksResponse | null | undefined
+): ParsedAssignedTasks => {
   const data = response?.data ?? response;
   const success = response?.success === true || response?.status_code === 200;
 
@@ -156,7 +196,21 @@ export const parseAssignedTasksResponse = (response) => {
   };
 };
 
-export const buildAssignedSpeechTaskParams = (user, overrides = {}) => {
+export interface AssignedSpeechTaskParams {
+  userId: unknown;
+  institutionId: unknown;
+  institutionSubSchoolId: unknown;
+  className: unknown;
+  activityType: SpeechTaskType[];
+  perPageCount: number;
+  paginationIndex: number;
+  [key: string]: unknown;
+}
+
+export const buildAssignedSpeechTaskParams = (
+  user: AuthUser | null | undefined,
+  overrides: Record<string, unknown> = {}
+): { params: AssignedSpeechTaskParams | null; missingFields: string[] } => {
   if (!user) {
     return { params: null, missingFields: ['user'] };
   }
@@ -164,9 +218,10 @@ export const buildAssignedSpeechTaskParams = (user, overrides = {}) => {
   const userId = user?.id ?? user?._id ?? user?.userId ?? null;
   const institutionId = user?.institution_id ?? user?.institutionId ?? user?.schoolId ?? null;
   const institutionSubSchoolId = user?.sub_school_id ?? user?.institutionSubSchoolId ?? user?.campusId ?? null;
-  const className = user?.classInfo?.[0] ?? user?.class_name ?? user?.className ?? '';
+  const classInfo = user?.classInfo as unknown[] | undefined;
+  const className = classInfo?.[0] ?? user?.class_name ?? user?.className ?? '';
 
-  const missingFields = [];
+  const missingFields: string[] = [];
 
   if (!userId) missingFields.push('userId');
   if (!institutionId) missingFields.push('institutionId');
@@ -176,7 +231,7 @@ export const buildAssignedSpeechTaskParams = (user, overrides = {}) => {
     return { params: null, missingFields };
   }
 
-  const params = {
+  const params: AssignedSpeechTaskParams = {
     userId,
     institutionId,
     institutionSubSchoolId,

@@ -9,7 +9,11 @@ import {
   setCachedAssignments,
   CACHE_DURATION_MS,
 } from '../store/slices/assignmentSlice';
-import { parseAssignedTasksResponse, transformTaskToAssignment } from '../utils/assignmentTransform';
+import {
+  AssignedTasksResponse,
+  parseAssignedTasksResponse,
+  transformTaskToAssignment,
+} from '../utils/assignmentTransform';
 import type { ApiResponse } from '../types/api';
 import type { Assignment } from '../types/assignment';
 
@@ -37,8 +41,8 @@ const appendFile = (formData: FormData, field: string, file: RNFormDataFile) => 
 
 const jsonHeaders = { headers: { 'Content-Type': 'application/json' } };
 
-export const fetchAssignedSpeechTasks = async (params: RequestParams): Promise<ApiResponse> => {
-  const response = await api.post<ApiResponse>(
+export const fetchAssignedSpeechTasks = async (params: RequestParams): Promise<AssignedTasksResponse> => {
+  const response = await api.post<AssignedTasksResponse>(
     API_ENDPOINTS.assignment.getAssignedSpeechTasks,
     params,
     jsonHeaders
@@ -86,7 +90,7 @@ export const fetchAssignedSpeechTasksWithCache = async (
   if (success && Array.isArray(tasks) && tasks.length > 0) {
     transformedAssignments = tasks
       .map(transformTaskToAssignment)
-      .filter((a: Assignment | null): a is Assignment => Boolean(a));
+      .filter((a): a is Assignment => Boolean(a));
   }
   
   // Store'a kaydet

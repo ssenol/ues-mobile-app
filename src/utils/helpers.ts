@@ -7,27 +7,27 @@ export const MICROPHONE_KEY = "microphone_permission_enabled";
 export const USER_CREDENTIALS_KEY = "user_credentials";
 export const BIOMETRIC_PROMPT_SHOWN_KEY = "biometric_prompt_shown";
 
-export async function getBiometricEnabled() {
+export async function getBiometricEnabled(): Promise<boolean> {
   const enabled = await AsyncStorage.getItem(BIOMETRIC_KEY);
-  return enabled === "true" || enabled === true;
+  return enabled === "true";
 }
 
-export async function setBiometricEnabled(enabled) {
+export async function setBiometricEnabled(enabled: boolean): Promise<void> {
   await AsyncStorage.setItem(BIOMETRIC_KEY, String(enabled));
 }
 
-export async function getMicrophoneEnabled() {
+export async function getMicrophoneEnabled(): Promise<boolean> {
   const { status } = await getRecordingPermissionsAsync();
   return status === "granted";
 }
 
-export async function requestMicrophonePermission() {
+export async function requestMicrophonePermission(): Promise<boolean> {
   const { status } = await requestRecordingPermissionsAsync();
   return status === "granted";
 }
 
 // HTML ve özel karakter temizleyici yardımcı fonksiyon
-export function cleanHtmlAndBreaks(str) {
+export function cleanHtmlAndBreaks(str: string | null | undefined): string {
   if (!str) return "";
   return str
     .replace(/&nbsp;/g, " ") // &nbsp; karakterlerini boşluğa çevir
@@ -38,7 +38,13 @@ export function cleanHtmlAndBreaks(str) {
     .trim();
 }
 
-export function getOptimizedImageUrl(originalUrl, options = {}) {
+export interface ImageUrlOptions {
+  width?: number;
+  quality?: number;
+  format?: string;
+}
+
+export function getOptimizedImageUrl<T>(originalUrl: T, options: ImageUrlOptions = {}): T | string {
   if (!originalUrl || typeof originalUrl !== 'string') {
     return originalUrl;
   }
@@ -64,7 +70,7 @@ export function getOptimizedImageUrl(originalUrl, options = {}) {
 }
 
 // Tüm uygulama verilerini tamamen temizler. Hiçbir anahtar saklanmaz.
-export async function clearAllAppData() {
+export async function clearAllAppData(): Promise<void> {
   try {
     // AsyncStorage'ı temizle
     await AsyncStorage.clear();
@@ -73,7 +79,7 @@ export async function clearAllAppData() {
     // SecureStore.clear() yok, bu yüzden bilinen anahtarları tek tek silelim
     try {
       await SecureStore.deleteItemAsync('accessToken');
-    } catch (e) {
+    } catch {
       // Anahtar yoksa hata vermez, devam et
     }
     
@@ -82,7 +88,7 @@ export async function clearAllAppData() {
     for (const key of possibleKeys) {
       try {
         await SecureStore.deleteItemAsync(key);
-      } catch (e) {
+      } catch {
         // Anahtar yoksa hata vermez, devam et
       }
     }
