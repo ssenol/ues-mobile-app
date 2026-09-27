@@ -3,8 +3,22 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
+import type { IconName } from '../constants/iconMap';
+import type { CompletedAssignment } from '../types/assignment';
 
-export default function CompletedAssignmentCard({ assignment, onPress, onDelete }) {
+interface CompletedAssignmentCardProps {
+  assignment: CompletedAssignment;
+  onPress?: () => void;
+  onDelete?: () => void;
+}
+
+interface ScoreStyle {
+  backgroundColor: string;
+  textColor: string;
+  iconName: IconName;
+}
+
+export default function CompletedAssignmentCard({ assignment, onPress, onDelete }: CompletedAssignmentCardProps) {
   const { colors, shadows } = useTheme();
 
   // Eğer status 'pending' ise farklı bir card göster
@@ -55,7 +69,7 @@ export default function CompletedAssignmentCard({ assignment, onPress, onDelete 
   const firstRange = 85;
   const secondRange = 60;
 
-  const getScoreStyle = (score) => {
+  const getScoreStyle = (score: number): ScoreStyle => {
     if (score >= firstRange) {
       return {
         backgroundColor: colors.goalBackgroundGreen,
@@ -80,7 +94,7 @@ export default function CompletedAssignmentCard({ assignment, onPress, onDelete 
   const scoreStyle = getScoreStyle(assignment.score);
 
   // Type'a göre renk belirleme
-  const getTypeColor = (type) => {
+  const getTypeColor = (type: string) => {
     if (type === 'Speech On Topic') {
       return '#D97184';
     } else if (type === 'Read Aloud') {
@@ -94,7 +108,7 @@ export default function CompletedAssignmentCard({ assignment, onPress, onDelete 
   const typeColor = getTypeColor(assignment.type);
 
   // HTML'den metni temizle
-  const stripHtml = (html) => {
+  const stripHtml = (html: string | null | undefined) => {
     if (!html) return '';
     return html.replace(/<[^>]*>/g, '').trim();
   };

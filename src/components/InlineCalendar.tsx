@@ -3,7 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ThemedText } from './ThemedText';
 import ThemedIcon from "./ThemedIcon";
 
-const InlineCalendar = ({ selectedDate, onDateSelect }) => {
+interface InlineCalendarProps {
+  selectedDate?: Date | string | number | null;
+  onDateSelect: (date: Date) => void;
+}
+
+const InlineCalendar = ({ selectedDate, onDateSelect }: InlineCalendarProps) => {
   const [currentMonth, setCurrentMonth] = useState(
     selectedDate ? new Date(selectedDate) : new Date()
   );
@@ -15,7 +20,7 @@ const InlineCalendar = ({ selectedDate, onDateSelect }) => {
 
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  const getDaysInMonth = (date) => {
+  const getDaysInMonth = (date: Date): (Date | null)[] => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1);
@@ -27,7 +32,7 @@ const InlineCalendar = ({ selectedDate, onDateSelect }) => {
     // Convert to Monday = 0, Sunday = 6
     firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
 
-    const days = [];
+    const days: (Date | null)[] = [];
     
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayOfWeek; i++) {
@@ -56,7 +61,7 @@ const InlineCalendar = ({ selectedDate, onDateSelect }) => {
     }
   };
 
-  const isDateSelected = (date) => {
+  const isDateSelected = (date: Date | null) => {
     if (!date || !selectedDate) return false;
     const selected = new Date(selectedDate);
     return (
@@ -66,7 +71,7 @@ const InlineCalendar = ({ selectedDate, onDateSelect }) => {
     );
   };
 
-  const isDateInFuture = (date) => {
+  const isDateInFuture = (date: Date | null) => {
     if (!date) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -135,7 +140,7 @@ const InlineCalendar = ({ selectedDate, onDateSelect }) => {
               disabled={isEmpty || isFuture}
               activeOpacity={0.7}
             >
-              {!isEmpty && (
+              {date && (
                 <View style={[
                   styles.dayButton,
                   isSelected && styles.dayButtonSelected,

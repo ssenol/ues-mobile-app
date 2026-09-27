@@ -1,17 +1,26 @@
-import React from 'react';
-import { View, StyleSheet, ImageBackground } from 'react-native';
+import React, { ReactNode } from 'react';
+import { View, StyleSheet, ImageBackground, ImageSourcePropType, StyleProp, ViewStyle } from 'react-native';
 import useResponsive from '../hooks/useResponsive';
+
+type BannerConfigKey = 'home' | 'assignmentsZero' | 'assignmentsProgress';
+
+interface BannerProps {
+  type: 'home' | 'assignments';
+  solvedCount?: number;
+  containerStyle?: StyleProp<ViewStyle>;
+  children?: ReactNode;
+}
 
 const Banner = ({ 
   type,
   solvedCount = 0,
   containerStyle,
   children 
-}) => {
+}: BannerProps) => {
   const { width: SCREEN_WIDTH, isTablet } = useResponsive();
 
   // Banner konfigürasyonları
-  const bannerConfig = {
+  const bannerConfig: Record<BannerConfigKey, { background: ImageSourcePropType; image: ImageSourcePropType }> = {
     home: {
       background: isTablet 
         ? require('../../assets/images/banners/tablet/bg-yellow.png')
@@ -33,14 +42,14 @@ const Banner = ({
   };
 
   // Banner tipini belirle
-  let bannerType;
+  let bannerType: BannerConfigKey | undefined;
   if (type === 'home') {
     bannerType = 'home';
   } else if (type === 'assignments') {
     bannerType = solvedCount === 0 ? 'assignmentsZero' : 'assignmentsProgress';
   }
 
-  const config = bannerConfig[bannerType];
+  const config = bannerType ? bannerConfig[bannerType] : undefined;
   if (!config) return null;
 
   // Boyutlar

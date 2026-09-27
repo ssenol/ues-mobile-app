@@ -1,7 +1,13 @@
 import React from "react";
-import {View, TextInput, StyleSheet} from "react-native";
+import {View, TextInput, StyleSheet, TextInputProps} from "react-native";
 import ThemedIcon from "./ThemedIcon";
-import { useTheme } from "../theme/ThemeContext";
+import { Theme, useTheme } from "../theme/ThemeContext";
+import type { IconName } from "../constants/iconMap";
+
+interface CustomInputProps
+  extends Pick<TextInputProps, "placeholder" | "secureTextEntry" | "value" | "onChangeText" | "autoCapitalize" | "onFocus"> {
+  iconName?: IconName;
+}
 
 const CustomInput = ({
   iconName,
@@ -11,7 +17,7 @@ const CustomInput = ({
   onChangeText,
   autoCapitalize = 'sentences',
   onFocus,
-}) => {
+}: CustomInputProps) => {
   const { colors, fonts } = useTheme();
   const styles = makeStyles(colors, fonts);
 
@@ -47,7 +53,7 @@ const CustomInput = ({
   );
 };
 
-const makeStyles = (colors, fonts) =>
+const makeStyles = (colors: Theme['colors'], fonts: Theme['fonts']) =>
   StyleSheet.create({
     inputContainer: {
       flexDirection: "row",

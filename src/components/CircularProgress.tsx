@@ -3,7 +3,16 @@ import { Animated, StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { ThemedText } from './ThemedText';
 
-export default function CircularProgress({ value, label, size = 80, strokeWidth = 8, color = '#3E4EF0', shouldAnimate = false }) {
+interface CircularProgressProps {
+  value: number;
+  label?: string;
+  size?: number;
+  strokeWidth?: number;
+  color?: string;
+  shouldAnimate?: boolean;
+}
+
+export default function CircularProgress({ value, label, size = 80, strokeWidth = 8, color = '#3E4EF0', shouldAnimate = false }: CircularProgressProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.min(Math.max(value, 0), 100);

@@ -3,8 +3,13 @@ import { Modal, StyleSheet, View } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { ThemedText } from './ThemedText';
 
-export default function LoadingOverlay({ visible, message }) {
-  const animationRef = useRef(null);
+interface LoadingOverlayProps {
+  visible: boolean;
+  message?: string;
+}
+
+export default function LoadingOverlay({ visible, message }: LoadingOverlayProps) {
+  const animationRef = useRef<LottieView>(null);
 
   useEffect(() => {
     if (visible && animationRef.current) {

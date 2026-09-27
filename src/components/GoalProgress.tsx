@@ -3,8 +3,14 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
+import type { IconName } from '../constants/iconMap';
 
-export default function GoalProgress({ completedAssignments, totalAssignments }) {
+interface GoalProgressProps {
+  completedAssignments: number;
+  totalAssignments: number;
+}
+
+export default function GoalProgress({ completedAssignments, totalAssignments }: GoalProgressProps) {
   const { colors } = useTheme();
   const completionRate = totalAssignments > 0 ? (completedAssignments / totalAssignments) * 100 : 0;
   const animatedWidth = useRef(new Animated.Value(0)).current;
@@ -31,7 +37,7 @@ export default function GoalProgress({ completedAssignments, totalAssignments })
     return "Keep going!";
   };
 
-  const getProgressIcon = () => {
+  const getProgressIcon = (): IconName => {
     if (completionRate >= firstRange) return "goalGreen";
     if (completionRate >= secondRange) return "goalOrange";
     return "goalRed";

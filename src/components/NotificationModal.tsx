@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   View,
@@ -9,17 +11,36 @@ import { useTheme } from '../theme/ThemeContext';
 import InfoModal from './InfoModal';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
+import type { IconName } from '../constants/iconMap';
 
-export default function NotificationModal({ visible = false, onClose = () => {}, mode = 'modal', resetScrollSignal = 0 }) {
+interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  icon: IconName;
+}
+
+interface NotificationModalProps {
+  visible?: boolean;
+  onClose?: () => void;
+  mode?: 'modal' | 'screen';
+  resetScrollSignal?: number;
+}
+
+export default function NotificationModal({ visible = false, onClose = () => {}, mode = 'modal', resetScrollSignal = 0 }: NotificationModalProps) {
   const { colors, shadows } = useTheme();
   const insets = useSafeAreaInsets();
-  const scrollViewRef = useRef(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const isScreenMode = mode === 'screen';
   const [isSectionSticky, setIsSectionSticky] = useState(false);
   const sectionHeaderY = useRef(0);
 
   // Dummy notification data
-  const notifications = {
+  const notifications: {
+    banner: { title: string; message: string; icon: IconName };
+    lastWeek: NotificationItem[];
+  } = {
     banner: {
       title: "Don't Miss Any Update!",
       message: "Turn on notifications to get the latest lessons and reports.",
@@ -234,7 +255,7 @@ export default function NotificationModal({ visible = false, onClose = () => {},
     },
   });
 
-  const handleScroll = ({ nativeEvent }) => {
+  const handleScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (!sectionHeaderY.current) {
       return;
     }
@@ -343,7 +364,7 @@ export default function NotificationModal({ visible = false, onClose = () => {},
     return (
       <View style={styles.screenContainer}>
         <View style={[styles.screenHeaderContainer, { paddingTop: insets.top + 16 }]}>
-          <ThemedText weight="semibold" style={styles.headerTitle}>
+          <ThemedText weight="semiBold" style={styles.headerTitle}>
             Notifications
           </ThemedText>
         </View>

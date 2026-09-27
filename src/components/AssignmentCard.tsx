@@ -2,8 +2,14 @@ import React from 'react';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
+import type { Assignment } from '../types/assignment';
 
-export default function AssignmentCard({ assignment, onPress }) {
+interface AssignmentCardProps {
+  assignment: Assignment;
+  onPress?: () => void;
+}
+
+export default function AssignmentCard({ assignment, onPress }: AssignmentCardProps) {
   return (
     <TouchableOpacity
       style={styles.assignmentCard}

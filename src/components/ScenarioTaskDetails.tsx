@@ -1,20 +1,25 @@
 import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { useSelector, useDispatch } from 'react-redux';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { ThemedText } from './ThemedText';
 import { getOptimizedImageUrl } from '../utils/helpers';
 import { selectTtsSpeed, setTtsSpeed, speedIndexToValue, speedValueToIndex } from '../store/slices/settingsSlice';
+import type { RawSpeechTask } from '../types/assignment';
 
 // HTML'den metni temizle
-const stripHtml = (html) => {
+const stripHtml = (html: string | null | undefined): string => {
   if (!html) return '';
   return html.replace(/<[^>]*>/g, '').trim();
 };
 
-const ScenarioTaskDetails = ({ task }) => {
-  const dispatch = useDispatch();
-  const ttsSpeed = useSelector(selectTtsSpeed);
+interface ScenarioTaskDetailsProps {
+  task: RawSpeechTask | null | undefined;
+}
+
+const ScenarioTaskDetails = ({ task }: ScenarioTaskDetailsProps) => {
+  const dispatch = useAppDispatch();
+  const ttsSpeed = useAppSelector(selectTtsSpeed);
   const speed = speedValueToIndex(ttsSpeed);
 
   if (!task || !task.task) {

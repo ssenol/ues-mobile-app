@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { ComponentProps } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import type { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ThemedIcon from './ThemedIcon';
 import { useTheme } from '../theme/ThemeContext';
 import useResponsive from '../hooks/useResponsive';
+import type { IconName } from '../constants/iconMap';
 
-export default function CustomTabBar({ state, descriptors, navigation }) {
+// expo-router Tabs'ın tabBar render prop'una verdiği prop'lar
+type CustomTabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
+
+export default function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { colors, shadows } = theme;
@@ -18,8 +23,8 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
   const verticalPadding = isTablet ? 10 : 20; // Dikey padding (telefonlarda alta yapışmasın)
   
   // Tab icon mapping
-  const getTabIcon = (routeName) => {
-    const iconMap = {
+  const getTabIcon = (routeName: string): IconName => {
+    const iconMap: Record<string, IconName> = {
       'index': 'tabHome',
       'assignments': 'tabAssignment',
       'completed': 'tabCompleted',
@@ -56,7 +61,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
   // href:null verilen (gizlenen) route'lar options.tabBarItemStyle.display='none' olarak işaretlenir;
   // varsayılan tab bar bunu kendisi filtreliyor ama custom render'da elle filtrelememiz gerekiyor
   const visibleRoutes = state.routes.filter(
-    (route) => descriptors[route.key]?.options?.tabBarItemStyle?.display !== 'none'
+    (route) => StyleSheet.flatten(descriptors[route.key]?.options?.tabBarItemStyle)?.display !== 'none'
   );
 
   return (

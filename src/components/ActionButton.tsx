@@ -3,52 +3,58 @@ import {
   TouchableOpacity,
   View,
   StyleSheet,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+  DimensionValue,
   // ActivityIndicator,
 } from "react-native";
 import ThemedIcon from "./ThemedIcon";
 import {ThemedText} from "./ThemedText";
 import {useTheme} from "../theme/ThemeContext";
+import type { IconName } from "../constants/iconMap";
+
+type ActionButtonVariant = "primary" | "outline";
+
+interface ActionButtonProps {
+  title: string;
+  onPress?: () => void;
+  variant?: ActionButtonVariant;
+  width?: DimensionValue;
+  iconName?: IconName;
+  iconSize?: number;
+  loading?: boolean;
+  iconLeft?: boolean;
+  style?: StyleProp<ViewStyle>;
+}
 
 export default function ActionButton({
   title,
   onPress,
-  variant = "primary", // primary, secondary, tertiary
+  variant = "primary", // primary, outline
   width = "100%",
   iconName,
   iconSize,
   loading = false,
   iconLeft = false,
   style,
-}) {
+}: ActionButtonProps) {
   const { colors } = useTheme();
-  const buttonStyle = {
+  const buttonStyle: Record<ActionButtonVariant, ViewStyle> = {
     primary: { backgroundColor: colors.primary },
-    secondary: { backgroundColor: colors.secondary },
-    tertiary: {
-      backgroundColor: "t",
-      borderWidth: 1,
-      borderColor: colors.white,
-    },
     outline: {
       backgroundColor: "white",
       borderWidth: 1,
       borderColor: colors.border,
     },
-    danger: { backgroundColor: colors.danger },
   };
 
-  const textStyle = {
+  const textStyle: Partial<Record<ActionButtonVariant, TextStyle>> = {
     primary: { color: colors.white },
-    secondary: { color: colors.white },
-    tertiary: { color: colors.white, fontWeight: "normal" },
-    danger: { color: colors.white },
   };
 
-  const iconTintByVariant = {
+  const iconTintByVariant: Record<ActionButtonVariant, string> = {
     primary: colors.white,
-    secondary: colors.white,
-    tertiary: colors.white,
-    danger: colors.white,
     outline: colors.primary,
   };
 

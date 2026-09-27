@@ -1,9 +1,27 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { ThemedText } from './ThemedText';
 import ThemedIcon from './ThemedIcon';
 import { useTheme } from '../theme/ThemeContext';
 import useResponsive from '../hooks/useResponsive';
+import type { IconName } from '../constants/iconMap';
+
+interface EmptyStateCardProps {
+  containerStyle?: StyleProp<ViewStyle>;
+  iconName?: IconName;
+  iconSize?: number;
+  iconColor?: string;
+  iconBackgroundColor?: string;
+  title?: string;
+  subtitle?: string;
+  subtitleColor?: string;
+  showLink?: boolean;
+  linkIconName?: IconName;
+  linkIconSize?: number;
+  linkText?: string;
+  onLinkPress?: () => void;
+  dividerColor?: string;
+}
 
 const EmptyStateCard = ({ 
   containerStyle,
@@ -20,7 +38,7 @@ const EmptyStateCard = ({
   linkText = 'Assignments',
   onLinkPress,
   dividerColor = '#F3F4FF'
-}) => {
+}: EmptyStateCardProps) => {
   const { shadows } = useTheme();
   const { isTablet } = useResponsive();
   const styles = useMemo(() => createStyles(isTablet), [isTablet]);
@@ -69,7 +87,7 @@ const EmptyStateCard = ({
   );
 };
 
-const createStyles = (isTablet) => StyleSheet.create({
+const createStyles = (isTablet: boolean) => StyleSheet.create({
   container: {
     backgroundColor: '#fff',
     borderRadius: 12,

@@ -5,18 +5,24 @@ import useResponsive from '../hooks/useResponsive';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
 
-export default function AudioPlayer({ audioUri, duration, onError }) {
+interface AudioPlayerProps {
+  audioUri: string | null | undefined;
+  duration?: number;
+  onError?: (error: unknown) => void;
+}
+
+export default function AudioPlayer({ audioUri, duration, onError }: AudioPlayerProps) {
   const player = useAudioPlayer(audioUri);
   const { isTablet } = useResponsive();
   const [audioWaveformIndex, setAudioWaveformIndex] = useState(0);
-  const [waveformHeights, setWaveformHeights] = useState([]);
-  const audioWaveformIntervalRef = useRef(null);
-  const timerIntervalRef = useRef(null);
+  const [waveformHeights, setWaveformHeights] = useState<number[]>([]);
+  const audioWaveformIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isComponentMounted, setIsComponentMounted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPosition, setCurrentPosition] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const startTimeRef = useRef(null);
+  const startTimeRef = useRef<number | null>(null);
 
   // Tablet uyumlu waveform ayarları
   const waveformConfig = {
@@ -26,8 +32,8 @@ export default function AudioPlayer({ audioUri, duration, onError }) {
   };
 
   // Generate random heights for waveform bars
-  const generateRandomHeights = () => {
-    const heights = [];
+  const generateRandomHeights = (): number[] => {
+    const heights: number[] = [];
     for (let i = 0; i < waveformConfig.barCount; i++) {
       heights.push(Math.random() * 24 + 8); // 8-32px arası random yükseklik
     }
@@ -40,12 +46,12 @@ export default function AudioPlayer({ audioUri, duration, onError }) {
   }, []);
 
   // Get waveform height
-  const getWaveformHeight = (index) => {
+  const getWaveformHeight = (index: number) => {
     return waveformHeights[index] || 16;
   };
 
   // Format duration
-  const formatTimer = (seconds) => {
+  const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
@@ -78,7 +84,7 @@ export default function AudioPlayer({ audioUri, duration, onError }) {
       
       timerIntervalRef.current = setInterval(() => {
         // Manuel olarak süreyi hesapla
-        const elapsed = (Date.now() - startTimeRef.current) / 1000;
+        const elapsed = (Date.now() - (startTimeRef.current ?? Date.now())) / 1000;
         const newPosition = Math.floor(elapsed);
         
         setCurrentPosition(newPosition);
@@ -192,8 +198,8 @@ export default function AudioPlayer({ audioUri, duration, onError }) {
       }
       // Don't call pause on unmount to avoid error
       try {
-        player.pause().catch(() => {});
-      } catch (error) {
+        player.pause();
+      } catch {
         // Ignore cleanup errors
       }
     };

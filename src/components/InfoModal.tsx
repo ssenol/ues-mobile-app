@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { ReactNode, useRef } from 'react';
 import {
   Animated,
   PanResponder,
@@ -11,6 +11,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from './ThemedText';
 import useResponsive from '../hooks/useResponsive';
 
+interface InfoModalButton {
+  text: string;
+  onPress: () => void;
+}
+
+interface InfoModalProps {
+  visible?: boolean;
+  onClose?: () => void;
+  title?: string;
+  children?: ReactNode;
+  height?: number;
+  primaryButton?: InfoModalButton | null;
+  secondaryButton?: InfoModalButton | null;
+}
+
 export default function InfoModal({ 
   visible = false, 
   onClose = () => {}, 
@@ -19,7 +34,7 @@ export default function InfoModal({
   height,
   primaryButton = null,
   secondaryButton = null,
-}) {
+}: InfoModalProps) {
   const insets = useSafeAreaInsets();
   const { height: SCREEN_HEIGHT } = useResponsive();
   height = height ?? SCREEN_HEIGHT * 0.85;
@@ -156,7 +171,7 @@ export default function InfoModal({
         
         {title && (
           <View style={styles.headerContainer} {...panResponder.panHandlers}>
-            <ThemedText weight="semibold" style={styles.headerTitle}>
+            <ThemedText weight="semiBold" style={styles.headerTitle}>
               {title}
             </ThemedText>
           </View>
@@ -186,7 +201,7 @@ export default function InfoModal({
                 onPress={secondaryButton.onPress}
                 activeOpacity={0.7}
               >
-                <ThemedText weight="semibold" style={styles.secondaryButtonText}>
+                <ThemedText weight="semiBold" style={styles.secondaryButtonText}>
                   {secondaryButton.text}
                 </ThemedText>
               </TouchableOpacity>

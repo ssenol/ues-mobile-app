@@ -8,6 +8,28 @@ import {
 import Modal from 'react-native-modal';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
+import type { IconName } from '../constants/iconMap';
+
+export interface ConfirmModalAction {
+  text: string;
+  onPress: () => void;
+  color?: string;
+}
+
+interface ConfirmModalProps {
+  visible?: boolean;
+  onClose?: () => void;
+  onConfirm?: (() => void) | null;
+  onCancel?: (() => void) | null;
+  iconName?: IconName;
+  title?: string;
+  description?: string;
+  confirmText?: string;
+  cancelText?: string;
+  confirmButtonColor?: string;
+  singleButton?: boolean;
+  actions?: ConfirmModalAction[] | null;
+}
 
 export default function ConfirmModal({ 
   visible = false, 
@@ -22,7 +44,7 @@ export default function ConfirmModal({
   confirmButtonColor = "#3E4EF0",
   singleButton = false,
   actions = null,
-}) {
+}: ConfirmModalProps) {
   const styles = StyleSheet.create({
     modal: {
       margin: 0,
@@ -143,7 +165,7 @@ export default function ConfirmModal({
             <TouchableOpacity
               style={[styles.confirmButton, { backgroundColor: confirmButtonColor }]}
               activeOpacity={0.85}
-              onPress={onConfirm}
+              onPress={onConfirm ?? undefined}
             >
               <ThemedText weight="bold" style={styles.confirmText}>
                 {confirmText}

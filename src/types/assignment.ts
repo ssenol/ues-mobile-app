@@ -16,6 +16,7 @@ export interface RawSpeechTask {
   speechAssignedDate?: string;
   dueDate?: string;
   task?: {
+    speechTaskType?: SpeechTaskType | string;
     data?: {
       coverImage?: string;
       minSentencesCount?: number;
@@ -26,8 +27,9 @@ export interface RawSpeechTask {
     };
     setting?: {
       cefrLevel?: string;
+      taskName?: string;
       selectedConcept?: {
-        concept: { scenario: string; [key: string]: unknown };
+        concept: { scenario: string; concept?: string; title?: string; [key: string]: unknown };
         [key: string]: unknown;
       };
       [key: string]: unknown;
@@ -61,4 +63,15 @@ export interface Assignment {
   assignedTaskId: string | null;
   speechTaskId: string | null;
   originalTask: RawSpeechTask;
+}
+
+// Completed ekranındaki çözülmüş görev kartı (CompletedScreen'de API yanıtından üretilir)
+export interface CompletedAssignment {
+  id?: string;
+  solvedTaskId?: string;
+  status?: 'pending' | string;
+  title: string;
+  type: string;
+  score: number;
+  completionDate: string;
 }
