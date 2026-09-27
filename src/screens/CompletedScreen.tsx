@@ -21,6 +21,13 @@ import type { CompletedAssignment, CompletedExercise, SpeechTaskType } from '../
 
 const ALL_SUB_TASK_TYPES: SpeechTaskType[] = ['speech_on_topic', 'read_aloud', 'speech_on_scenario'];
 
+interface CompletedFilters {
+  subTaskTypes: string[];
+  completionDate: string | null; // ISO tarih
+}
+
+const DEFAULT_FILTERS: CompletedFilters = { subTaskTypes: ALL_SUB_TASK_TYPES, completionDate: null };
+
 
 export default function CompletedScreen() {
   const router = useRouter();
@@ -60,11 +67,13 @@ export default function CompletedScreen() {
   const [hasMore, setHasMore] = useState(true);
   const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleRefreshRef = useRef<(() => Promise<void>) | null>(null);
-  const fetchCompletedExercisesRef = useRef<((reset?: boolean, cursor?: string | null, isRefresh?: boolean) => Promise<void>) | null>(null);
+  const fetchCompletedExercisesRef = useRef<
+    ((reset?: boolean, cursor?: string | null, isRefresh?: boolean, filters?: CompletedFilters) => Promise<void>) | null
+  >(null);
   
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [selectedSubTaskTypes, setSelectedSubTaskTypes] = useState<string[]>(ALL_SUB_TASK_TYPES); // Multi selection
-  const [completionDate, setCompletionDate] = useState<string | null>(null); // ISO tarih
+  const [selectedSubTaskTypes, setSelectedSubTaskTypes] = useState<string[]>(DEFAULT_FILTERS.subTaskTypes); // Multi selection
+  const [completionDate, setCompletionDate] = useState<string | null>(DEFAULT_FILTERS.completionDate); // ISO tarih
 
   // Dinamik scrollContent stili
   const scrollContentStyle = {
@@ -114,7 +123,14 @@ export default function CompletedScreen() {
   };
 
   // Fetch completed exercises
-  const fetchCompletedExercises = useCallback(async (reset = false, cursor: string | null = null, isRefresh = false) => {
+  // filters verilmezse state'teki filtreler kullanılır. Filtreleri sıfırlayan çağrılar (Reset, ekrana dönüş) yeni
+  // değerleri burada verir: setState sonrası aynı closure'daki state hâlâ eski filtreleri tutar.
+  const fetchCompletedExercises = useCallback(async (
+    reset = false,
+    cursor: string | null = null,
+    isRefresh = false,
+    filters: CompletedFilters = { subTaskTypes: selectedSubTaskTypes, completionDate },
+  ) => {
     if (!user) return;
 
     try {
@@ -134,13 +150,13 @@ export default function CompletedScreen() {
       }
 
       const params = {
-        completionDate: formatDate(completionDate, 'api'),
+        completionDate: formatDate(filters.completionDate, 'api'),
         lastAssignedTaskId: reset ? null : (cursor || nextCursor),
         perPageCount: 100,
         role: 'student',
         selectedTaskNames: [],
         selectedTaskTypes: ['speech'],
-        selectedSubTaskTypes: selectedSubTaskTypes.length > 0 ? selectedSubTaskTypes : ['speech_on_topic', 'read_aloud', 'speech_on_scenario'],
+        selectedSubTaskTypes: filters.subTaskTypes.length > 0 ? filters.subTaskTypes : ALL_SUB_TASK_TYPES,
         userId: userId,
       };
 
@@ -280,15 +296,15 @@ export default function CompletedScreen() {
       scrollToTop();
       
       // Reset filters when screen comes into focus
-      setSelectedSubTaskTypes(['speech_on_topic', 'read_aloud', 'speech_on_scenario']);
-      setCompletionDate(null);
+      setSelectedSubTaskTypes(DEFAULT_FILTERS.subTaskTypes);
+      setCompletionDate(DEFAULT_FILTERS.completionDate);
       setNextCursor(null);
       setHasMore(true);
       
-      // Fetch data with a small delay to ensure state updates are applied
+      // Varsayılan filtreler açıkça verilir; state güncellemesinin yansımasına güvenilmez
       const timer = setTimeout(async () => {
         if (fetchCompletedExercisesRef.current) {
-          await fetchCompletedExercisesRef.current(true, null);
+          await fetchCompletedExercisesRef.current(true, null, false, DEFAULT_FILTERS);
         }
       }, 100);
       
@@ -345,12 +361,12 @@ export default function CompletedScreen() {
   };
 
   const resetFilters = async () => {
-    setSelectedSubTaskTypes(['speech_on_topic', 'read_aloud', 'speech_on_scenario']);
-    setCompletionDate(null);
+    setSelectedSubTaskTypes(DEFAULT_FILTERS.subTaskTypes);
+    setCompletionDate(DEFAULT_FILTERS.completionDate);
     setShowMore(false);
     setNextCursor(null);
     setHasMore(true);
-    await fetchCompletedExercises(true, null);
+    await fetchCompletedExercises(true, null, false, DEFAULT_FILTERS);
   };
 
   const handleDeletePress = (assignment: CompletedAssignment) => {

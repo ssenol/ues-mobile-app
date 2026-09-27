@@ -21,12 +21,10 @@ bilerek dokunulmayan konular. Kullanıcı 2026-09-27'de "dönüşümden sonra ba
   başlangıç tarihi en yeni önce. `Assignment.dueDate` eklendi, karşılaştırma `compareAssignmentsByDueDate`
   (`src/utils/assignmentTransform.ts`). Önbellekteki eski kartlar için `originalTask.dueDate`'e düşülür.
 
-## 3. Completed filtresindeki Reset eski filtrelerle yükleniyor
+## 3. Completed filtresindeki Reset eski filtrelerle yükleniyordu — düzeltildi: `fix/completed-filter-reset`
 
-- `CompletedScreen` → `resetFilters` state'leri (`selectedSubTaskTypes`, `completionDate`) sıfırlıyor ama
-  hemen ardından çağırdığı `fetchCompletedExercises` eski closure'daki filtreleri kullanıyor. Liste bir sonraki
-  yenilemeye kadar eski filtrelerle kalıyor.
-- Çözüm: `fetchCompletedExercises`'e filtreleri parametre olarak geçmek (veya focus'taki gibi ref kullanmak).
+- `resetFilters` state'i sıfırlayıp aynı closure'daki `fetchCompletedExercises`'i çağırıyordu; istek eski filtrelerle gidiyordu.
+- `fetchCompletedExercises`'e isteğe bağlı `filters` parametresi eklendi; Reset ve ekrana dönüş `DEFAULT_FILTERS`'ı açıkça veriyor.
 
 ## 4. Küçük temizlikler — yapıldı: `chore/cleanup`
 
