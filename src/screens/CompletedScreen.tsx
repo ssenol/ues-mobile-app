@@ -15,7 +15,7 @@ import ThemedIcon from "../components/ThemedIcon";
 import InfoModal from '../components/InfoModal';
 import ConfirmModal from '../components/ConfirmModal';
 import InlineCalendar from '../components/InlineCalendar';
-import {useTheme} from "../theme/ThemeContext";
+import {theme, useTheme} from "../theme/ThemeContext";
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import type { CompletedAssignment, CompletedExercise, SpeechTaskType } from '../types/assignment';
 
@@ -479,6 +479,31 @@ export default function CompletedScreen() {
         onClose={() => setFilterModalVisible(false)}
         title="Filter"
         height={SCREEN_HEIGHT * 0.85}
+        footer={
+          <View style={[styles.applyButtonContainer, shadows.dark]}>
+            <View style={styles.applyButtonsInner}>
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={applyFilters}
+                activeOpacity={0.8}
+              >
+                <ThemedText weight="bold" style={styles.applyButtonText}>
+                  Apply Filter
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.resetButton}
+                onPress={resetFilters}
+                activeOpacity={0.8}
+              >
+                <ThemedText weight="semiBold" style={styles.resetButtonText}>
+                  Reset Filter
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        }
       >
         <ScrollView style={styles.filterContent} showsVerticalScrollIndicator={false}>
           {/* Type Section */}
@@ -525,28 +550,6 @@ export default function CompletedScreen() {
           </View>
         </ScrollView>
 
-        {/* Apply Filter Button */}
-        <View style={[styles.applyButtonContainer, shadows.dark]}>
-          <TouchableOpacity 
-            style={styles.applyButton}
-            onPress={applyFilters}
-            activeOpacity={0.8}
-          >
-            <ThemedText weight="bold" style={styles.applyButtonText}>
-              Apply Filter
-            </ThemedText>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.resetButton}
-            onPress={resetFilters}
-            activeOpacity={0.8}
-          >
-            <ThemedText weight="semiBold" style={styles.resetButtonText}>
-              Reset Filter
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
       </InfoModal>
 
       {/* Delete Confirmation Modal */}
@@ -675,6 +678,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#F3F4FF',
+  },
+  // Gölgeli kutu tam genişlikte; butonlar tablette ortalı ve sınırlı
+  applyButtonsInner: {
+    width: '100%',
+    maxWidth: theme.layout.maxActionWidth,
+    alignSelf: 'center',
   },
   applyButton: {
     backgroundColor: '#3E4EF0',

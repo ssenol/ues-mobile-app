@@ -24,6 +24,9 @@ interface InfoModalProps {
   title?: string;
   children?: ReactNode;
   height?: number;
+  // İçeriğin altında tam genişlikte duran özel alan (ör. gölgeli buton kutusu); içindeki öğeleri
+  // tablette daraltmak çağıran tarafın işidir (theme.layout.maxActionWidth)
+  footer?: ReactNode;
   primaryButton?: InfoModalButton | null;
   secondaryButton?: InfoModalButton | null;
 }
@@ -36,6 +39,7 @@ export default function InfoModal({
   height,
   primaryButton = null,
   secondaryButton = null,
+  footer = null,
 }: InfoModalProps) {
   const insets = useSafeAreaInsets();
   const { height: SCREEN_HEIGHT } = useResponsive();
@@ -92,7 +96,7 @@ export default function InfoModal({
       borderTopRightRadius: 24,
       paddingTop: 12,
       // Buton alanı yoksa içeriğin altı dock'un altında kalmasın
-      paddingBottom: primaryButton || secondaryButton ? 0 : androidBottomInset,
+      paddingBottom: primaryButton || secondaryButton || footer ? 0 : androidBottomInset,
       flexDirection: 'column',
       overflow: 'hidden',
     },
@@ -192,6 +196,12 @@ export default function InfoModal({
         <View style={styles.contentContainer}>
           {children}
         </View>
+
+        {footer && (
+          <View style={{ paddingBottom: androidBottomInset, backgroundColor: '#fff' }}>
+            {footer}
+          </View>
+        )}
         
         {(primaryButton || secondaryButton) && (
           <View style={styles.buttonContainer}>
