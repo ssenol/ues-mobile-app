@@ -1,7 +1,8 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {Dimensions, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
+import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import CompletedAssignmentCard from '../components/CompletedAssignmentCard';
@@ -16,7 +17,6 @@ import ConfirmModal from '../components/ConfirmModal';
 import InlineCalendar from '../components/InlineCalendar';
 import {useTheme} from "../theme/ThemeContext";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function CompletedScreen() {
   const router = useRouter();
@@ -43,7 +43,7 @@ export default function CompletedScreen() {
       }
     }
   };
-  const isTablet = SCREEN_WIDTH >= 744;
+  const { height: SCREEN_HEIGHT, isTablet } = useResponsive();
   const insets = useSafeAreaInsets();
   const STATUSBAR_HEIGHT = insets.top;
   const user = useSelector((state) => selectCurrentUser(state));

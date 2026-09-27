@@ -1,7 +1,8 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, ImageBackground, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, ImageBackground, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import AssignmentCard from '../components/AssignmentCard';
@@ -14,13 +15,13 @@ import { fetchAssignedSpeechTasksWithCache } from '../services/speak';
 import { selectCurrentUser } from '../store/slices/authSlice';
 import { buildAssignedSpeechTaskParams } from '../utils/assignmentTransform';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isTablet = SCREEN_WIDTH >= 744;
 
 export default function AssignmentsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { colors, shadows } = useTheme();
+  const { width: SCREEN_WIDTH, isTablet } = useResponsive();
+  const styles = useMemo(() => createStyles(isTablet, SCREEN_WIDTH), [isTablet, SCREEN_WIDTH]);
   const insets = useSafeAreaInsets();
   const user = useSelector((state) => selectCurrentUser(state));
   const STATUSBAR_HEIGHT = insets.top;
@@ -515,7 +516,7 @@ export default function AssignmentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (isTablet, SCREEN_WIDTH) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',

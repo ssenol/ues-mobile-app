@@ -1,14 +1,13 @@
 import { useAudioPlayer } from 'expo-audio';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import useResponsive from '../hooks/useResponsive';
 import ThemedIcon from './ThemedIcon';
 import { ThemedText } from './ThemedText';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 export default function AudioPlayer({ audioUri, duration, onError }) {
   const player = useAudioPlayer(audioUri);
-  const isTablet = SCREEN_WIDTH >= 744;
+  const { isTablet } = useResponsive();
   const [audioWaveformIndex, setAudioWaveformIndex] = useState(0);
   const [waveformHeights, setWaveformHeights] = useState([]);
   const audioWaveformIntervalRef = useRef(null);

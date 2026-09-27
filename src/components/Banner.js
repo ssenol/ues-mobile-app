@@ -1,8 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions, ImageBackground } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isTablet = SCREEN_WIDTH >= 744;
+import { View, StyleSheet, ImageBackground } from 'react-native';
+import useResponsive from '../hooks/useResponsive';
 
 const Banner = ({ 
   type,
@@ -10,6 +8,7 @@ const Banner = ({
   containerStyle,
   children 
 }) => {
+  const { width: SCREEN_WIDTH, isTablet } = useResponsive();
 
   // Banner konfigürasyonları
   const bannerConfig = {

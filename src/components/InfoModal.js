@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import {
   Animated,
-  Dimensions,
   PanResponder,
   StyleSheet,
   View,
@@ -10,19 +9,20 @@ import {
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from './ThemedText';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+import useResponsive from '../hooks/useResponsive';
 
 export default function InfoModal({ 
   visible = false, 
   onClose = () => {}, 
   title = '',
   children,
-  height = SCREEN_HEIGHT * 0.85,
+  height,
   primaryButton = null,
   secondaryButton = null,
 }) {
   const insets = useSafeAreaInsets();
+  const { height: SCREEN_HEIGHT } = useResponsive();
+  height = height ?? SCREEN_HEIGHT * 0.85;
   const translateY = useRef(new Animated.Value(0)).current;
   const isClosing = useRef(false);
 

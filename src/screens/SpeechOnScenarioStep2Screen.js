@@ -6,11 +6,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Dimensions,
   Keyboard,
   ActivityIndicator,
   TextInput,
 } from 'react-native';
+import useResponsive from '../hooks/useResponsive';
 import { useAudioRecorder, setAudioModeAsync, AudioQuality, IOSOutputFormat, useAudioPlayer } from 'expo-audio';
 import axios from 'axios';
 import api, { API_ENDPOINTS } from '../config/api';
@@ -29,7 +29,6 @@ import InfoModal from '../components/InfoModal';
 import ConfirmModal from '../components/ConfirmModal';
 import ScenarioTaskDetails from '../components/ScenarioTaskDetails';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const SpeechOnScenarioStep2Screen = () => {
   const router = useRouter();
@@ -42,8 +41,7 @@ const SpeechOnScenarioStep2Screen = () => {
   const ttsSpeed = useSelector(selectTtsSpeed);
 
   // Dinamik padding değerleri
-  const { width: screenWidth } = Dimensions.get('window');
-  const isTablet = screenWidth >= 744;
+  const { height: SCREEN_HEIGHT, isTablet } = useResponsive();
   const basePadding = isTablet ? 10 : 10;
   
   // Dinamik taskOptionsBar stili
@@ -1141,7 +1139,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 20,
     padding: 24,
-    width: SCREEN_WIDTH * 0.85,
+    width: '85%',
     alignItems: 'center',
   },
   ttsModalTitle: {

@@ -1,12 +1,13 @@
 import { Redirect, Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { Dimensions, DynamicColorIOS, Platform } from 'react-native';
+import { DynamicColorIOS, Platform } from 'react-native';
 import { useSelector } from 'react-redux';
 import { selectIsAuthenticated } from '@/src/store/slices/authSlice';
 import CustomTabBar from '@/src/components/CustomTabBar';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isIPad = Platform.OS === 'ios' && SCREEN_WIDTH >= 744;
+// Genişliğe değil cihaz tipine bakılır: iPad penceresi yeniden boyutlandırılınca tab bar sistemi
+// değişirse navigator baştan kurulur. Pencere küçülünce CustomTabBar kendi içinde telefon ölçülerine geçer.
+const isIPad = Platform.OS === 'ios' && Platform.isPad;
 // NativeTabs (Liquid Glass) sadece iOS 26+ üzerinde düzgün çalışıyor; eski iPhone'larda
 // custom PNG sekme ikonlarının arkasında istenmeyen gri bir kapsül görünüyor.
 // Bu yüzden iOS 26 altındaki iPhone'larda da iPad'deki floating CustomTabBar'a düşülüyor.

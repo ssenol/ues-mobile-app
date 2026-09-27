@@ -1,17 +1,18 @@
 import * as Haptics from 'expo-haptics';
 import React, {useMemo} from 'react';
-import {Dimensions, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import useResponsive from '../../hooks/useResponsive';
 import ThemedIcon from '../ThemedIcon';
 import {ThemedText} from '../ThemedText';
 import {useTheme} from '../../theme/ThemeContext';
 import {catForType, formatSubType} from './reportIssueCategories';
 import {getExampleSegments} from './reportUtils';
 
-const { height: SCREEN_H } = Dimensions.get('window');
 
 // Grammar/Word Choice/Logic gibi metin hatalarının detayını ortada gösteren modal (prev/next ile gezinilebilir)
 export default function ReportErrorModal({ issue, index, total, onPrev, onNext, onClose }) {
   const { fonts, colors } = useTheme();
+  const { height: SCREEN_H } = useResponsive();
 
   // Parmakla sola/sağa kaydırınca prev/next (yatay hareket dikeyden belirgin şekilde
   // fazlaysa ScrollView'ın dikey kaydırmasıyla çakışmaz)
@@ -50,7 +51,7 @@ export default function ReportErrorModal({ issue, index, total, onPrev, onNext, 
       <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.card} {...panResponder.panHandlers}>
+        <View style={[styles.card, { height: SCREEN_H * 0.42 }]} {...panResponder.panHandlers}>
           <View style={styles.topRow}>
             <ThemedText weight="bold" style={[styles.catLabel, { color: cat.color }]}>
               {cat.label} Error
@@ -142,7 +143,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     alignSelf: 'center',
-    height: SCREEN_H * 0.42,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,

@@ -1,10 +1,9 @@
 import React from 'react';
-import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ThemedIcon from './ThemedIcon';
 import { useTheme } from '../theme/ThemeContext';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import useResponsive from '../hooks/useResponsive';
 
 export default function CustomTabBar({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
@@ -12,7 +11,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
   const { colors, shadows } = theme;
   
   // Tablet kontrolü (iPad ve Android tablet dahil, ekran genişliğine göre)
-  const isTablet = SCREEN_WIDTH >= 744;
+  const { isTablet } = useResponsive();
   const horizontalPadding = isTablet ? 240 : 24; // Yatay padding
   const verticalPadding = isTablet ? 10 : 20; // Dikey padding (telefonlarda alta yapışmasın)
   

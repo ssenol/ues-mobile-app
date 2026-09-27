@@ -70,7 +70,7 @@ Gerçek navigasyon her zaman `app/_layout.tsx`'ten başlar. Expo Router migratio
 ### Tab bar: platforma göre iki farklı implementasyon
 
 `app/(tabs)/_layout.tsx`, ekran genişliğine (`Dimensions`) VE iOS sürümüne (`Platform.Version`) bakıp karar verir:
-- **iPad** (`SCREEN_WIDTH >= 744`) **veya iOS 26'dan eski iPhone**: expo-router'ın `Tabs` bileşeni + özel `tabBar={(props) => <CustomTabBar {...props} />}` (`src/components/CustomTabBar.js`) — mavi zeminli, floating custom tab bar. NativeTabs'ın custom PNG ikonları eski (Liquid Glass öncesi) iOS'ta ikonun arkasında istenmeyen gri bir kapsül gösteriyor, bu yüzden o sürümlerde de CustomTabBar kullanılıyor.
+- **iPad** (`Platform.isPad`, genişliğe göre değil) **veya iOS 26'dan eski iPhone**: expo-router'ın `Tabs` bileşeni + özel `tabBar={(props) => <CustomTabBar {...props} />}` (`src/components/CustomTabBar.js`) — mavi zeminli, floating custom tab bar. NativeTabs'ın custom PNG ikonları eski (Liquid Glass öncesi) iOS'ta ikonun arkasında istenmeyen gri bir kapsül gösteriyor, bu yüzden o sürümlerde de CustomTabBar kullanılıyor.
 - **iPhone, iOS 26+**: `expo-router/unstable-native-tabs`'tan `NativeTabs` — iOS 26 Liquid Glass native tab bar, ikonlar `assets/icons/tab-*.png`'den.
 
 Tab bar davranışını değiştirirken hangi platform dalını etkilediğinizi netleştirin; ikisi tamamen ayrı componentlerdir.
@@ -123,4 +123,5 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 - Persist edilecek Redux state'leri her zaman `whitelist` ile açıkça belirtin (yukarıdaki tablo).
 - API çağrıları service layer'da (`src/services/`) toplanır, component'lerden direkt axios çağrısı yapılmaz.
 - Ses işlemleri için `expo-audio` kullanılır (react-native-sound değil); recording/playback sonrası her zaman unload/cleanup yapılır.
+- **Ekran boyutu için `Dimensions.get('window')` kullanmayın**, `src/hooks/useResponsive.js`'teki `useResponsive()` hook'unu (`{ width, height, isTablet }`, eşik 744) component içinde kullanın. iPadOS 26+ pencereleri her zaman yeniden boyutlandırılabilir (`requireFullScreen` dikkate alınmıyor), modül seviyesinde okunan boyut güncellenmez. `isTablet`'e bağlı stiller modül seviyesindeyse `createStyles(isTablet)` + `useMemo` kalıbı kullanılır.
 - Yeni ekran eklerken önce `src/screens/`, sonra `app/` altında ince route wrapper — asla tersi.

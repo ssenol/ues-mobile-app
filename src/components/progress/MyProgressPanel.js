@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {ActivityIndicator, Dimensions, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
 import CircularProgress from '../CircularProgress';
 import EmptyStateCard from '../EmptyStateCard';
 import InfoModal from '../InfoModal';
@@ -9,6 +9,7 @@ import {getScoreColor} from '../report/reportUtils';
 import {ThemedText} from '../ThemedText';
 import ThemedIcon from '../ThemedIcon';
 import {useTheme} from '../../theme/ThemeContext';
+import useResponsive from '../../hooks/useResponsive';
 import {getSelfAnalytics} from '../../services/speak';
 import {BarRow, LineTrend, StatTile} from './ProgressCharts';
 import {
@@ -19,8 +20,6 @@ import {
   titleCase,
 } from './progressUtils';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const isTablet = SCREEN_WIDTH >= 744;
 const VOICE_PROFILE_KEYS = ['pronunciation', 'fluency', 'prosody', 'accuracy', 'completeness', 'clarity'];
 
 const SECTION_INFO = {
@@ -69,6 +68,7 @@ function SectionHeader({ title, meta, onInfoPress }) {
 // Backend /student/get-self-analytics'i type:'speaking' ile çağırır.
 export default function MyProgressPanel({ userId }) {
   const { colors } = useTheme();
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, isTablet } = useResponsive();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

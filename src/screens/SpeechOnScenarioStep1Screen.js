@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Image, Dimensions, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import useResponsive from '../hooks/useResponsive';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
@@ -7,7 +8,6 @@ import { ThemedText } from '../components/ThemedText';
 import ThemedIcon from '../components/ThemedIcon';
 import ScenarioTaskDetails from '../components/ScenarioTaskDetails';
 
-const { width } = Dimensions.get('window');
 
 const SpeechOnScenarioStep1Screen = () => {
   const router = useRouter();
@@ -18,8 +18,7 @@ const SpeechOnScenarioStep1Screen = () => {
   const task = params.task ? JSON.parse(params.task) : null;
 
   // Tablet ve mobil kontrolü
-  const { width: screenWidth } = Dimensions.get('window');
-  const isTablet = screenWidth >= 744;
+  const { isTablet } = useResponsive();
   const basePadding = isTablet ? 50 : 10;
 
   // Dinamik stil oluşturma

@@ -2,7 +2,8 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { AudioQuality, IOSOutputFormat, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, Dimensions, LayoutAnimation, Linking, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, LayoutAnimation, Linking, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import useResponsive from '../hooks/useResponsive';
 import Modal from 'react-native-modal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
@@ -17,7 +18,6 @@ import { clearCache } from '../store/slices/assignmentSlice';
 import { getMicrophoneEnabled, requestMicrophonePermission } from '../utils/helpers';
 import { useTheme } from '../theme/ThemeContext';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function AssignmentDetailScreen() {
   const router = useRouter();
@@ -37,8 +37,7 @@ export default function AssignmentDetailScreen() {
   const STATUSBAR_HEIGHT = insets.top;
   
   // Dinamik padding değerleri
-  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-  const isTablet = screenWidth >= 744; // Tablet genişliği 768px ve üzeri
+  const { isTablet } = useResponsive();
   
   // Cihaz tipine göre padding
   const basePadding = isTablet ? 20 : 10;  // Tablet'te 50px, mobil'de 10px

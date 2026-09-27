@@ -3,7 +3,6 @@ import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import {
   Animated,
-  Dimensions,
   Image,
   RefreshControl,
   ScrollView,
@@ -11,6 +10,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from "react-redux";
 import AssignmentCard from "../components/AssignmentCard";
@@ -31,8 +31,7 @@ export default function HomeScreen() {
   const user = useSelector((state) => selectCurrentUser(state));
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { width: SCREEN_WIDTH } = Dimensions.get('window');
-  const isTablet = SCREEN_WIDTH >= 744;
+  const { width: SCREEN_WIDTH, isTablet } = useResponsive();
   const STATUSBAR_HEIGHT = insets.top;
 
   // Navigation helper - React Navigation'dan Expo Router'a geçiş için

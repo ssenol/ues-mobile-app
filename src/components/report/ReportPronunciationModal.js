@@ -1,14 +1,14 @@
 import {useAudioPlayer} from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, Dimensions, Modal, PanResponder, Pressable, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {ActivityIndicator, Modal, PanResponder, Pressable, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
+import useResponsive from '../../hooks/useResponsive';
 import {getWordTts} from '../../services/speak';
 import ThemedIcon from '../ThemedIcon';
 import {ThemedText} from '../ThemedText';
 import {useTheme} from '../../theme/ThemeContext';
 import {getScoreColor} from './reportUtils';
 
-const { height: SCREEN_H } = Dimensions.get('window');
 
 // Kelime/mesaj değişiminde eski native player zaten serbest bırakılmış olabilir
 // (expo-audio kaynak değişince kendi iç effect'iyle onu yok ediyor) — bu yarış
@@ -25,6 +25,7 @@ function safeCall(fn) {
 // audioUri: kullanıcının tam ses kaydı (varsa) — issue.startTime/endTime aralığı bundan çalınır
 export default function ReportPronunciationModal({ issue, index, total, onPrev, onNext, onClose, audioUri }) {
   const { colors } = useTheme();
+  const { height: SCREEN_H } = useResponsive();
 
   const recordingPlayer = useAudioPlayer(audioUri || '');
   const segmentEndRef = useRef(null);
@@ -147,7 +148,7 @@ export default function ReportPronunciationModal({ issue, index, total, onPrev, 
       <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.card} {...panResponder.panHandlers}>
+        <View style={[styles.card, { height: SCREEN_H * 0.46 }]} {...panResponder.panHandlers}>
           <View style={styles.topRow}>
             <ThemedText weight="bold" style={styles.catLabel}>Pronunciation</ThemedText>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
@@ -243,7 +244,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     alignSelf: 'center',
-    height: SCREEN_H * 0.46,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,

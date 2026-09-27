@@ -8,7 +8,6 @@ import React, {useCallback, useEffect, useRef, useState} from "react";
 import {
   Animated,
   AppState,
-  Dimensions,
   Image,
   Linking,
   Platform,
@@ -18,6 +17,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import useResponsive from '../hooks/useResponsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from "react-redux";
 import ConfirmModal from "../components/ConfirmModal";
@@ -37,11 +37,10 @@ import {
 import { performLogout } from "../utils/logoutHelper";
 import {useFocusEffect} from "expo-router";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   const dispatch = useDispatch();
-  const isTablet = SCREEN_WIDTH >= 744;
+  const { isTablet } = useResponsive();
   const user = useSelector((state) => selectCurrentUser(state));
   const refreshToken = useSelector(selectRefreshToken);
   const { colors, shadows } = useTheme();

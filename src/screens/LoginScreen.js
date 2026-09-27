@@ -5,7 +5,6 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Dimensions,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -15,6 +14,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import useResponsive from '../hooks/useResponsive';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
 import ActionButton from "../components/ActionButton";
@@ -30,11 +30,11 @@ import ThemedIcon from "../components/ThemedIcon";
 
 // Biyometrik hatırlatma Alert'inin daha önce gösterilip gösterilmediğini tutan anahtar.
 const BIOMETRIC_PROMPT_SHOWN_KEY = "biometric_prompt_shown";
-// iPhone 6s/SE gibi küçük ekranlarda header ve boşlukları küçültüp içeriğin sığmasını kolaylaştırır
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const isSmallScreen = SCREEN_HEIGHT < 700;
 
 export default function LoginScreen() {
+  // iPhone 6s/SE gibi küçük ekranlarda (veya kısa iPad penceresinde) header ve boşlukları küçültüp içeriğin sığmasını kolaylaştırır
+  const { height: SCREEN_HEIGHT } = useResponsive();
+  const isSmallScreen = SCREEN_HEIGHT < 700;
   const dispatch = useDispatch();
   const { colors } = useTheme();
   const scrollViewRef = useRef(null);

@@ -1,16 +1,14 @@
-import React from 'react';
-import { View, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from './ThemedText';
 import ThemedIcon from './ThemedIcon';
 import { useTheme } from '../theme/ThemeContext';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const isTablet = SCREEN_WIDTH >= 744;
+import useResponsive from '../hooks/useResponsive';
 
 const EmptyStateCard = ({ 
   containerStyle,
   iconName = 'bigcheck', 
-  iconSize = isTablet ? 100 : 72,
+  iconSize,
   iconColor = '#3E4EF0',
   iconBackgroundColor = '#fff',
   title = 'Great Job!', 
@@ -18,12 +16,16 @@ const EmptyStateCard = ({
   subtitleColor = '#727272',
   showLink = false,
   linkIconName = 'tabAssignment',
-  linkIconSize = isTablet ? 24 : 16,
+  linkIconSize,
   linkText = 'Assignments',
   onLinkPress,
   dividerColor = '#F3F4FF'
 }) => {
   const { shadows } = useTheme();
+  const { isTablet } = useResponsive();
+  const styles = useMemo(() => createStyles(isTablet), [isTablet]);
+  iconSize = iconSize ?? (isTablet ? 100 : 72);
+  linkIconSize = linkIconSize ?? (isTablet ? 24 : 16);
   
   return (
     <View style={[styles.container, containerStyle, shadows.light]}>
@@ -67,7 +69,7 @@ const EmptyStateCard = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (isTablet) => StyleSheet.create({
   container: {
     backgroundColor: '#fff',
     borderRadius: 12,
