@@ -65,6 +65,7 @@ module.exports = {
       "expo-audio",
       "expo-web-browser",
       "expo-screen-orientation",
+      "expo-status-bar",
       "./plugins/withPodsDeploymentTarget"
     ],
     extra: {

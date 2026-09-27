@@ -48,7 +48,7 @@ export default function ReportErrorModal({ issue, index, total, onPrev, onNext, 
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose} visible>
       <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
         <View style={styles.card} {...panResponder.panHandlers}>
           <View style={styles.topRow}>

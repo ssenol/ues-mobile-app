@@ -133,7 +133,7 @@ export function DonutChart({ segments, centerValue, centerLabel, size = 120, thi
           })}
         </G>
       </Svg>
-      <View style={StyleSheet.absoluteFillObject}>
+      <View style={StyleSheet.absoluteFill}>
         <View style={styles.donutCenter}>
           <ThemedText weight="extraBold" style={styles.donutCenterValue}>{centerValue}</ThemedText>
           <ThemedText weight="bold" style={styles.donutCenterLabel}>{centerLabel}</ThemedText>

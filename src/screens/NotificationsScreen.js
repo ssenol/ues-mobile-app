@@ -1,4 +1,4 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import React, { useCallback, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
