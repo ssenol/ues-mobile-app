@@ -9,11 +9,6 @@ module.exports = {
     orientation: "portrait",
     icon: IS_DEV ? "./assets/images/icon-dev.png" : "./assets/images/icon.png",
     userInterfaceStyle: "light",
-    splash: {
-      image: "./assets/images/splash.png",
-      resizeMode: "cover",
-      background: "#ffffff"
-    },
     ios: {
       supportsTablet: true,
       // iPad'de Split View / Slide Over açık (iPadOS 26+ bunu zaten dikkate almıyor, pencereler hep boyutlandırılabilir)
@@ -50,7 +45,8 @@ module.exports = {
     android: {
       adaptiveIcon: {
         foregroundImage: IS_DEV ? "./assets/images/adaptive-icon-dev.png" : "./assets/images/adaptive-icon.png",
-        background: "#ffffff"
+        // Foreground görseli kendi zeminini içeriyor; bu renk yalnızca maske kenarında görünür
+        backgroundColor: "#303FE0"
       },
       package: IS_DEV ? "com.ues.boostifyspeak.dev" : "com.ues.boostifyspeak",
       permissions: [
@@ -67,6 +63,16 @@ module.exports = {
     plugins: [
       "expo-secure-store",
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          // boostifywrite ile aynı yapı: tam ekran görsel. Tablet yatayda üstten/alttan kırpılır, logo ortada kalır.
+          image: "./assets/images/splash.png",
+          resizeMode: "cover",
+          backgroundColor: "#303FE0",
+          enableFullScreenImage_legacy: true
+        }
+      ],
       "expo-font",
       "expo-audio",
       "expo-web-browser",

@@ -3,9 +3,11 @@
   "main": "index.js",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios --device \"iPhone 16\"",
+    "start": "APP_VARIANT=development expo start",
+    "android": "APP_VARIANT=development expo run:android",
+    "ios": "APP_VARIANT=development expo run:ios --device \"iPhone 16\"",
+    "prebuild:dev": "APP_VARIANT=development expo prebuild",
+    "icons:dev": "node scripts/generate-dev-icons.js",
     "web": "expo start --web",
     "lint": "expo lint"
   },
@@ -60,6 +62,7 @@
     "baseline-browser-mapping": "^2.9.19",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~57.0.2",
+    "pngjs": "^3.4.0",
     "typescript": "~6.0.3"
   },
   "private": true

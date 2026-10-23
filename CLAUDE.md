@@ -16,17 +16,21 @@ BoostifySpeak (iç adı: UES Mobile App), öğrencilerin konuşma görevlerini (
 npm start                              # Expo dev server (dev client gerekli, Expo Go DESTEKLENMİYOR)
 npm run ios                            # iOS'ta çalıştır (iPhone 16 fiziksel cihaz, expo run:ios)
 npm run android                        # Android'de çalıştır
+npm run prebuild:dev                   # Native projeleri dev varyantıyla üret/güncelle
+npm run icons:dev                      # Dev ikonlarını normal ikonlardan üret (DEV badge'i bindirir)
 npm run web                            # Web'de çalıştır
 npm run lint                           # expo lint (eslint-config-expo/flat)
 npx expo start --clear                 # Metro cache temizleyerek başlat
-npx expo prebuild --clean              # Native projeleri (ios/android) yeniden üret
+npm run prebuild:dev -- --clean        # Native projeleri (ios/android) sıfırdan yeniden üret
 ```
 
-**Xcode 27 notu:** Xcode 27'de Simulator.app yerine Device Hub geldi. @expo/cli bunu tanımadığı için `npm run ios` (`expo run:ios`) "Can't determine id of Simulator app" hatası verebilir. Geçici çözüm: `npx expo start` + `ios/BoostifySpeak.xcworkspace`'i Xcode'da açıp cihazı seçerek Run. Her `prebuild --clean` sonrası Signing Team yeniden seçilmeli ve `xattr -w com.dropbox.ignored 1 ios android` tekrarlanmalı (proje Dropbox'ta).
+**Xcode 27 notu:** Xcode 27'de Simulator.app yerine Device Hub geldi. @expo/cli bunu tanımadığı için `npm run ios` (`expo run:ios`) "Can't determine id of Simulator app" hatası verebilir. Geçici çözüm: `npx expo start` + `ios/BoostifySpeakDEV.xcworkspace`'i Xcode'da açıp cihazı seçerek Run. Her `prebuild --clean` sonrası Signing Team yeniden seçilmeli ve `xattr -w com.dropbox.ignored 1 ios android` tekrarlanmalı (proje Dropbox'ta).
 
 Bu projede birim/entegrasyon test altyapısı (Jest vb.) **yok** — `npm run lint` ve manuel/fiziksel cihaz testi mevcut doğrulama yoludur.
 
 Native bağımlılık eklendiğinde veya `app.config.js`/plugin değişikliğinde `ios`/`android` klasörleri prebuild ile senkronize edilmeli (`expo-dev-client` kullanıldığı için Expo Go ile çalışmaz).
+
+**Yerel build her zaman dev varyantıdır.** `start`/`ios`/`android`/`prebuild:dev` script'leri `APP_VARIANT=development` verir: bundle id `com.ues.boostifyspeak.dev`, ad "BoostifySpeak DEV", iOS projesi `ios/BoostifySpeakDEV.xcworkspace`. Böylece store sürümü aynı cihazda yan yana kalır. `npx expo prebuild`'i script dışında **çıplak çalıştırmayın**: prod varyantıyla `ios/BoostifySpeak` üretir ve store uygulamasının üzerine kurulur. TestFlight/store build'leri yalnızca EAS `production` profiliyle alınır (ios/android gitignore'da, EAS kendi prebuild'ini env'siz yapar).
 
 ## Mimari
 
@@ -113,7 +117,7 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 
 ### Build konfigürasyonu
 
-- `app.config.js` tek config dosyasıdır (`app.json` yok, eklemeyin: `app.config.js` düz obje export ettiği için yok sayılır) — `APP_VARIANT=development` env değişkenine göre dev/prod arasında icon, bundle identifier (`com.ues.boostifyspeak[.dev]`) ve isim değiştirir.
+- `app.config.js` tek config dosyasıdır (`app.json` yok, eklemeyin: `app.config.js` düz obje export ettiği için yok sayılır) — `APP_VARIANT=development` env değişkenine göre dev/prod arasında icon, bundle identifier (`com.ues.boostifyspeak[.dev]`) ve isim değiştirir. Dev ikonları (`icon-dev*.png`, `adaptive-icon-dev.png`) elle tasarlanmaz: normal ikon değişince `npm run icons:dev` ile `dev-badge.png` bindirilerek üretilir. Splash her iki varyantta aynıdır (`expo-splash-screen` plugin'i, tam ekran `splash.png`, zemin `#303FE0`).
 - `eas.json` build profilleri: `development` (internal, dev client, APK), `preview` (internal, APK), `production` (store, app-bundle/ios).
 - iOS `buildNumber` her production build'de manuel artırılıyor (`app.config.js` içinde).
 - **Ekran yönü:** iPhone ve Android telefonlar portre kilitli; iPad ve Android tablet (en kısa kenar ≥ 600dp) her yöne döner. iOS'ta bu `app.config.js` → `infoPlist` içindeki `UISupportedInterfaceOrientations` (iPhone) / `~ipad` listeleriyle, Android'de manifest portre + `app/_layout.tsx`'te tablette `ScreenOrientation.lockAsync(OrientationLock.DEFAULT)` ile yapılır. Yerleşimler yatay ve kısa pencereye `useResponsive()` üzerinden uyum sağlamalı.
