@@ -165,6 +165,18 @@ class BiometricAuthService {
     await AsyncStorage.setItem(SECURE_STORAGE_READY_KEY, 'true');
   }
 
+  // SSO linkiyle giriş yapan öğrenci, kayıtlı kimlik bilgilerinin sahibi değilse kayıtlar silinir ve
+  // biyometrik kapatılır: yoksa çıkıştan sonra Face ID önceki öğrencinin hesabını açardı (Profil'den
+  // biyometrik açmak da son girişin bilgilerini kullanıyor). Aynı öğrenciyse (ya da kayıt yoksa) dokunulmaz.
+  async clearCredentialsIfOtherUser(username: string | undefined): Promise<void> {
+    const stored = await Promise.all(CREDENTIAL_KEYS.map(readCredentials));
+    const owners = stored.filter((c): c is StoredCredentials => !!c).map((c) => c.username.trim().toLowerCase());
+    if (owners.length === 0) return;
+    if (username && owners.every((owner) => owner === username.trim().toLowerCase())) return;
+    await this.clearStoredCredentials();
+    await this.setBiometricEnabled(false);
+  }
+
   // Biyometrik kimlik doğrulama tercihini kaydeder
   async setBiometricEnabled(enabled: boolean): Promise<void> {
     await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, JSON.stringify(enabled));

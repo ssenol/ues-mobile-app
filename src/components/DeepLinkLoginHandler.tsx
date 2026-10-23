@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import authService, { NotStudentError } from '../services/auth';
 import { subscribeDeepLinkToken } from '../services/deepLinkToken';
+import BiometricAuthService from '../services/biometricAuth';
 import { setCredentials } from '../store/slices/authSlice';
 import { clearAssignmentState } from '../store/slices/assignmentSlice';
 import { useAppDispatch } from '../store/hooks';
@@ -31,6 +32,8 @@ export default function DeepLinkLoginHandler() {
             tokenAcquiredAt: Date.now(),
           })
         );
+        // Başka öğrenciye geçildiyse önceki öğrencinin Face ID kaydı kalmasın
+        await BiometricAuthService.clearCredentialsIfOtherUser(response.user?.username);
       } catch (error) {
         Alert.alert(
           'Error',

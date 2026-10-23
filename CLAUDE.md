@@ -108,7 +108,7 @@ Yeni bir endpoint eklerken `API_ENDPOINTS`'e ekleyin ve çağrıyı `src/service
 
 ### Deep link ile SSO girişi
 
-Okul platformundan gelen öğrenci service.ueslms üzerinden `boostifyspeak://login?token=<şifreli SSO token>` ile app'e düşer (dev sürümünde scheme `boostifyspeak-dev`). `app/+native-intent.tsx` `token` taşıyan her linki `/`'e çevirir ve token'ı `src/services/deepLinkToken.ts`'te bekletir; PersistGate içindeki `src/components/DeepLinkLoginHandler.tsx` rehydrate sonrası `authService.loginWithSsoToken()` ile `POST /auth/sso-mobile`'a gönderir (yanıt `/auth/login` ile aynı, öğrenci kontrolü dahil). Açık oturum varsa yalnızca giriş başarılı olunca yeni öğrenciye geçilir. `/auth/` uçlarında 401 mevcut oturumu yenilemez/kapatmaz (`src/config/api.ts` response interceptor).
+Okul platformundan gelen öğrenci service.ueslms üzerinden `boostifyspeak://login?token=<şifreli SSO token>` ile app'e düşer (dev sürümünde scheme `boostifyspeak-dev`). `app/+native-intent.tsx` `token` taşıyan her linki `/`'e çevirir ve token'ı `src/services/deepLinkToken.ts`'te bekletir; PersistGate içindeki `src/components/DeepLinkLoginHandler.tsx` rehydrate sonrası `authService.loginWithSsoToken()` ile `POST /auth/sso-mobile`'a gönderir (yanıt `/auth/login` ile aynı, öğrenci kontrolü dahil). Açık oturum varsa yalnızca giriş başarılı olunca yeni öğrenciye geçilir. `/auth/` uçlarında 401 mevcut oturumu yenilemez/kapatmaz (`src/config/api.ts` response interceptor). Giriş başarılıysa ve SecureStore'daki kimlik bilgileri (biyometrik + son giriş) başka öğrenciye aitse `BiometricAuthService.clearCredentialsIfOtherUser()` hepsini siler ve biyometriği kapatır; aynı öğrenciyse dokunmaz. BW'da aynı kural.
 
 ### İkon sistemi: iki paralel sistem bir arada
 
