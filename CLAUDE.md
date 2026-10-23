@@ -26,6 +26,8 @@ npm run prebuild:dev -- --clean        # Native projeleri (ios/android) sıfırd
 
 **Xcode 27 notu:** Xcode 27'de Simulator.app yerine Device Hub geldi. @expo/cli bunu tanımadığı için `npm run ios` (`expo run:ios`) "Can't determine id of Simulator app" hatası verebilir. Geçici çözüm: `npx expo start` + `ios/BoostifySpeakDEV.xcworkspace`'i Xcode'da açıp cihazı seçerek Run. Her `prebuild --clean` sonrası Signing Team yeniden seçilmeli ve `xattr -w com.dropbox.ignored 1 ios android` tekrarlanmalı (proje Dropbox'ta).
 
+**Xcode/Swift güncellemesi sonrası build hatası:** `failed to build module 'ExpoModulesCore'; this SDK is not supported by the compiler (... Swift 6.3.1 ..., while this compiler is ... 6.4)` veya `cannot find type '__ObjC::expo'` görülürse sebep `node_modules/expo-modules-jsi/apple/Products/` altındaki eski derleyiciyle üretilmiş JSI xcframework önbelleğidir (build log'unda `xcframework slices up to date, skipping build`). Çözüm: `bash node_modules/expo-modules-jsi/apple/scripts/clear-caches.sh`, ilgili DerivedData'yı sil, `cd ios && pod install`, yeniden build. `usePrecompiledModules`'ı kapatmak gerekmez. Xcode'un kullandığı Node `ios/.xcode.env.local`'daki yoldur (`~/.n/bin/node`, Node 22 olmalı).
+
 Bu projede birim/entegrasyon test altyapısı (Jest vb.) **yok** — `npm run lint` ve manuel/fiziksel cihaz testi mevcut doğrulama yoludur.
 
 Native bağımlılık eklendiğinde veya `app.config.js`/plugin değişikliğinde `ios`/`android` klasörleri prebuild ile senkronize edilmeli (`expo-dev-client` kullanıldığı için Expo Go ile çalışmaz).
@@ -136,3 +138,4 @@ Halihazırda kısmi bir migration devam ediyor (bkz. `TODO.md` — Icon Migratio
 ## Notlar
 
 - [.claude/notes/ts-sonrasi-yapilacaklar.md](.claude/notes/ts-sonrasi-yapilacaklar.md) — JS → TS dönüşümünde (branch `ts/sdk57`) bulunup ertelenen işler: düz metin saklanan şifreler (düzeltildi), persist edilen token'lar, `dueDate` sıralaması (düzeltildi), Completed filtre Reset hatası (düzeltildi), eksik `refresh` ikonu ve ölü kod (temizlendi), tablet rotasyonu (yapıldı).
+- [.claude/notes/dev-varyant-kurulumu.md](.claude/notes/dev-varyant-kurulumu.md) — store ve dev sürümünün aynı cihazda yan yana durması için kurulum (APP_VARIANT script'leri, otomatik dev ikonları, `IS_DEV_MODE`); boostifywrite ve boostifyexam'a uygulanacak tarif.
