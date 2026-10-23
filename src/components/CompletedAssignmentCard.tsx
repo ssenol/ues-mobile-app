@@ -187,17 +187,20 @@ export default function CompletedAssignmentCard({ assignment, onPress, onDelete 
           </ThemedText>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={onDelete}
-          activeOpacity={0.7}
-        >
-          <ThemedIcon
-            iconName="trash"
-            size={16}
-            tintColor="#FF3B30"
-          />
-        </TouchableOpacity>
+        {/* Silme yalnızca onDelete verilirse (dev modda) görünür */}
+        {onDelete && (
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={onDelete}
+            activeOpacity={0.7}
+          >
+            <ThemedIcon
+              iconName="trash"
+              size={16}
+              tintColor="#FF3B30"
+            />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { isAxiosError } from "axios";
 import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -20,7 +19,7 @@ import ActionButton from "../components/ActionButton";
 import ConfirmModal from "../components/ConfirmModal";
 import CustomInput from "../components/CustomInput";
 import { ThemedText } from "../components/ThemedText";
-import authService from "../services/auth";
+import authService, { NotStudentError } from "../services/auth";
 import BiometricAuthService from "../services/biometricAuth";
 import { store } from "../store/index";
 import { CredentialsPayload, setCredentials } from "../store/slices/authSlice";
@@ -41,6 +40,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState(""); // 123456
   const [loading, setLoading] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("Login failed. Please check your details.");
   const [biometricPromptModalVisible, setBiometricPromptModalVisible] = useState(false);
   const [biometricPromptType, setBiometricPromptType] = useState("");
   const [pendingCredentials, setPendingCredentials] = useState<{
@@ -108,7 +108,9 @@ export default function LoginScreen() {
       console.error("Biyometrik otomatik giriş hatası:", error);
       Alert.alert(
         "Error",
-        "Automatic login with biometric failed. Please login manually."
+        error instanceof NotStudentError
+          ? error.message
+          : "Automatic login with biometric failed. Please login manually."
       );
     } finally {
       setLoading(false);
@@ -217,16 +219,12 @@ export default function LoginScreen() {
       // navigation ile yönlendirme kaldırıldı, AppNavigator otomatik yönlendirecek
     } catch (error) {
       setLoading(false);
-      const statusCode = isAxiosError(error) ? error.response?.status : undefined;
-      if (statusCode === 401) {
-        setErrorModalVisible(true);
-      } else {
-        setErrorModalVisible(true);
-        // Alert.alert(
-        //   "Error",
-        //   "Login failed. Please check your details."
-        // );
-      }
+      setErrorMessage(
+        error instanceof NotStudentError
+          ? error.message
+          : "Login failed. Please check your details."
+      );
+      setErrorModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -407,7 +405,7 @@ export default function LoginScreen() {
         onClose={() => setErrorModalVisible(false)}
         iconName="logout"
         title="Error"
-        description="Login failed. Please check your details."
+        description={errorMessage}
         confirmText="OK"
         singleButton={true}
       />

@@ -84,6 +84,8 @@ module.exports = {
       ]
     ],
     extra: {
+      // Çalışma anında src/config/env.ts okur (dev araçlarını göstermek için)
+      appVariant: IS_DEV ? "development" : "production",
       router: {},
       eas: {
         projectId: "b265e6b9-bacb-437b-b64f-53554b99a0dc"

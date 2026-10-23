@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { Redirect, Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { DynamicColorIOS } from 'react-native';
-import { useSelector } from 'react-redux';
-import { selectIsAuthenticated } from '@/src/store/slices/authSlice';
+import { logout, selectCurrentUser, selectIsAuthenticated } from '@/src/store/slices/authSlice';
+import { clearAssignmentState } from '@/src/store/slices/assignmentSlice';
+import { useAppDispatch, useAppSelector } from '@/src/store/hooks';
 import CustomTabBar, { USES_CUSTOM_TAB_BAR } from '@/src/components/CustomTabBar';
 
 // Hangi tab bar'ın kullanılacağı CustomTabBar.tsx'teki USES_CUSTOM_TAB_BAR'da (sekme ekranlarının alt boşluğu da
@@ -10,9 +12,20 @@ import CustomTabBar, { USES_CUSTOM_TAB_BAR } from '@/src/components/CustomTabBar
 // sekme ikonlarının arkasında istenmeyen gri bir kapsül göründüğü için onlar da floating CustomTabBar'a düşüyor.
 
 export default function TabsLayout() {
-  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const currentUser = useAppSelector(selectCurrentUser);
+  // Rol kontrolünden önce (eski sürümde) giriş yapmış öğrenci olmayan hesapların oturumu kapatılır
+  const isNotStudent = isAuthenticated && currentUser?.role !== 'student';
 
-  if (!isAuthenticated) {
+  useEffect(() => {
+    if (isNotStudent) {
+      dispatch(clearAssignmentState());
+      dispatch(logout());
+    }
+  }, [isNotStudent, dispatch]);
+
+  if (!isAuthenticated || isNotStudent) {
     return <Redirect href="/(auth)/login" />;
   }
 

@@ -26,6 +26,7 @@ import ThemedIcon from "../components/ThemedIcon";
 import { ThemedText } from "../components/ThemedText";
 import BiometricAuthService from "../services/biometricAuth";
 import api, { API_ENDPOINTS } from "../config/api";
+import { IS_DEV_MODE } from "../config/env";
 import { selectCurrentUser, selectRefreshToken, setCredentials, updateAvatarUrl } from "../store/slices/authSlice";
 import { clearAssignmentState } from "../store/slices/assignmentSlice";
 import { useTheme } from "../theme/ThemeContext";
@@ -804,17 +805,19 @@ export default function ProfileScreen() {
           Version {appVersion} ({buildNumber})
         </ThemedText>
 
-        {/* Reset App Settings Button - Debug */}
-        <TouchableOpacity
-          style={styles.resetButton}
-          onPress={handleResetAppSettings}
-          activeOpacity={0.85}
-          disabled={isResetting}
-        >
-          <ThemedText weight="semiBold" style={styles.resetText}>
-            {isResetting ? 'Resetting...' : 'Reset App Settings'}
-          </ThemedText>
-        </TouchableOpacity>
+        {/* Reset App Settings Button - yalnızca dev modda */}
+        {IS_DEV_MODE && (
+          <TouchableOpacity
+            style={styles.resetButton}
+            onPress={handleResetAppSettings}
+            activeOpacity={0.85}
+            disabled={isResetting}
+          >
+            <ThemedText weight="semiBold" style={styles.resetText}>
+              {isResetting ? 'Resetting...' : 'Reset App Settings'}
+            </ThemedText>
+          </TouchableOpacity>
+        )}
 
       </Animated.ScrollView>
 

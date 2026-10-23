@@ -16,6 +16,7 @@ import InfoModal from '../components/InfoModal';
 import ConfirmModal from '../components/ConfirmModal';
 import InlineCalendar from '../components/InlineCalendar';
 import {theme, useTheme} from "../theme/ThemeContext";
+import { IS_DEV_MODE } from '../config/env';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import type { CompletedAssignment, CompletedExercise, SpeechTaskType } from '../types/assignment';
 
@@ -455,7 +456,7 @@ export default function CompletedScreen() {
                   <CompletedAssignmentCard
                     assignment={assignment}
                     onPress={() => handleReportPress(assignment)}
-                    onDelete={() => handleDeletePress(assignment)}
+                    onDelete={IS_DEV_MODE ? () => handleDeletePress(assignment) : undefined}
                   />
                 </View>
               ))}
@@ -467,7 +468,7 @@ export default function CompletedScreen() {
                 key={assignment.solvedTaskId || assignment.id || `task-${index}`}
                 assignment={assignment}
                 onPress={() => handleReportPress(assignment)}
-                onDelete={() => handleDeletePress(assignment)}
+                onDelete={IS_DEV_MODE ? () => handleDeletePress(assignment) : undefined}
               />
             ))
           )

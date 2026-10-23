@@ -14,6 +14,14 @@ export interface LoginResult {
   refreshToken?: string;
 }
 
+// Uygulama yalnızca öğrenciler içindir; öğretmen/yönetici hesapları girişte reddedilir
+export class NotStudentError extends Error {
+  constructor() {
+    super("Only student accounts can sign in.");
+    this.name = "NotStudentError";
+  }
+}
+
 export interface RefreshResult {
   token: string;
   user?: AuthUser;
@@ -35,6 +43,10 @@ class AuthService {
           console.error("Giriş yanıtında token bulunamadı:", JSON.stringify(response.data, null, 2));
           throw new Error("Giriş yanıtında token bulunamadı");
         }
+
+        if (user?.role !== "student") {
+          throw new NotStudentError();
+        }
         
         return {
           token,
@@ -45,6 +57,9 @@ class AuthService {
         throw new Error("Geçersiz giriş yanıt formatı");
       }
     } catch (error) {
+      if (error instanceof NotStudentError) {
+        throw error;
+      }
       if (isAxiosError(error)) {
         console.error('Giriş hatası:', {
           message: error.message,
