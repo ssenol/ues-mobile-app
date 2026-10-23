@@ -11,6 +11,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { ThemeProvider } from '@/src/theme/ThemeContext';
 import { persistor, store } from '@/src/store';
 import { ensureCredentialStorageReady } from '@/src/services/biometricAuth';
+import DeepLinkLoginHandler from '@/src/components/DeepLinkLoginHandler';
 
 // Splash screen'i font yüklenene kadar göster
 // Native splash o view controller için henüz kayıtlı değilse (dev client'ın kendi splash
@@ -67,6 +68,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
               </Stack>
+              <DeepLinkLoginHandler />
             </SafeAreaProvider>
           </ThemeProvider>
         </PersistGate>

@@ -29,10 +29,21 @@ export interface RefreshResult {
 
 class AuthService {
   async login(username: string, password: string): Promise<LoginResult> {
+    return this.requestLogin(API_ENDPOINTS.auth.login, { username, password });
+  }
+
+  // Web'den (service.ueslms) deep link ile gelen şifreli SSO token'ını quizmaker-api'de oturuma çevirir.
+  // Yanıt /auth/login ile aynı şekildedir; öğrenci kontrolü de aynen uygulanır.
+  async loginWithSsoToken(ssoToken: string): Promise<LoginResult> {
+    return this.requestLogin(API_ENDPOINTS.auth.ssoMobile, { token: ssoToken });
+  }
+
+  // /auth/login ve /auth/sso-mobile ortak yanıtı: { user, token, refreshToken }
+  private async requestLogin(url: string, body: Record<string, string>): Promise<LoginResult> {
     try {
-      const response = await api.post<ApiResponse<LoginResponseData>>(API_ENDPOINTS.auth.login, {
-        username,
-        password,
+      const response = await api.post<ApiResponse<LoginResponseData>>(url, body, {
+        // Açık bir oturum varken (SSO ile kullanıcı değişimi) mevcut access token eklenmesin
+        skipAuthInterceptor: true,
       });
 
       if (response.data?.status === "success" && response.data?.data) {
@@ -61,10 +72,11 @@ class AuthService {
         throw error;
       }
       if (isAxiosError(error)) {
+        // error.config loglanmaz: istek gövdesi şifreyi / SSO token'ını içerir
         console.error('Giriş hatası:', {
           message: error.message,
           code: error.code,
-          config: error.config,
+          status: error.response?.status,
           response: error.response?.data,
           isAxiosError: true,
         });
@@ -98,7 +110,13 @@ class AuthService {
         throw new Error("Geçersiz token yenileme yanıt formatı");
       }
     } catch (error) {
-      console.error('Token yenileme hatası:', (isAxiosError(error) && error.response?.data) || error);
+      // AxiosError'un tamamı loglanmaz: config içindeki istek gövdesi refreshToken'ı taşır
+      console.error(
+        'Token yenileme hatası:',
+        isAxiosError(error)
+          ? { message: error.message, status: error.response?.status, response: error.response?.data }
+          : (error as Error)?.message
+      );
       throw error;
     }
   }

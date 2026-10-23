@@ -2,7 +2,8 @@ const IS_DEV = process.env.APP_VARIANT === 'development';
 
 module.exports = {
   expo: {
-    scheme: "boostifyspeak",
+    // Dev sürümü ayrı scheme: iki sürüm aynı cihazdayken SSO linki store sürümünü açsın
+    scheme: IS_DEV ? "boostifyspeak-dev" : "boostifyspeak",
     name: IS_DEV ? "BoostifySpeak DEV" : "BoostifySpeak",
     slug: "boostifyspeak",
     version: "1.1.0",

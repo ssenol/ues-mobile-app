@@ -106,6 +106,10 @@ Yeni bir slice eklerken `src/store/index.ts`'e hem reducer'ı hem karşılık ge
 
 Yeni bir endpoint eklerken `API_ENDPOINTS`'e ekleyin ve çağrıyı `src/services/` altındaki ilgili service dosyasından yapın (`auth.ts`, `speak.ts`, `biometricAuth.ts`; ortak backend tipleri `src/types/api.ts`) — component'ler doğrudan axios/`api` çağırmaz.
 
+### Deep link ile SSO girişi
+
+Okul platformundan gelen öğrenci service.ueslms üzerinden `boostifyspeak://login?token=<şifreli SSO token>` ile app'e düşer (dev sürümünde scheme `boostifyspeak-dev`). `app/+native-intent.tsx` `token` taşıyan her linki `/`'e çevirir ve token'ı `src/services/deepLinkToken.ts`'te bekletir; PersistGate içindeki `src/components/DeepLinkLoginHandler.tsx` rehydrate sonrası `authService.loginWithSsoToken()` ile `POST /auth/sso-mobile`'a gönderir (yanıt `/auth/login` ile aynı, öğrenci kontrolü dahil). Açık oturum varsa yalnızca giriş başarılı olunca yeni öğrenciye geçilir. `/auth/` uçlarında 401 mevcut oturumu yenilemez/kapatmaz (`src/config/api.ts` response interceptor).
+
 ### İkon sistemi: iki paralel sistem bir arada
 
 - **SVG ikonlar:** `SvgIcon` component + `src/constants/svgIcons.json` (path tanımları).

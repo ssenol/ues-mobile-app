@@ -28,6 +28,8 @@ export const API_ENDPOINTS = {
   auth: {
     login: `${BASE_URL}/auth/login`,
     refresh: `${BASE_URL}/auth/refresh-mobile-app-access-token`,
+    // service.ueslms'ten deep link ile gelen SSO token'ını oturuma çevirir (BoostifyEdu ekibi ekleyecek)
+    ssoMobile: `${BASE_URL}/auth/sso-mobile`,
   },
   assignment: {
     getAssignedSpeechTasks: `${BASE_URL}/student/get-assigned-speech-tasks`,
@@ -120,7 +122,9 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config;
-    if (originalRequest && error.response?.status === 401 && !originalRequest._retry) {
+    // Giriş uçlarında 401 = geçersiz kimlik bilgisi/SSO token'ı; mevcut oturum yenilenmez ya da kapatılmaz
+    const isAuthEndpoint = originalRequest?.url?.includes('/auth/');
+    if (originalRequest && !isAuthEndpoint && error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const { refreshToken } = store.getState().auth;
 
