@@ -16,6 +16,8 @@ const supportsLiquidGlassTabs = Platform.OS === 'ios' && iosMajorVersion >= 26;
 export const USES_CUSTOM_TAB_BAR = isIPad || !supportsLiquidGlassTabs;
 
 const TAB_BAR_HEIGHT = 56;
+// Geniş pencerede sekmeler birbirinden çok açılmasın
+const TAB_BAR_MAX_WIDTH = 400;
 // Kaydırılan içeriğin son öğesi ile tab bar arasında bırakılan boşluk
 const CONTENT_GAP_ABOVE_TAB_BAR = 16;
 
@@ -42,11 +44,11 @@ export default function CustomTabBar({ state, descriptors, navigation }: CustomT
   const theme = useTheme();
   const { colors, shadows } = theme;
   
-  // Tablet kontrolü (iPad ve Android tablet dahil, ekran genişliğine göre)
-  const { width, isTablet } = useResponsive();
+  const { width } = useResponsive();
   const tabBarBottom = useTabBarBottom();
-  // Tablette 240px yan boşluk, ama bar en fazla 400px: yatay tablette sekmeler birbirinden çok açılmasın
-  const barWidth = isTablet ? Math.min(width - 480, 400) : width - 48;
+  // Her genişlikte tek kural: kenarlardan 24px, en fazla TAB_BAR_MAX_WIDTH. Tablet eşiğine bağlı olsaydı
+  // iPad penceresi (Stage Manager) eşiği geçerken bar birden daralırdı.
+  const barWidth = Math.min(width - 48, TAB_BAR_MAX_WIDTH);
   const horizontalPadding = (width - barWidth) / 2;
   
   // Tab icon mapping
